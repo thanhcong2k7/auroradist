@@ -17,9 +17,10 @@ import {
 
 interface LayoutProps {
   children: React.ReactNode;
+  onLogout?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -93,7 +94,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <p className="text-sm font-bold truncate">Unknown Brain</p>
               <p className="text-xs text-gray-500 truncate font-mono">Artist Account</p>
             </div>
-            <button className="text-gray-500 hover:text-red-400 transition">
+            <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition">
               <LogOut size={16} />
             </button>
           </div>

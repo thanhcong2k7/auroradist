@@ -1,5 +1,5 @@
-import React from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Discography from './pages/Discography';
@@ -10,11 +10,36 @@ import Tracks from './pages/Tracks';
 import Analytics from './pages/Analytics';
 import Wallet from './pages/Wallet';
 import Settings from './pages/Settings';
+import Login from './pages/Login';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check for session (mock)
+  useEffect(() => {
+    const session = localStorage.getItem('aurora_session');
+    if (session) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = () => {
+    localStorage.setItem('aurora_session', 'active');
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('aurora_session');
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <Router>
-      <Layout>
+      <Layout onLogout={handleLogout}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/discography" element={<Discography />} />
@@ -26,6 +51,7 @@ const App: React.FC = () => {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
     </Router>
