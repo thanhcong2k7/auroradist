@@ -1,181 +1,213 @@
-import React, { useState } from 'react';
-import { User, Bell, Shield, Mail, Lock, Smartphone, CreditCard, Banknote } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import { PayoutMethod, UserProfile } from '../types';
+import { User, Bell, Shield, Plus, Trash2, CreditCard, Banknote, Save, CheckCircle2, X, Smartphone, Loader2, Lock, Fingerprint } from 'lucide-react';
 
 const Settings: React.FC = () => {
-    const [emailNotifs, setEmailNotifs] = useState(true);
-    const [twoFactor, setTwoFactor] = useState(false);
-    const [payoutMethod, setPayoutMethod] = useState<'BANK' | 'PAYPAL'>('BANK');
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [tempProfile, setTempProfile] = useState<Partial<UserProfile>>({});
+    const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
+    const [showPayoutModal, setShowPayoutModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [saveFeedback, setSaveFeedback] = useState(false);
+
+    // New Payout Form
+    const [pmType, setPmType] = useState<'BANK' | 'PAYPAL'>('BANK');
+    const [pmName, setPmName] = useState('');
+    const [pmAccount, setPmAccount] = useState('');
+    const [pmExtra, setPmExtra] = useState('');
+    const [pmHolder, setPmHolder] = useState('');
+
+    useEffect(() => { loadData(); }, []);
+
+    const loadData = async () => {
+        const [prof, payouts] = await Promise.all([api.auth.getProfile(), api.wallet.getPayoutMethods()]);
+        setProfile(prof);
+        setPayoutMethods(payouts);
+        setTempProfile(prof);
+    };
+
+    const handleSaveProfile = async () => {
+        setIsSubmitting(true);
+        try {
+            const updated = await api.auth.updateProfile(tempProfile);
+            setProfile(updated);
+            setIsEditingProfile(false);
+            triggerFeedback();
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleAddPayout = async () => {
+        if (!pmName || !pmAccount) return;
+        setIsSubmitting(true);
+        const details = pmType === 'BANK' ? `Bank Node: ...${pmAccount.slice(-4)}` : pmAccount;
+        await api.wallet.savePayoutMethod({
+            type: pmType,
+            name: pmName,
+            details: details,
+            accountHolder: pmHolder,
+            swiftCode: pmExtra
+        });
+        await loadData();
+        setIsSubmitting(false);
+        setShowPayoutModal(false);
+        setPmName(''); setPmAccount(''); setPmExtra(''); setPmHolder('');
+    };
+
+    const handleDeletePayout = async (id: string) => {
+        if (!confirm("Terminate this disbursement endpoint? Authentication required for re-sync.")) return;
+        setIsSubmitting(true);
+        try {
+            await api.wallet.deletePayoutMethod(id);
+            await loadData();
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const triggerFeedback = () => {
+        setSaveFeedback(true);
+        setTimeout(() => setSaveFeedback(false), 3000);
+    };
     
+    if (!profile) return null;
+
     return (
-        <div className="space-y-6 max-w-4xl mx-auto pb-10">
-            <div className="border-b border-white/10 pb-4">
-                <h1 className="text-3xl font-black uppercase mb-1">System Config</h1>
-                <p className="text-gray-400 font-mono text-sm">Manage account preferences and security protocols.</p>
+        <div className="space-y-8 max-w-6xl mx-auto pb-24 animate-fade-in">
+            <div className="border-b border-white/5 pb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div>
+                  <h1 className="text-2xl font-black uppercase tracking-tight">System Node Config</h1>
+                  <p className="text-gray-600 font-mono text-[10px] uppercase tracking-widest opacity-60">Identity & Disbursement Alignment</p>
+                </div>
+                {saveFeedback && (
+                   <div className="flex items-center gap-2 text-green-400 font-black text-[9px] uppercase animate-fade-in border border-green-500/10 px-3 py-1.5 rounded-full bg-green-500/5">
+                       <CheckCircle2 size={12} /> Matrix Synchronized
+                   </div>
+                )}
             </div>
 
-            {/* Profile Section */}
-            <div className="bg-surface border border-white/10 rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-white/10 flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
-                        <User size={20} />
-                    </div>
-                    <h3 className="font-bold uppercase text-sm">Account Profile</h3>
-                </div>
-                <div className="p-6 space-y-6">
-                    <div className="flex items-center gap-6">
-                         <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-2xl border-4 border-black shadow-xl">
-                            UN
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-7 space-y-6">
+                    <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/40">
+                            <h3 className="font-bold uppercase tracking-widest text-[10px] text-blue-500 flex items-center gap-2"><Fingerprint size={14}/> Identity Matrix</h3>
+                            {!isEditingProfile ? (
+                                <button onClick={() => setIsEditingProfile(true)} className="px-4 py-2 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Modify</button>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <button onClick={() => setIsEditingProfile(false)} className="px-4 py-2 text-[10px] font-black uppercase text-gray-600">Discard</button>
+                                    <button onClick={handleSaveProfile} className="px-6 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">{isSubmitting ? <Loader2 size={12} className="animate-spin" /> : 'Commit'}</button>
+                                </div>
+                            )}
                         </div>
-                        <div>
-                            <h4 className="text-xl font-bold">Unknown Brain</h4>
-                            <p className="text-gray-400 font-mono text-sm">Artist Account</p>
-                        </div>
-                        <button className="ml-auto px-4 py-2 border border-white/10 text-xs font-bold uppercase hover:bg-white hover:text-black transition rounded">
-                            Edit Details
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Display Name</label>
-                            <input type="text" value="Unknown Brain" readOnly className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-gray-400 cursor-not-allowed" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Email Address</label>
-                            <input type="text" value="contact@unknownbrain.com" readOnly className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-gray-400 cursor-not-allowed" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Payout Settings */}
-            <div className="bg-surface border border-white/10 rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-white/10 flex items-center gap-3">
-                    <div className="p-2 bg-green-500/10 rounded-lg text-green-400">
-                        <CreditCard size={20} />
-                    </div>
-                    <h3 className="font-bold uppercase text-sm">Payout Methods</h3>
-                </div>
-                <div className="p-6 space-y-6">
-                    <div>
-                        <div className="flex bg-black p-1 rounded-lg border border-white/10 w-fit mb-6">
-                            <button 
-                                onClick={() => setPayoutMethod('BANK')}
-                                className={`px-4 py-2 rounded text-xs font-bold uppercase transition ${payoutMethod === 'BANK' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}
-                            >
-                                <Banknote size={14} className="inline mr-2 mb-0.5" /> Bank Transfer
-                            </button>
-                            <button 
-                                onClick={() => setPayoutMethod('PAYPAL')}
-                                className={`px-4 py-2 rounded text-xs font-bold uppercase transition ${payoutMethod === 'PAYPAL' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}
-                            >
-                                <span className="inline mr-2 text-lg leading-none" style={{ verticalAlign: 'middle' }}>P</span> PayPal
-                            </button>
-                        </div>
-
-                        {payoutMethod === 'BANK' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-                                <div className="md:col-span-2">
-                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Beneficiary Name</label>
-                                    <input type="text" className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition" placeholder="Full Legal Name" />
+                        <div className="p-8 space-y-8">
+                            <div className="flex items-center gap-6">
+                                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 shadow-lg">
+                                    <div className="w-full h-full rounded-full bg-[#080808] flex items-center justify-center text-3xl font-black border-2 border-white/5 relative">
+                                        {profile.name.charAt(0)}
+                                        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 border-2 border-[#080808] rounded-full shadow-[0_0_10px_green]"></div>
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Bank Name</label>
-                                    <input type="text" className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition" placeholder="Bank Name" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">SWIFT / BIC Code</label>
-                                    <input type="text" className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition" placeholder="XXXXXXXX" />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">IBAN / Account Number</label>
-                                    <input type="text" className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition" placeholder="Account Number" />
+                                    <h4 className="text-xl font-black uppercase tracking-tight">{profile.name}</h4>
+                                    <p className="text-gray-600 font-mono text-[9px] uppercase tracking-widest mt-1">{profile.role}</p>
                                 </div>
                             </div>
-                        )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-mono text-gray-600 uppercase tracking-widest ml-1">Alias</label>
+                                    <input type="text" value={isEditingProfile ? tempProfile.name : profile.name} onChange={e => setTempProfile({...tempProfile, name: e.target.value})} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-600 cursor-not-allowed'}`} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-mono text-gray-600 uppercase tracking-widest ml-1">Legal Identity</label>
+                                    <input type="text" value={isEditingProfile ? tempProfile.legalName : profile.legalName} onChange={e => setTempProfile({...tempProfile, legalName: e.target.value})} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-600 cursor-not-allowed'}`} placeholder="Required for financial nodes" />
+                                </div>
+                                <div className="md:col-span-2 space-y-1">
+                                    <label className="text-[9px] font-mono text-gray-600 uppercase tracking-widest ml-1">Endpoint (Email)</label>
+                                    <input type="text" value={isEditingProfile ? tempProfile.email : profile.email} onChange={e => setTempProfile({...tempProfile, email: e.target.value})} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-600 cursor-not-allowed'}`} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                        {payoutMethod === 'PAYPAL' && (
-                            <div className="animate-fade-in">
-                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">PayPal Email Address</label>
-                                <input type="email" className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition" placeholder="email@example.com" />
+                    <div className="bg-surface border border-white/5 rounded-2xl p-6 group hover:border-blue-500/10 transition-all">
+                        <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-blue-500 mb-6"><Shield size={16}/> Access Control</div>
+                        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-black/40 p-5 rounded-xl border border-white/5">
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-tight">System Passcode</p>
+                                <p className="text-[9px] text-gray-700 font-mono uppercase mt-1">Global Authorization Override</p>
                             </div>
-                        )}
+                            <button className="px-6 py-2.5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Rotate Key</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="lg:col-span-5 space-y-6">
+                    <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm flex flex-col h-full">
+                        <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/40">
+                             <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-green-500"><Banknote size={16}/> Disbursement Nodes</div>
+                             <button onClick={() => setShowPayoutModal(true)} className="p-2 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white rounded-xl transition-all active:scale-90"><Plus size={16}/></button>
+                        </div>
+                        <div className="p-5 space-y-3 flex-1 custom-scrollbar overflow-y-auto">
+                             {payoutMethods.length === 0 ? (
+                                 <div className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-white/5 rounded-xl opacity-20"><p className="text-[9px] font-mono uppercase tracking-widest">No nodes configured</p></div>
+                             ) : (
+                                 payoutMethods.map(pm => (
+                                     <div key={pm.id} className="p-4 bg-black/40 border border-white/5 rounded-xl flex items-center justify-between group hover:border-blue-500/20 transition-all">
+                                         <div className="flex items-center gap-4">
+                                             <div className="p-3 bg-white/5 rounded-lg text-gray-600 group-hover:text-blue-400 transition-colors">{pm.type === 'BANK' ? <CreditCard size={18}/> : <Smartphone size={18}/>}</div>
+                                             <div><p className="text-[10px] font-black uppercase tracking-tight">{pm.name}</p><p className="text-[8px] font-mono text-gray-700 tracking-tighter">{pm.details}</p></div>
+                                         </div>
+                                         <button onClick={() => handleDeletePayout(pm.id)} className="p-2 text-gray-800 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                                     </div>
+                                 ))
+                             )}
+                        </div>
+                        <div className="p-5 bg-blue-500/5 border-t border-blue-500/10 text-center"><p className="text-[8px] text-gray-600 font-mono uppercase tracking-widest leading-relaxed">Multi-DSP reconciliation feed prioritized.</p></div>
                     </div>
                 </div>
             </div>
 
-            {/* Notifications */}
-            <div className="bg-surface border border-white/10 rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-white/10 flex items-center gap-3">
-                    <div className="p-2 bg-yellow-500/10 rounded-lg text-yellow-400">
-                        <Bell size={20} />
-                    </div>
-                    <h3 className="font-bold uppercase text-sm">Notifications</h3>
-                </div>
-                <div className="p-6 space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-black/40 rounded-lg border border-white/5">
-                        <div className="flex items-center gap-4">
-                            <Mail size={18} className="text-gray-500" />
-                            <div>
-                                <p className="font-bold text-sm">Email Alerts</p>
-                                <p className="text-xs text-gray-500 font-mono">Receive updates on release status and royalties.</p>
+            {showPayoutModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
+                    <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
+                            <h3 className="font-bold uppercase tracking-widest text-[10px] text-blue-500">Add Disbursement Node</h3>
+                            <button onClick={() => setShowPayoutModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
+                        </div>
+                        <div className="p-8 space-y-6">
+                            <div className="flex bg-black p-1 rounded-xl border border-white/5">
+                                <button onClick={() => setPmType('BANK')} className={`flex-1 py-2 text-[9px] font-black uppercase rounded-lg transition-all ${pmType === 'BANK' ? 'bg-white text-black' : 'text-gray-700'}`}>Swift / IBAN</button>
+                                <button onClick={() => setPmType('PAYPAL')} className={`flex-1 py-2 text-[9px] font-black uppercase rounded-lg transition-all ${pmType === 'PAYPAL' ? 'bg-white text-black' : 'text-gray-700'}`}>PayPal Gateway</button>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-mono text-gray-700 uppercase tracking-widest ml-1">Nickname</label>
+                                    <input type="text" value={pmName} onChange={e => setPmName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="e.g. Asset Accumulator" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-mono text-gray-700 uppercase tracking-widest ml-1">Holder</label>
+                                    <input type="text" value={pmHolder} onChange={e => setPmHolder(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="Legal Name" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-mono text-gray-700 uppercase tracking-widest ml-1">{pmType === 'BANK' ? 'Account Number' : 'Provider Identity (Email)'}</label>
+                                    <input type={pmType === 'BANK' ? 'password' : 'email'} value={pmAccount} onChange={e => setPmAccount(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none font-mono" placeholder={pmType === 'BANK' ? '••••••••' : 'identity@aurora.net'} />
+                                </div>
                             </div>
                         </div>
-                        <div 
-                            className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${emailNotifs ? 'bg-blue-600' : 'bg-gray-700'}`}
-                            onClick={() => setEmailNotifs(!emailNotifs)}
-                        >
-                            <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${emailNotifs ? 'translate-x-6' : 'translate-x-0'}`} />
+                        <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
+                            <button onClick={() => setShowPayoutModal(false)} className="flex-1 py-3 text-[10px] font-black uppercase text-gray-700 hover:text-white transition">Cancel</button>
+                            <button onClick={handleAddPayout} disabled={isSubmitting || !pmName || !pmAccount} className="flex-1 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 shadow-xl disabled:opacity-30">
+                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Establish Node'}
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            {/* Security */}
-            <div className="bg-surface border border-white/10 rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-white/10 flex items-center gap-3">
-                    <div className="p-2 bg-red-500/10 rounded-lg text-red-400">
-                        <Shield size={20} />
-                    </div>
-                    <h3 className="font-bold uppercase text-sm">Security & Access</h3>
-                </div>
-                <div className="p-6 space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-black/40 rounded-lg border border-white/5">
-                        <div className="flex items-center gap-4">
-                            <Smartphone size={18} className="text-gray-500" />
-                            <div>
-                                <p className="font-bold text-sm">Two-Factor Authentication</p>
-                                <p className="text-xs text-gray-500 font-mono">Secure your account with 2FA.</p>
-                            </div>
-                        </div>
-                        <div 
-                            className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${twoFactor ? 'bg-blue-600' : 'bg-gray-700'}`}
-                            onClick={() => setTwoFactor(!twoFactor)}
-                        >
-                            <div className={`w-4 h-4 bg-white rounded-full shadow transition-transform ${twoFactor ? 'translate-x-6' : 'translate-x-0'}`} />
-                        </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-4 bg-black/40 rounded-lg border border-white/5">
-                        <div className="flex items-center gap-4">
-                            <Lock size={18} className="text-gray-500" />
-                            <div>
-                                <p className="font-bold text-sm">Password</p>
-                                <p className="text-xs text-gray-500 font-mono">Last changed 3 months ago.</p>
-                            </div>
-                        </div>
-                        <button className="text-xs font-bold text-blue-400 hover:text-white uppercase">Change</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div className="flex justify-end gap-4 pt-4">
-                <button className="px-6 py-2 border border-white/10 text-white font-bold uppercase rounded text-sm hover:bg-white/5">
-                    Discard
-                </button>
-                <button className="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-sm shadow-[0_0_15px_rgba(37,99,235,0.4)]">
-                    Save Changes
-                </button>
-            </div>
+            )}
         </div>
     );
 };

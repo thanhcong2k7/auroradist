@@ -48,7 +48,9 @@ const ReleaseForm: React.FC = () => {
     const [copyrightLine, setCopyrightLine] = useState('');
     const [phonogramYear, setPhonogramYear] = useState(new Date().getFullYear().toString());
     const [phonogramLine, setPhonogramLine] = useState('');
-    const [status, setStatus] = useState<'DRAFT' | 'DELIVERED' | 'ERROR' | 'CHECKING' | 'ACCEPTED'>('DRAFT');
+    
+    // Fix: Updated status state to use full Release['status'] type to prevent assignment errors
+    const [status, setStatus] = useState<Release['status']>('DRAFT');
 
     // Form Data - Tracks
     const [releaseTracks, setReleaseTracks] = useState<Track[]>([]);

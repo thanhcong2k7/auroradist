@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 import { Key, ArrowRight, Loader2, ShieldCheck, Globe } from 'lucide-react';
 
 interface LoginProps {
@@ -12,76 +13,77 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) return setError('Identity required.');
+    
     setLoading(true);
     setError('');
 
-    // Simulate API Call
-    setTimeout(() => {
-      if (email === 'demo@aurora.com' && password === 'demo') {
-        setLoading(false);
-        onLogin();
-      } else {
-        setLoading(false);
-        setError('Invalid credentials. Try demo@aurora.com / demo');
-      }
-    }, 1500);
+    try {
+      const response = await api.auth.login(email, password);
+      // In production, you'd store the actual token
+      localStorage.setItem('aurora_token', response.token);
+      onLogin();
+    } catch (err) {
+      setError('AUTHENTICATION_FAILED: ACCESS_DENIED');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background text-white font-sans flex items-center justify-center p-6 relative overflow-hidden">
       {/* Background FX */}
-      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.15),transparent_70%)] pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-[radial-gradient(circle_at_100%_100%,rgba(99,102,241,0.1),transparent_60%)] pointer-events-none"></div>
-
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.1),transparent_70%)] pointer-events-none"></div>
+      
       <div className="w-full max-w-md relative z-10">
-        <div className="mb-8 text-center">
-          <div className="text-4xl font-black tracking-tighter uppercase mb-2">
+        <div className="mb-12 text-center animate-fade-in">
+          <div className="text-5xl font-black tracking-tighter uppercase mb-2">
             Aurora<span className="text-blue-500">.</span>
           </div>
-          <p className="text-gray-500 font-mono text-xs tracking-widest uppercase">The Next Frequency</p>
+          <p className="text-gray-500 font-mono text-[10px] tracking-[0.3em] uppercase opacity-50">Global Distribution Node</p>
         </div>
 
-        <div className="bg-surface border border-white/10 p-8 rounded-2xl shadow-2xl backdrop-blur-sm">
-          <div className="flex items-center gap-3 mb-6 p-4 bg-blue-500/5 border border-blue-500/10 rounded-lg">
-            <div className="p-2 bg-blue-500/10 rounded-full text-blue-400">
-              <ShieldCheck size={20} />
+        <div className="bg-surface/50 border border-white/10 p-10 rounded-3xl shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center gap-4 mb-8 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+            <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400">
+              <ShieldCheck size={24} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Secure Gateway</h3>
-              <p className="text-[10px] text-gray-400 font-mono">End-to-end encrypted session.</p>
+              <h3 className="text-sm font-bold text-white uppercase tracking-tight">Encrypted Portal</h3>
+              <p className="text-[10px] text-gray-500 font-mono">TLS 1.3 // AES-256 Enabled</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Identity / Email</label>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-mono text-gray-600 uppercase tracking-widest ml-1">Identity</label>
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition shadow-inner"
-                placeholder="enter your credentials"
+                className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-800"
+                placeholder="user@aurora.com"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Access Key / Password</label>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-mono text-gray-600 uppercase tracking-widest ml-1">Access Key</label>
               <div className="relative">
                 <input 
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition shadow-inner"
+                  className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-800"
                   placeholder="••••••••"
                 />
-                <Key className="absolute right-4 top-3 text-gray-600" size={16} />
+                <Key className="absolute right-5 top-4 text-gray-700" size={18} />
               </div>
             </div>
 
             {error && (
-              <div className="text-xs text-red-500 font-bold bg-red-500/10 p-3 rounded border border-red-500/20 text-center animate-pulse">
+              <div className="text-[10px] text-red-500 font-mono font-bold bg-red-500/5 p-4 rounded-xl border border-red-500/10 text-center animate-shake uppercase tracking-widest">
                 {error}
               </div>
             )}
@@ -89,28 +91,37 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded-lg shadow-[0_0_20px_rgba(37,99,235,0.4)] transition flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
             >
               {loading ? (
-                <>Authenticating <Loader2 className="animate-spin" size={16} /></>
+                <>Verifying <Loader2 className="animate-spin" size={18} /></>
               ) : (
-                <>Enter Dashboard <ArrowRight size={16} /></>
+                <>Initialize Session <ArrowRight size={18} /></>
               )}
             </button>
           </form>
 
-          <div className="mt-6 flex justify-between items-center text-[10px] font-mono text-gray-600 uppercase">
-             <span className="flex items-center gap-1"><Globe size={10} /> SYS.STATUS: ONLINE</span>
-             <a href="#" className="hover:text-blue-400 transition">Forgot Access?</a>
+          <div className="mt-8 flex justify-between items-center text-[10px] font-mono text-gray-600 uppercase tracking-widest border-t border-white/5 pt-6">
+             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div> SYS.LIVE</span>
+             <a href="#" className="hover:text-blue-400 transition-colors">Request Access</a>
           </div>
         </div>
 
-        <div className="mt-8 text-center">
-            <p className="text-[10px] text-gray-700 font-mono">
-                © 2024 AURORA MUSIC INC. UNAUTHORIZED ACCESS IS PROHIBITED.
+        <div className="mt-10 text-center">
+            <p className="text-[10px] text-gray-700 font-mono tracking-widest uppercase opacity-40">
+                © 2025 AURORA MUSIC // NEURAL NETWORK SECURED
             </p>
         </div>
       </div>
+      
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
+      `}</style>
     </div>
   );
 };

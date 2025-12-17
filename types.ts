@@ -1,11 +1,12 @@
+
 export interface Release {
   id: number;
   upc: string;
   title: string;
   version?: string;
-  artist: string; // Legacy/Display artist
+  artist: string; 
   labelId?: number;
-  status: 'DRAFT' | 'DELIVERED' | 'ERROR' | 'CHECKING' | 'ACCEPTED';
+  status: 'DRAFT' | 'DELIVERED' | 'ERROR' | 'CHECKING' | 'ACCEPTED' | 'REJECTED' | 'TAKENDOWN';
   releaseDate: string;
   originalReleaseDate?: string;
   coverArt: string;
@@ -15,22 +16,56 @@ export interface Release {
   phonogramLine?: string;
 }
 
+// Added missing Artist interface for the Roster
+export interface Artist {
+  id: number;
+  name: string;
+  legalName?: string;
+  email?: string;
+  avatar: string;
+  spotifyId?: string;
+  appleMusicId?: string;
+  soundcloudId?: string;
+  address?: string;
+}
+
+export interface UserProfile {
+  id: number;
+  name: string;
+  legalName: string;
+  email: string;
+  role: string;
+  avatar?: string;
+}
+
+export interface ActionLog {
+  id: string;
+  releaseId?: number;
+  releaseTitle?: string;
+  action: 'SUBMIT_FOR_RELEASE' | 'REQUEST_TAKEDOWN' | 'DELETE' | 'METADATA_UPDATE' | 'WITHDRAWAL_REQUEST' | 'LABEL_ACTION';
+  timestamp: string;
+  status: 'PENDING_REVIEW' | 'APPROVED' | 'COMPLETED' | 'FAILED';
+  performedBy: string;
+  details?: string;
+}
+
 export interface Label {
   id: number;
   name: string;
   email: string;
 }
 
-export interface Artist {
-  id: number;
+export interface PayoutMethod {
+  id: string;
+  type: 'BANK' | 'PAYPAL';
   name: string;
-  legalName?: string;
-  spotifyId?: string;
-  appleMusicId?: string;
-  soundcloudId?: string;
-  email?: string;
-  address?: string;
-  avatar: string;
+  details: string; // Masked account or email
+  accountHolder?: string;
+  bankName?: string;
+  routingNumber?: string;
+  accountNumber?: string;
+  swiftCode?: string;
+  paypalEmail?: string;
 }
 
 export interface TrackArtist {
@@ -45,7 +80,7 @@ export interface TrackContributor {
   id?: number;
   name: string;
   role: 'Composer' | 'Lyricist' | 'Producer' | 'Performer';
-  instrument?: string; // Only for Performer
+  instrument?: string; 
 }
 
 export interface Track {
@@ -56,16 +91,10 @@ export interface Track {
   duration: string;
   status: 'PROCESSING' | 'READY' | 'ERROR';
   releaseId?: number;
-  
-  // Audio File
   audioUrl?: string;
   filename?: string;
-
-  // Credits
   artists: TrackArtist[];
   contributors: TrackContributor[];
-
-  // Lyrics
   hasLyrics: boolean;
   lyricsLanguage?: string;
   lyricsText?: string;

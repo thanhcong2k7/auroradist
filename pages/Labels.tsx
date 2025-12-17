@@ -1,49 +1,128 @@
-import React from 'react';
-import { MOCK_LABELS } from '../constants';
-import { Tags, Plus, Mail, Edit2, Trash2 } from 'lucide-react';
+
+import React, { useEffect, useState } from 'react';
+import { api } from '../services/api';
+import { Label as LabelType, Release } from '../types';
+import { Tags, Plus, Mail, Edit2, Trash2, X, Save, Loader2 } from 'lucide-react';
 
 const Labels: React.FC = () => {
-    return (
-        <div className="space-y-6">
-             <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                <div>
-                    <h1 className="text-3xl font-black uppercase mb-1">Record Labels</h1>
-                    <p className="text-gray-400 font-mono text-sm">Manage imprints and copyright holders.</p>
-                </div>
-                <button className="px-6 py-2 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition shadow-[0_0_15px_rgba(37,99,235,0.4)] flex items-center gap-2 text-sm">
-                    <Plus size={16} /> Add Label
-                </button>
-            </div>
+  const [labels, setLabels] = useState<LabelType[]>([]);
+  const [releases, setReleases] = useState<Release[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingLabel, setEditingLabel] = useState<Partial<LabelType> | null>(null);
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {MOCK_LABELS.map(label => (
-                    <div key={label.id} className="bg-surface border border-white/10 p-6 rounded-xl hover:border-white/30 transition group">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 bg-blue-500/10 rounded-lg text-blue-400">
-                                <Tags size={24} />
-                            </div>
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                                <button className="p-1.5 bg-white/5 hover:bg-white/10 rounded text-gray-400 hover:text-white">
-                                    <Edit2 size={14} />
-                                </button>
-                                <button className="p-1.5 bg-white/5 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400">
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
-                        </div>
-                        <h3 className="text-xl font-bold mb-1">{label.name}</h3>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 font-mono">
-                            <Mail size={12} /> {label.email}
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
-                            <span className="text-xs font-mono text-gray-400">RELEASES</span>
-                            <span className="text-lg font-bold">12</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
+  useEffect(() => { loadData(); }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [l, r] = await Promise.all([api.labels.getAll(), api.catalog.getReleases()]);
+      setLabels(l);
+      setReleases(r);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isLabelUsed = (id: number) => releases.some(r => r.labelId === id);
+
+  const handleOpenModal = (label?: LabelType) => {
+    setEditingLabel(label ? { ...label } : { name: '', email: '' });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!editingLabel?.name || !editingLabel?.email) return;
+    setIsSubmitting(true);
+    try {
+      await api.labels.save(editingLabel);
+      await loadData();
+      setShowModal(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Confirm permanent removal? This imprint will be erased from logs.")) return;
+    setLoading(true);
+    try {
+      await api.labels.delete(id);
+      await loadData();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
+        <div>
+          <h1 className="text-3xl font-black uppercase tracking-tight">Record Imprints</h1>
+          <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Distribution Entity Management</p>
         </div>
-    );
+        <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)] flex items-center gap-2 text-xs rounded-xl">
+          <Plus size={16} /> New Label
+        </button>
+      </div>
+
+      {loading && !labels.length ? (
+        <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {labels.map(label => (
+            <div key={label.id} className="bg-surface border border-white/5 p-6 rounded-2xl hover:border-white/10 transition group relative">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><Tags size={24} /></div>
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                  <button onClick={() => handleOpenModal(label)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition"><Edit2 size={14} /></button>
+                  {!isLabelUsed(label.id) && (
+                    <button onClick={() => handleDelete(label.id)} className="p-2 bg-white/5 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition"><Trash2 size={14} /></button>
+                  )}
+                </div>
+              </div>
+              <h3 className="text-xl font-bold uppercase tracking-tight mb-1">{label.name}</h3>
+              <div className="flex items-center gap-2 text-xs text-gray-500 font-mono"><Mail size={12} /> {label.email}</div>
+              <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-[10px] font-mono font-bold uppercase tracking-widest">
+                <span className="text-gray-600">State</span>
+                <span className={isLabelUsed(label.id) ? 'text-blue-500' : 'text-gray-700'}>
+                  {isLabelUsed(label.id) ? 'ACTIVE' : 'IDLE'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
+              <h3 className="font-bold uppercase tracking-widest text-xs">Imprint Settings</h3>
+              <button onClick={() => setShowModal(false)}><X size={20} className="text-gray-500 hover:text-white" /></button>
+            </div>
+            <div className="p-8 space-y-6">
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono text-gray-600 uppercase tracking-widest ml-1">Label Name</label>
+                <input type="text" value={editingLabel?.name} onChange={e => setEditingLabel({...editingLabel!, name: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition" placeholder="e.g. Aurora Neon" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono text-gray-600 uppercase tracking-widest ml-1">Contact Email</label>
+                <input type="email" value={editingLabel?.email} onChange={e => setEditingLabel({...editingLabel!, email: e.target.value})} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition" placeholder="contact@label.com" />
+              </div>
+            </div>
+            <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
+              <button onClick={() => setShowModal(false)} className="flex-1 py-3 text-[10px] font-black uppercase text-gray-500 hover:text-white transition">Cancel</button>
+              <button onClick={handleSave} disabled={isSubmitting} className="flex-1 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2">
+                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Commit</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default Labels;
