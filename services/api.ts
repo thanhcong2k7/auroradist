@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Release, Track, Label, PayoutMethod, UserProfile, SupportTicket, Transaction } from '../types';
 
 // Initialize Supabase
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.SUPABASE_URL;
+const supabaseKey = import.meta.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error("Missing Supabase Environment Variables");

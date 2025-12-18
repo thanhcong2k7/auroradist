@@ -10,10 +10,10 @@ interface FileUploaderProps {
     type: 'image' | 'audio';
 }
 
-const FileUploader: React.FC<FileUploaderProps> = ({ 
-    accept, 
-    maxSizeMB = 50, 
-    onUploadComplete, 
+const FileUploader: React.FC<FileUploaderProps> = ({
+    accept,
+    maxSizeMB = 100,
+    onUploadComplete,
     currentUrl,
     label,
     type
@@ -33,7 +33,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         }
     }, []);
 
-    const processFile = (file: File) => {
+    const processFile = async (file: File) => { // Make async
         setError('');
         if (file.size > maxSizeMB * 1024 * 1024) {
             setError(`File too large. Max ${maxSizeMB}MB.`);
@@ -41,21 +41,20 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         }
 
         setUploading(true);
-        
-        // SIMULATE CLOUDFLARE R2 UPLOAD
-        let p = 0;
-        const interval = setInterval(() => {
-            p += Math.random() * 10;
-            if (p >= 100) {
-                p = 100;
-                clearInterval(interval);
-                setUploading(false);
-                // In a real app, this would be the R2 URL
-                const mockUrl = URL.createObjectURL(file);
-                onUploadComplete(mockUrl, file);
-            }
-            setProgress(p);
-        }, 200);
+
+        try {
+            // CALL THE REAL API INSTEAD OF SIMULATION
+            // This triggers services/api.ts -> storage.upload -> Edge Function
+            const { api } = await import('../services/api'); // Dynamic import to avoid cycles or standard import
+            const publicUrl = await api.storage.upload(file);
+
+            onUploadComplete(publicUrl, file);
+            setProgress(100);
+        } catch (err) {
+            setError('Upload failed: ' + (err as Error).message);
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleDrop = useCallback((e: React.DragEvent) => {
@@ -83,23 +82,22 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     return (
         <div className="w-full">
             {label && <label className="block text-xs font-mono text-gray-500 mb-2 uppercase">{label}</label>}
-            
-            <div 
-                className={`relative group border-2 border-dashed rounded-xl transition-all duration-200 overflow-hidden ${
-                    dragActive 
-                        ? 'border-blue-500 bg-blue-500/10' 
-                        : currentUrl 
-                            ? 'border-green-500/30 bg-surface' 
+
+            <div
+                className={`relative group border-2 border-dashed rounded-xl transition-all duration-200 overflow-hidden ${dragActive
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : currentUrl
+                            ? 'border-green-500/30 bg-surface'
                             : 'border-white/10 hover:border-white/30 bg-black'
-                } ${type === 'image' ? 'aspect-square' : 'p-8'}`}
+                    } ${type === 'image' ? 'aspect-square' : 'p-8'}`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
             >
-                <input 
-                    type="file" 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                <input
+                    type="file"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     onChange={handleChange}
                     accept={accept}
                     disabled={uploading}
@@ -136,8 +134,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                                 </div>
                             </div>
                         )}
-                        
-                        <button 
+
+                        <button
                             onClick={clearFile}
                             className="absolute top-2 right-2 z-30 p-1.5 bg-black/80 text-gray-400 hover:text-red-500 rounded border border-white/10 hover:border-red-500/50 transition"
                         >
