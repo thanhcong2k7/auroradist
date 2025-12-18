@@ -1,65 +1,67 @@
-import { S3Client, PutObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.454.0";
-import { getSignedUrl } from "https://esm.sh/@aws-sdk/s3-request-presigner@3.454.0";
+// FIX 1: Add '?target=deno' to imports to prevent 502 crashes
+import { S3Client, PutObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.454.0?target=deno";
+import { getSignedUrl } from "https://esm.sh/@aws-sdk/s3-request-presigner@3.454.0?target=deno";
 
-// CORS Headers to allow browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 Deno.serve(async (req) => {
-  // 1. Handle CORS Preflight Request
+  // Handle CORS Preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // 2. Setup R2 Client
-    const S3 = new S3Client({
-      region: "auto",
-      endpoint: `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID") ?? "",
-        secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY") ?? "",
-      },
-    });
+    // FIX 2: Check secrets carefully
+    const accountId = Deno.env.get("R2_ACCOUNT_ID");
+    const accessKeyId = Deno.env.get("R2_ACCESS_KEY_ID");
+    const secretAccessKey = Deno.env.get("R2_SECRET_ACCESS_KEY");
+    const bucketName = Deno.env.get("R2_BUCKET_NAME");
+    const publicDomain = Deno.env.get("R2_PUBLIC_DOMAIN");
 
-    // 3. Parse Request
-    const { filename, fileType } = await req.json();
-
-    // Basic validation
-    if (!filename || !fileType) {
-        return new Response(JSON.stringify({ error: "Missing filename or fileType" }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+    if (!accountId || !accessKeyId || !secretAccessKey || !bucketName) {
+      throw new Error("Missing required R2 environment variables.");
     }
 
-    // 4. Generate Unique Key
+    // FIX 3: clean the ID just in case (removes https:// if accidentally added)
+    const cleanAccountId = accountId.replace("https://", "").replace("http://", "");
+
+    const S3 = new S3Client({
+      region: "auto",
+      endpoint: `https://${cleanAccountId}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId, secretAccessKey },
+    });
+
+    const { filename, fileType } = await req.json();
+    
+    // Basic validation
+    if (!filename || !fileType) {
+        throw new Error("Missing filename or fileType in request body");
+    }
+
     const key = `${crypto.randomUUID()}-${filename}`;
 
-    // 5. Generate Presigned URL
     const command = new PutObjectCommand({
-      Bucket: Deno.env.get("R2_BUCKET_NAME"),
+      Bucket: bucketName,
       Key: key,
       ContentType: fileType,
     });
 
-    // expiresIn: 3600 seconds (1 hour)
     const uploadUrl = await getSignedUrl(S3, command, { expiresIn: 3600 });
-    const publicUrl = `${Deno.env.get("R2_PUBLIC_DOMAIN")}/${key}`;
+    const publicUrl = `${publicDomain}/${key}`;
 
-    // 6. Return Success Response
-    return new Response(
-      JSON.stringify({ uploadUrl, publicUrl }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
-      },
-    );
+    return new Response(JSON.stringify({ uploadUrl, publicUrl }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    // Log the REAL error to the Supabase dashboard/CLI so you can see it
+    console.error("FUNCTION ERROR:", error); 
+
+    return new Response(JSON.stringify({ error: error.message, type: "Server Error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
