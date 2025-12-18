@@ -84,7 +84,7 @@ const Wallet: React.FC = () => {
                             <div className="flex items-center gap-2 text-blue-400 font-mono text-[10px] uppercase tracking-[0.3em] mb-3">
                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> Net Liquidity
                             </div>
-                            <div className="text-6xl font-black text-white tracking-tighter">${summary?.availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                            <div className="text-6xl font-black text-white tracking-tighter">${summary?.availableBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                         </div>
                         <button 
                             onClick={() => setShowWithdrawModal(true)}
