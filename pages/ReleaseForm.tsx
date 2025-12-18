@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MOCK_RELEASES, MOCK_ARTISTS, MOCK_TRACKS, MOCK_LABELS, PERFORMER_ROLES } from '../constants';
 import FileUploader from '../components/FileUploader';
-import { 
-    Save, Send, X, 
+import {
+    Save, Send, X,
     AlertTriangle, Disc, Globe, Plus, Trash2, CheckCircle2,
     ArrowLeft, ArrowRight, Search, Check, Mic2, Users, FileAudio, UploadCloud
 } from 'lucide-react';
@@ -21,11 +21,11 @@ const ReleaseForm: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showTrackModal, setShowTrackModal] = useState(false);
-    
+
     // Track Modal State
     const [modalView, setModalView] = useState<'BROWSE' | 'EDIT'>('BROWSE');
     const [searchQuery, setSearchQuery] = useState('');
-    
+
     // Current Track Editing State
     const [currentTrack, setCurrentTrack] = useState<Partial<Track>>({
         artists: [],
@@ -48,7 +48,7 @@ const ReleaseForm: React.FC = () => {
     const [copyrightLine, setCopyrightLine] = useState('');
     const [phonogramYear, setPhonogramYear] = useState(new Date().getFullYear().toString());
     const [phonogramLine, setPhonogramLine] = useState('');
-    
+
     // Fix: Updated status state to use full Release['status'] type to prevent assignment errors
     const [status, setStatus] = useState<Release['status']>('DRAFT');
 
@@ -120,16 +120,16 @@ const ReleaseForm: React.FC = () => {
     // Navigation Helpers
     const goNext = () => {
         if (currentStep < 3) setCurrentStep(currentStep + 1);
-        window.scrollTo(0,0);
+        window.scrollTo(0, 0);
     };
-    
+
     const goBack = () => {
         if (currentStep > 1) setCurrentStep(currentStep - 1);
-        window.scrollTo(0,0);
+        window.scrollTo(0, 0);
     };
 
     const getStepName = (step: number) => {
-        switch(step) {
+        switch (step) {
             case 1: return "Overview";
             case 2: return "Tracks";
             case 3: return "Platforms";
@@ -184,7 +184,7 @@ const ReleaseForm: React.FC = () => {
         if (currentTrack.hasLyrics && !hasLyricist) { alert("A Lyricist is required when lyrics are present."); return; }
 
         const trackToSave = currentTrack as Track;
-        
+
         const existingIdx = availableTracks.findIndex(t => t.id === trackToSave.id);
         let newAvailable = [...availableTracks];
         if (existingIdx >= 0) {
@@ -195,17 +195,17 @@ const ReleaseForm: React.FC = () => {
         setAvailableTracks(newAvailable);
 
         if (releaseTracks.some(t => t.id === trackToSave.id)) {
-             const newReleaseTracks = releaseTracks.map(t => t.id === trackToSave.id ? trackToSave : t);
-             setReleaseTracks(newReleaseTracks);
+            const newReleaseTracks = releaseTracks.map(t => t.id === trackToSave.id ? trackToSave : t);
+            setReleaseTracks(newReleaseTracks);
         } else if (addToRelease) {
-             setReleaseTracks([...releaseTracks, trackToSave]);
+            setReleaseTracks([...releaseTracks, trackToSave]);
         }
 
         setModalView('BROWSE'); // Return to browse after save
     };
 
     // --- Track Editor Sub-components helpers ---
-    
+
     const addArtist = () => {
         setCurrentTrack({
             ...currentTrack,
@@ -258,9 +258,9 @@ const ReleaseForm: React.FC = () => {
 
     return (
         <div className="-m-6 lg:-m-8 flex flex-col min-h-full relative">
-            
+
             {/* Sticky Header with Padding Restored */}
-            <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-white/10 px-6 lg:px-8 pt-6 lg:pt-8 pb-4">
+            <div className="sticky top-0 z-30 bg-[#0A0A0A] border-b border-white/10 px-6 lg:px-8 pt-6 lg:pt-8 pb-4">
                 <div className="max-w-6xl mx-auto w-full flex justify-between items-end">
                     <div>
                         <div className="flex items-center gap-3 text-gray-500 font-mono text-xs mb-2">
@@ -282,7 +282,7 @@ const ReleaseForm: React.FC = () => {
 
             {/* Content Area with Padding Restored */}
             <div className="flex-1 px-6 lg:px-8 pt-0 pb-24 max-w-6xl mx-auto w-full space-y-6">
-                
+
                 {/* Steps Navigation */}
                 <div className="flex border-b border-white/10 mt-6">
                     <button onClick={() => setCurrentStep(1)} className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2 border-b-2 ${currentStep === 1 ? 'text-blue-500 border-blue-500' : 'text-gray-600 hover:text-gray-400 border-transparent'}`}>1. Overview</button>
@@ -296,7 +296,7 @@ const ReleaseForm: React.FC = () => {
                         <>
                             <div className="lg:col-span-4 space-y-6">
                                 <div className="bg-surface border border-white/5 p-6 rounded-xl">
-                                    <FileUploader 
+                                    <FileUploader
                                         label="Artwork Asset"
                                         type="image"
                                         accept="image/*"
@@ -308,7 +308,7 @@ const ReleaseForm: React.FC = () => {
 
                             <div className="lg:col-span-8 space-y-6">
                                 <div className="bg-surface border border-white/5 p-8 rounded-xl space-y-6">
-                                    
+
                                     {/* Row 1: Title and Version */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div className="md:col-span-2">
@@ -350,7 +350,7 @@ const ReleaseForm: React.FC = () => {
                                             <div className="flex-1"><input type="text" value={copyrightLine} onChange={(e) => setCopyrightLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Copyrights Stack - P Line */}
                                     <div className="space-y-2 mt-4">
                                         <h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">℗</span> Phonogram (Recording)</h3>
@@ -431,13 +431,13 @@ const ReleaseForm: React.FC = () => {
             </div>
 
             {/* Bottom Navigation - Sticky & Full Width */}
-            <div className="sticky bottom-0 z-30 bg-[#0A0A0A] border-t border-white/10 px-6 lg:px-8 py-4 w-full">
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0A0A0A] border-t border-white/10 px-6 lg:px-8 py-4 w-full">
                 <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
                     {/* Left Section (Back) */}
                     <div className="w-1/3 flex justify-start">
                         {currentStep > 1 && (
-                            <button 
-                                onClick={goBack} 
+                            <button
+                                onClick={goBack}
                                 className="flex items-center gap-2 group hover:opacity-80 transition"
                             >
                                 <ArrowLeft className="w-5 h-5 text-blue-500 group-hover:-translate-x-1 transition-transform" />
@@ -448,7 +448,7 @@ const ReleaseForm: React.FC = () => {
 
                     {/* Center Section (Step Counter) */}
                     <div className="w-1/3 flex justify-center">
-                         <div className="text-[10px] font-mono font-bold text-gray-600 uppercase tracking-widest border border-white/10 px-3 py-1 rounded bg-black">
+                        <div className="text-[10px] font-mono font-bold text-gray-600 uppercase tracking-widest border border-white/10 px-3 py-1 rounded bg-black">
                             Step {currentStep} / 3
                         </div>
                     </div>
@@ -456,7 +456,7 @@ const ReleaseForm: React.FC = () => {
                     {/* Right Section (Next) */}
                     <div className="w-1/3 flex justify-end">
                         {currentStep < 3 && (
-                            <button 
+                            <button
                                 onClick={goNext}
                                 className="flex items-center gap-2 group hover:opacity-80 transition"
                             >
@@ -473,7 +473,7 @@ const ReleaseForm: React.FC = () => {
             {showTrackModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-surface border border-white/10 rounded-xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-                        
+
                         {/* Modal Header */}
                         <div className="p-5 border-b border-white/10 flex justify-between items-center bg-black/40">
                             <div>
@@ -486,9 +486,9 @@ const ReleaseForm: React.FC = () => {
                         {/* Switcher */}
                         {modalView === 'EDIT' ? (
                             <div className="flex border-b border-white/10 bg-black/20">
-                                <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${trackTab === 'GENERAL' ? 'bg-blue-600/10 text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}><FileAudio size={14} className="inline mr-2"/> Audio & Info</button>
-                                <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${trackTab === 'CREDITS' ? 'bg-blue-600/10 text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}><Users size={14} className="inline mr-2"/> Artists</button>
-                                <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${trackTab === 'LYRICS' ? 'bg-blue-600/10 text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}><Mic2 size={14} className="inline mr-2"/> Lyrics</button>
+                                <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${trackTab === 'GENERAL' ? 'bg-blue-600/10 text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}><FileAudio size={14} className="inline mr-2" /> Audio & Info</button>
+                                <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${trackTab === 'CREDITS' ? 'bg-blue-600/10 text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}><Users size={14} className="inline mr-2" /> Artists</button>
+                                <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${trackTab === 'LYRICS' ? 'bg-blue-600/10 text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}><Mic2 size={14} className="inline mr-2" /> Lyrics</button>
                             </div>
                         ) : (
                             <div className="p-4 border-b border-white/10 bg-black/20 flex gap-4">
@@ -533,7 +533,7 @@ const ReleaseForm: React.FC = () => {
                                             </div>
                                         );
                                     })}
-                                    
+
                                     {availableTracks.length === 0 && (
                                         <div className="text-center py-12">
                                             <div className="inline-flex p-4 rounded-full bg-white/5 text-gray-600 mb-4">
@@ -548,18 +548,18 @@ const ReleaseForm: React.FC = () => {
                                     {/* --- TAB: GENERAL --- */}
                                     {trackTab === 'GENERAL' && (
                                         <>
-                                            <FileUploader 
+                                            <FileUploader
                                                 type="audio"
                                                 accept="audio/wav,audio/flac,audio/mp3"
                                                 label="Master Audio File"
                                                 currentUrl={currentTrack.audioUrl}
-                                                onUploadComplete={(url) => setCurrentTrack({...currentTrack, audioUrl: url})}
+                                                onUploadComplete={(url) => setCurrentTrack({ ...currentTrack, audioUrl: url })}
                                             />
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Track Title</label><input type="text" value={currentTrack.name} onChange={(e) => setCurrentTrack({...currentTrack, name: e.target.value})} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition" /></div>
-                                                <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Version</label><input type="text" value={currentTrack.version || ''} onChange={(e) => setCurrentTrack({...currentTrack, version: e.target.value})} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition" /></div>
+                                                <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Track Title</label><input type="text" value={currentTrack.name} onChange={(e) => setCurrentTrack({ ...currentTrack, name: e.target.value })} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition" /></div>
+                                                <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Version</label><input type="text" value={currentTrack.version || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, version: e.target.value })} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition" /></div>
                                             </div>
-                                            <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">ISRC</label><input type="text" value={currentTrack.isrc || ''} onChange={(e) => setCurrentTrack({...currentTrack, isrc: e.target.value})} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition font-mono" /></div>
+                                            <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">ISRC</label><input type="text" value={currentTrack.isrc || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, isrc: e.target.value })} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition font-mono" /></div>
                                         </>
                                     )}
 
@@ -570,14 +570,14 @@ const ReleaseForm: React.FC = () => {
                                             <div>
                                                 <div className="flex justify-between items-center mb-3">
                                                     <h4 className="text-xs font-bold uppercase text-gray-400">Performing Artists</h4>
-                                                    <button onClick={addArtist} className="text-[10px] text-blue-400 font-bold uppercase flex items-center gap-1 hover:text-white"><Plus size={12}/> Add Artist</button>
+                                                    <button onClick={addArtist} className="text-[10px] text-blue-400 font-bold uppercase flex items-center gap-1 hover:text-white"><Plus size={12} /> Add Artist</button>
                                                 </div>
                                                 <div className="space-y-2">
                                                     {currentTrack.artists?.map((artist, idx) => (
                                                         <div key={idx} className="flex gap-2">
                                                             <select value={artist.role} onChange={(e) => updateArtist(idx, 'role', e.target.value)} className="w-32 bg-black border border-white/10 rounded px-2 py-2 text-xs focus:outline-none"><option value="Primary">Primary</option><option value="Featured">Featured</option><option value="Remixer">Remixer</option></select>
                                                             <input type="text" value={artist.name} onChange={(e) => updateArtist(idx, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none" placeholder="Artist Name" list="artist-suggestions" />
-                                                            <button onClick={() => removeArtist(idx)} className="p-2 text-gray-600 hover:text-red-500"><X size={14}/></button>
+                                                            <button onClick={() => removeArtist(idx)} className="p-2 text-gray-600 hover:text-red-500"><X size={14} /></button>
                                                         </div>
                                                     ))}
                                                     <datalist id="artist-suggestions">{MOCK_ARTISTS.map(a => <option key={a.id} value={a.name} />)}</datalist>
@@ -590,7 +590,7 @@ const ReleaseForm: React.FC = () => {
                                             <div>
                                                 <div className="flex justify-between items-center mb-3">
                                                     <h4 className="text-xs font-bold uppercase text-gray-400">Credits & Contributors</h4>
-                                                    <button onClick={addContributor} className="text-[10px] text-blue-400 font-bold uppercase flex items-center gap-1 hover:text-white"><Plus size={12}/> Add Credit</button>
+                                                    <button onClick={addContributor} className="text-[10px] text-blue-400 font-bold uppercase flex items-center gap-1 hover:text-white"><Plus size={12} /> Add Credit</button>
                                                 </div>
                                                 <div className="space-y-2">
                                                     {currentTrack.contributors?.map((contributor, idx) => (
@@ -610,7 +610,7 @@ const ReleaseForm: React.FC = () => {
                                                                 )}
                                                             </div>
                                                             <input type="text" value={contributor.name} onChange={(e) => updateContributor(idx, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none" placeholder="Full Name" />
-                                                            <button onClick={() => removeContributor(idx)} className="p-2 text-gray-600 hover:text-red-500 mt-1"><X size={14}/></button>
+                                                            <button onClick={() => removeContributor(idx)} className="p-2 text-gray-600 hover:text-red-500 mt-1"><X size={14} /></button>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -626,8 +626,8 @@ const ReleaseForm: React.FC = () => {
                                                 <div className="space-y-2">
                                                     <p className="text-sm font-bold">Does this track have lyrics?</p>
                                                     <div className="flex gap-4">
-                                                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!currentTrack.hasLyrics} onChange={() => setCurrentTrack({...currentTrack, hasLyrics: false})} className="accent-blue-500"/> No</label>
-                                                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!!currentTrack.hasLyrics} onChange={() => setCurrentTrack({...currentTrack, hasLyrics: true})} className="accent-blue-500"/> Yes</label>
+                                                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!currentTrack.hasLyrics} onChange={() => setCurrentTrack({ ...currentTrack, hasLyrics: false })} className="accent-blue-500" /> No</label>
+                                                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!!currentTrack.hasLyrics} onChange={() => setCurrentTrack({ ...currentTrack, hasLyrics: true })} className="accent-blue-500" /> Yes</label>
                                                     </div>
                                                 </div>
                                             </div>
@@ -636,7 +636,7 @@ const ReleaseForm: React.FC = () => {
                                                 <div className="space-y-4 animate-fade-in pl-4 border-l border-white/10">
                                                     <div>
                                                         <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Lyrics Language</label>
-                                                        <select value={currentTrack.lyricsLanguage || 'English'} onChange={(e) => setCurrentTrack({...currentTrack, lyricsLanguage: e.target.value})} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm">
+                                                        <select value={currentTrack.lyricsLanguage || 'English'} onChange={(e) => setCurrentTrack({ ...currentTrack, lyricsLanguage: e.target.value })} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm">
                                                             <option value="English">English</option>
                                                             <option value="Spanish">Spanish</option>
                                                             <option value="French">French</option>
@@ -646,9 +646,9 @@ const ReleaseForm: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Lyrics Transcription (Optional)</label>
-                                                        <textarea 
-                                                            value={currentTrack.lyricsText || ''} 
-                                                            onChange={(e) => setCurrentTrack({...currentTrack, lyricsText: e.target.value})}
+                                                        <textarea
+                                                            value={currentTrack.lyricsText || ''}
+                                                            onChange={(e) => setCurrentTrack({ ...currentTrack, lyricsText: e.target.value })}
                                                             className="w-full h-32 bg-black border border-white/10 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500"
                                                             placeholder="Transcribe complete lyrics..."
                                                         />
@@ -661,16 +661,16 @@ const ReleaseForm: React.FC = () => {
                                             <div>
                                                 <p className="text-sm font-bold mb-2">Explicit Content?</p>
                                                 <div className="space-y-2">
-                                                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!!currentTrack.isExplicit} onChange={() => setCurrentTrack({...currentTrack, isExplicit: true})} className="accent-blue-500"/> <span className="text-sm">Yes - Contains offensive language or references</span></label>
-                                                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!currentTrack.isExplicit} onChange={() => setCurrentTrack({...currentTrack, isExplicit: false})} className="accent-blue-500"/> <span className="text-sm">No - Suitable for all audiences</span></label>
+                                                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!!currentTrack.isExplicit} onChange={() => setCurrentTrack({ ...currentTrack, isExplicit: true })} className="accent-blue-500" /> <span className="text-sm">Yes - Contains offensive language or references</span></label>
+                                                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!currentTrack.isExplicit} onChange={() => setCurrentTrack({ ...currentTrack, isExplicit: false })} className="accent-blue-500" /> <span className="text-sm">No - Suitable for all audiences</span></label>
                                                 </div>
                                             </div>
 
                                             <div>
                                                 <p className="text-sm font-bold mb-2">Is there an explicit version?</p>
                                                 <div className="space-y-2">
-                                                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!!currentTrack.hasExplicitVersion} onChange={() => setCurrentTrack({...currentTrack, hasExplicitVersion: true})} className="accent-blue-500"/> <span className="text-sm">Yes - Another explicit version exists</span></label>
-                                                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!currentTrack.hasExplicitVersion} onChange={() => setCurrentTrack({...currentTrack, hasExplicitVersion: false})} className="accent-blue-500"/> <span className="text-sm">No - This is the only version</span></label>
+                                                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!!currentTrack.hasExplicitVersion} onChange={() => setCurrentTrack({ ...currentTrack, hasExplicitVersion: true })} className="accent-blue-500" /> <span className="text-sm">Yes - Another explicit version exists</span></label>
+                                                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" checked={!currentTrack.hasExplicitVersion} onChange={() => setCurrentTrack({ ...currentTrack, hasExplicitVersion: false })} className="accent-blue-500" /> <span className="text-sm">No - This is the only version</span></label>
                                                 </div>
                                             </div>
                                         </div>
@@ -686,7 +686,7 @@ const ReleaseForm: React.FC = () => {
                             ) : (
                                 <span className="text-[10px] text-gray-600 font-mono">{releaseTracks.length} tracks in release.</span>
                             )}
-                            
+
                             <div className="flex gap-2">
                                 <button onClick={() => setShowTrackModal(false)} className="px-4 py-2 border border-white/10 text-white font-bold uppercase rounded text-xs hover:bg-white/5">Cancel</button>
                                 {modalView === 'EDIT' ? (
