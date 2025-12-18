@@ -1,6 +1,6 @@
 
-import { MOCK_RELEASES, MOCK_LABELS, MOCK_TRACKS, DASHBOARD_STATS, DASHBOARD_CHART_DATA, WALLET_SUMMARY, MOCK_TRANSACTIONS } from '../constants';
-import { Release, Transaction, ActionLog, Label, Track, PayoutMethod, UserProfile } from '../types';
+import { MOCK_RELEASES, MOCK_LABELS, MOCK_TRACKS, DASHBOARD_STATS, DASHBOARD_CHART_DATA, WALLET_SUMMARY, MOCK_TRANSACTIONS, MOCK_TICKETS } from '../constants';
+import { Release, Transaction, ActionLog, Label, Track, PayoutMethod, UserProfile, SupportTicket } from '../types';
 
 /**
  * PRODUCTION ARCHITECTURE NOTE:
@@ -14,10 +14,10 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 let auditLogs: ActionLog[] = [];
 let labels = [...MOCK_LABELS];
 let tracks = [...MOCK_TRACKS];
+let tickets = [...MOCK_TICKETS];
 let userProfile: UserProfile = {
   id: 1,
   name: 'Unknown Brain',
-  legalName: 'Maikel S. Brain',
   email: 'contact@unknownbrain.com',
   role: 'Artist Account',
 };
@@ -29,7 +29,6 @@ export const api = {
   auth: {
     login: async (email: string, pass: string) => {
       await delay(800);
-      // Supabase: `const { data, error } = await supabase.auth.signInWithPassword(...)`
       if (email === 'demo@aurora.com' && pass === 'demo') {
         return { token: 'JWT_AURORA_PROD', user: userProfile };
       }
@@ -43,12 +42,7 @@ export const api = {
     }
   },
 
-  // S3 / CLOUDFLARE R2 HANDLER
   storage: {
-    /**
-     * Gets a presigned URL from your backend/worker to upload directly to R2.
-     * This prevents large files (WAV/FLAC) from hitting your main API.
-     */
     getPresignedUrl: async (filename: string, contentType: string) => {
       await delay(300);
       return {
@@ -57,10 +51,6 @@ export const api = {
       };
     },
     upload: async (file: File) => {
-      // Logic would be: 
-      // 1. Get presigned URL
-      // 2. PUT file to that URL
-      // 3. Return the public path
       await delay(1500);
       return `https://pub-assets.auroramusic.net/simulated_path/${file.name}`;
     }
@@ -75,7 +65,6 @@ export const api = {
   catalog: {
     getReleases: async () => MOCK_RELEASES,
     deleteRelease: async (id: number) => { 
-      // Supabase: `await supabase.from('releases').delete().eq('id', id)`
       await delay(500); 
       return { success: true }; 
     },
@@ -139,6 +128,50 @@ export const api = {
         details: `Disbursement of $${amount} to ${method?.name}`
       });
       return { success: true };
+    }
+  },
+
+  support: {
+    getTickets: async () => {
+      await delay(400);
+      return tickets;
+    },
+    createTicket: async (data: Partial<SupportTicket>) => {
+      await delay(800);
+      const newTicket: SupportTicket = {
+        id: `TKT-${Math.floor(1000 + Math.random() * 9000)}`,
+        subject: data.subject || 'Untitled',
+        category: data.category || 'OTHER',
+        status: 'OPEN',
+        priority: data.priority || 'MEDIUM',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        messages: [{
+          id: `msg-${Date.now()}`,
+          senderName: userProfile.name,
+          role: 'USER',
+          content: data.messages?.[0]?.content || '',
+          timestamp: new Date().toISOString()
+        }]
+      };
+      tickets = [newTicket, ...tickets];
+      return newTicket;
+    },
+    addMessage: async (ticketId: string, content: string) => {
+      await delay(500);
+      const ticket = tickets.find(t => t.id === ticketId);
+      if (ticket) {
+        ticket.messages.push({
+          id: `msg-${Date.now()}`,
+          senderName: userProfile.name,
+          role: 'USER',
+          content,
+          timestamp: new Date().toISOString()
+        });
+        ticket.updatedAt = new Date().toISOString();
+        ticket.status = 'OPEN'; // Re-open if closed
+      }
+      return ticket;
     }
   }
 };

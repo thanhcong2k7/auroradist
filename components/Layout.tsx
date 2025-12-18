@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -11,8 +12,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  Zap,
-  Tags
+  Tags,
+  MessageSquare
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -38,6 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
     { path: '/tracks', icon: Music, label: 'Tracks' },
     { path: '/analytics', icon: BarChart2, label: 'Analytics' },
     { path: '/wallet', icon: Wallet, label: 'Revenue' },
+    { path: '/support', icon: MessageSquare, label: 'Support' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
@@ -71,14 +73,14 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
                   isActive 
                     ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20' 
                     : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                 }`}
               >
                 <item.icon size={18} className={isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-white'} />
-                <span className="font-mono uppercase">{item.label}</span>
+                <span className="font-mono uppercase text-[10px] tracking-widest">{item.label}</span>
                 {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />}
               </Link>
             );
@@ -111,7 +113,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             <Menu size={24} />
           </button>
 
-          <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-gray-500">
+          <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-gray-500 uppercase tracking-widest">
              <span className="text-blue-500">SYS.STATUS: ONLINE</span>
              <span>//</span>
              <span>{currentTime.toLocaleDateString()}</span>
@@ -120,9 +122,9 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-4">
-             <button className="px-4 py-1.5 text-xs font-bold border border-white/20 hover:bg-white hover:text-black transition uppercase rounded-full">
+             <Link to="/discography/new" className="px-4 py-1.5 text-[10px] font-black border border-white/20 hover:bg-white hover:text-black transition uppercase rounded-full tracking-widest">
                Upload
-             </button>
+             </Link>
           </div>
         </header>
 

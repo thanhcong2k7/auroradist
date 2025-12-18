@@ -1,4 +1,5 @@
-import { Release, Artist, Track, Transaction, Label } from './types';
+
+import { Release, Artist, Track, Transaction, Label, SupportTicket } from './types';
 
 export const MOCK_LABELS: Label[] = [
   { id: 1, name: 'Aurora Records', email: 'demo@aurora.com' },
@@ -130,6 +131,52 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   { id: 'TXN-005', date: '2023-12-01', amount: 1500.00, type: 'WITHDRAWAL', status: 'COMPLETED' },
 ];
 
+export const MOCK_TICKETS: SupportTicket[] = [
+  {
+    id: 'TKT-7721',
+    subject: 'Spotify URI Mapping Issue',
+    category: 'DISTRIBUTION',
+    status: 'OPEN',
+    priority: 'HIGH',
+    createdAt: '2024-05-18T10:00:00Z',
+    updatedAt: '2024-05-18T10:00:00Z',
+    messages: [
+      {
+        id: 'msg-1',
+        senderName: 'Maikel S. Brain',
+        role: 'USER',
+        content: "Hello, my latest release 'Neon Horizon' is mapped to a wrong artist profile on Spotify. Can you fix the URI?",
+        timestamp: '2024-05-18T10:00:00Z'
+      }
+    ]
+  },
+  {
+    id: 'TKT-7710',
+    subject: 'Withdrawal delay',
+    category: 'FINANCIAL',
+    status: 'RESOLVED',
+    priority: 'MEDIUM',
+    createdAt: '2024-05-10T09:00:00Z',
+    updatedAt: '2024-05-12T14:30:00Z',
+    messages: [
+      {
+        id: 'msg-1',
+        senderName: 'Maikel S. Brain',
+        role: 'USER',
+        content: "My withdrawal from May 1st is still pending.",
+        timestamp: '2024-05-10T09:00:00Z'
+      },
+      {
+        id: 'msg-2',
+        senderName: 'Aurora Admin',
+        role: 'ADMIN',
+        content: "Hello! We have processed your payment. It should reflect in your bank account within 24 hours.",
+        timestamp: '2024-05-12T14:30:00Z'
+      }
+    ]
+  }
+];
+
 // --- DASHBOARD STATISTICS ---
 export const DASHBOARD_STATS = {
     totalStreams: "1,245,890",
@@ -174,7 +221,7 @@ export const ANALYTICS_SOURCE_DATA = [
   { name: 'Other', value: 5, color: '#888888' },
 ];
 
-// --- WALLET STATISTICS ---
+// --- WALLET SUMMARY ---
 export const WALLET_SUMMARY = {
     availableBalance: 1240.50,
     pendingClearance: 340.20,

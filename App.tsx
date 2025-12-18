@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -10,6 +11,7 @@ import Tracks from './pages/Tracks';
 import Analytics from './pages/Analytics';
 import Wallet from './pages/Wallet';
 import Settings from './pages/Settings';
+import Support from './pages/Support';
 import Login from './pages/Login';
 
 const App: React.FC = () => {
@@ -50,6 +52,7 @@ const App: React.FC = () => {
           <Route path="/tracks" element={<Tracks />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/support" element={<Support />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

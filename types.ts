@@ -16,7 +16,6 @@ export interface Release {
   phonogramLine?: string;
 }
 
-// Added missing Artist interface for the Roster
 export interface Artist {
   id: number;
   name: string;
@@ -32,7 +31,7 @@ export interface Artist {
 export interface UserProfile {
   id: number;
   name: string;
-  legalName: string;
+  legal_name?: string; // Matching DB schema
   email: string;
   role: string;
   avatar?: string;
@@ -59,7 +58,7 @@ export interface PayoutMethod {
   id: string;
   type: 'BANK' | 'PAYPAL';
   name: string;
-  details: string; // Masked account or email
+  details: string; 
   accountHolder?: string;
   bankName?: string;
   routingNumber?: string;
@@ -108,4 +107,24 @@ export interface Transaction {
   amount: number;
   type: 'ROYALTY' | 'WITHDRAWAL';
   status: 'COMPLETED' | 'PENDING';
+}
+
+// Support Ticket System
+export interface TicketMessage {
+  id: string;
+  senderName: string;
+  role: 'USER' | 'ADMIN';
+  content: string;
+  timestamp: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  subject: string;
+  category: 'TECHNICAL' | 'FINANCIAL' | 'DISTRIBUTION' | 'OTHER';
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  createdAt: string;
+  updatedAt: string;
+  messages: TicketMessage[];
 }

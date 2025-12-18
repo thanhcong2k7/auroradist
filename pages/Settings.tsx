@@ -124,7 +124,8 @@ const Settings: React.FC = () => {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-mono text-gray-600 uppercase tracking-widest ml-1">Legal Identity</label>
-                                    <input type="text" value={isEditingProfile ? tempProfile.legalName : profile.legalName} onChange={e => setTempProfile({...tempProfile, legalName: e.target.value})} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-600 cursor-not-allowed'}`} placeholder="Required for financial nodes" />
+                                    {/* Fixed: Use legal_name property instead of legalName to match UserProfile interface */}
+                                    <input type="text" value={isEditingProfile ? tempProfile.legal_name : profile.legal_name} onChange={e => setTempProfile({...tempProfile, legal_name: e.target.value})} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-600 cursor-not-allowed'}`} placeholder="Required for financial nodes" />
                                 </div>
                                 <div className="md:col-span-2 space-y-1">
                                     <label className="text-[9px] font-mono text-gray-600 uppercase tracking-widest ml-1">Endpoint (Email)</label>
