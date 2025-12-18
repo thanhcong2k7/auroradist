@@ -268,7 +268,7 @@ export const api = {
       const { data, error } = await supabase
         .from('support_tickets')
         .select('*, messages:ticket_messages(*)')
-        .order('updatedAt', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
       return data as SupportTicket[];
@@ -312,7 +312,7 @@ export const api = {
       // Update ticket timestamp
       await supabase
         .from('support_tickets')
-        .update({ updatedAt: new Date().toISOString(), status: 'OPEN' })
+        .update({ updated_at: new Date().toISOString(), status: 'OPEN' })
         .eq('id', ticketId);
 
       // Return updated ticket structure
