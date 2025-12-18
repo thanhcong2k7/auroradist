@@ -1,177 +1,328 @@
+import { createClient } from '@supabase/supabase-js';
+import { Release, Track, Label, PayoutMethod, UserProfile, SupportTicket, Transaction } from '../types';
 
-import { MOCK_RELEASES, MOCK_LABELS, MOCK_TRACKS, DASHBOARD_STATS, DASHBOARD_CHART_DATA, WALLET_SUMMARY, MOCK_TRANSACTIONS, MOCK_TICKETS } from '../constants';
-import { Release, Transaction, ActionLog, Label, Track, PayoutMethod, UserProfile, SupportTicket } from '../types';
+// Initialize Supabase
+const supabaseUrl = import.meta.env.SUPABASE_URL;
+const supabaseKey = import.meta.env.SUPABASE_ANON_KEY;
 
-/**
- * PRODUCTION ARCHITECTURE NOTE:
- * For Supabase: Replace local state logic with `supabase.from('table').select()`
- * For Cloudflare R2: Use the `getPresignedUrl` pattern for direct-to-bucket uploads.
- */
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing Supabase Environment Variables");
+}
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Simulated State for R2 & Database
-let auditLogs: ActionLog[] = [];
-let labels = [...MOCK_LABELS];
-let tracks = [...MOCK_TRACKS];
-let tickets = [...MOCK_TICKETS];
-let userProfile: UserProfile = {
-  id: 1,
-  name: 'Unknown Brain',
-  email: 'contact@unknownbrain.com',
-  role: 'Artist Account',
+// Helper to map DB snake_case to TS camelCase if your DB uses snake_case
+// In a real scenario, it is better to define Database types matching the DB exactly.
+const handleError = (error: any) => {
+  console.error("API Error:", error);
+  throw new Error(error.message || "An unexpected error occurred");
 };
-let payoutMethods: PayoutMethod[] = [
-  { id: 'pm_1', type: 'BANK', name: 'Primary Bank', details: 'Chase (...4421)', accountHolder: 'Maikel S. Brain' }
-];
 
 export const api = {
   auth: {
     login: async (email: string, pass: string) => {
-      await delay(800);
-      if (email === 'demo@aurora.com' && pass === 'demo') {
-        return { token: 'JWT_AURORA_PROD', user: userProfile };
-      }
-      throw new Error('Unauthorized');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: pass,
+      });
+      if (error) throw error;
+
+      // Fetch profile details after auth
+      const profile = await api.auth.getProfile();
+      return { token: data.session.access_token, user: profile };
     },
-    getProfile: async () => userProfile,
-    updateProfile: async (data: Partial<UserProfile>) => {
-      await delay(600);
-      userProfile = { ...userProfile, ...data };
-      return userProfile;
+
+    getProfile: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No session");
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      return data as UserProfile;
+    },
+
+    updateProfile: async (updates: Partial<UserProfile>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No session");
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as UserProfile;
     }
   },
 
   storage: {
-    getPresignedUrl: async (filename: string, contentType: string) => {
-      await delay(300);
-      return {
-        uploadUrl: `https://aurora-assets.r2.cloudflarestorage.com/signed-upload-path/${filename}`,
-        publicUrl: `https://pub-assets.auroramusic.net/${filename}`
-      };
-    },
-    upload: async (file: File) => {
-      await delay(1500);
-      return `https://pub-assets.auroramusic.net/simulated_path/${file.name}`;
+    /**
+     * Uploads a file to Cloudflare R2 via Supabase Edge Function
+     */
+    upload: async (file: File): Promise<string> => {
+      try {
+        // 1. Get Presigned URL from Backend
+        const { data: signData, error: signError } = await supabase.functions.invoke('upload-signer', {
+          body: {
+            filename: file.name,
+            fileType: file.type
+          }
+        });
+
+        if (signError) throw signError;
+
+        // 2. Upload directly to R2 using the presigned URL
+        const uploadResponse = await fetch(signData.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type
+          }
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload asset to storage node.');
+        }
+
+        // 3. Return the public URL for the DB
+        return signData.publicUrl;
+      } catch (err) {
+        handleError(err);
+        return "";
+      }
     }
   },
 
   dashboard: {
-    getStats: async () => DASHBOARD_STATS,
-    getChartData: async () => DASHBOARD_CHART_DATA,
-    getRecentReleases: async () => MOCK_RELEASES.slice(0, 5)
+    // Best practice: Use a Postgres RPC (function) for complex aggregations
+    getStats: async () => {
+      const { data, error } = await supabase.rpc('get_dashboard_stats');
+      if (error) {
+        console.warn("Stats RPC not found, falling back to mock or simple count");
+        return { totalStreams: "0", revenue: "$0.00", activeReleases: "0" };
+      }
+      return data;
+    },
+
+    getChartData: async () => {
+      const { data, error } = await supabase.from('analytics_monthly').select('*').order('month', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+
+    getRecentReleases: async () => {
+      const { data, error } = await supabase
+        .from('releases')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data as Release[];
+    }
   },
 
   catalog: {
-    getReleases: async () => MOCK_RELEASES,
-    deleteRelease: async (id: number) => { 
-      await delay(500); 
-      return { success: true }; 
+    getReleases: async () => {
+      const { data, error } = await supabase
+        .from('releases')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Release[];
     },
-    requestTakedown: async (id: number) => { 
-      await delay(800); 
-      return { success: true }; 
+
+    deleteRelease: async (id: number) => {
+      const { error } = await supabase.from('releases').delete().eq('id', id);
+      if (error) throw error;
+      return { success: true };
+    },
+
+    requestTakedown: async (id: number) => {
+      const { error } = await supabase
+        .from('releases')
+        .update({ status: 'TAKENDOWN' }) // Or 'PENDING_TAKEDOWN'
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
     }
   },
 
   labels: {
-    getAll: async () => labels,
+    getAll: async () => {
+      const { data, error } = await supabase.from('labels').select('*');
+      if (error) throw error;
+      return data as Label[];
+    },
+
     save: async (label: Partial<Label>) => {
-      await delay(500);
-      if (label.id) labels = labels.map(l => l.id === label.id ? { ...l, ...label } as Label : l);
-      else labels.push({ ...label, id: Date.now() } as Label);
+      if (label.id) {
+        const { error } = await supabase.from('labels').update(label).eq('id', label.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('labels').insert(label);
+        if (error) throw error;
+      }
       return { success: true };
     },
+
     delete: async (id: number) => {
-      await delay(600);
-      labels = labels.filter(l => l.id !== id);
+      const { error } = await supabase.from('labels').delete().eq('id', id);
+      if (error) throw error;
       return { success: true };
     }
   },
 
   tracks: {
-    getAll: async () => tracks,
+    getAll: async () => {
+      // Assuming simple structure. For relations, use .select('*, artists:track_artists(*)')
+      const { data, error } = await supabase.from('tracks').select('*');
+      if (error) throw error;
+      return data as Track[];
+    },
+
     save: async (track: Track) => {
-      await delay(700);
-      const idx = tracks.findIndex(t => t.id === track.id);
-      if (idx >= 0) tracks[idx] = track;
-      else tracks.unshift(track);
-      return track;
+      // Upsert handles both Insert and Update based on ID
+      const { data, error } = await supabase
+        .from('tracks')
+        .upsert(track)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Track;
     }
   },
 
   wallet: {
-    getSummary: async () => WALLET_SUMMARY,
-    getTransactions: async () => MOCK_TRANSACTIONS,
-    getPayoutMethods: async () => payoutMethods,
-    savePayoutMethod: async (pm: Partial<PayoutMethod>) => {
-      await delay(400);
-      const newPm = { ...pm, id: pm.id || `pm_${Date.now()}` } as PayoutMethod;
-      if (pm.id) payoutMethods = payoutMethods.map(p => p.id === pm.id ? newPm : p);
-      else payoutMethods.push(newPm);
-      return newPm;
+    getSummary: async () => {
+      const { data, error } = await supabase.from('wallet_summary').select('*').single();
+      // Handle empty state gracefully
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || { availableBalance: 0, pendingClearance: 0, lifetimeEarnings: 0 };
     },
+
+    getTransactions: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      return data as Transaction[];
+    },
+
+    getPayoutMethods: async () => {
+      const { data, error } = await supabase.from('payout_methods').select('*');
+      if (error) throw error;
+      return data as PayoutMethod[];
+    },
+
+    savePayoutMethod: async (pm: Partial<PayoutMethod>) => {
+      const { data, error } = await supabase
+        .from('payout_methods')
+        .upsert(pm)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as PayoutMethod;
+    },
+
     deletePayoutMethod: async (id: string) => {
-      await delay(400);
-      payoutMethods = payoutMethods.filter(p => p.id !== id);
+      const { error } = await supabase.from('payout_methods').delete().eq('id', id);
+      if (error) throw error;
       return { success: true };
     },
+
     requestWithdrawal: async (amount: number, methodId: string) => {
-      await delay(1200);
-      const method = payoutMethods.find(p => p.id === methodId);
-      auditLogs.push({
-        id: `TX-${Date.now()}`,
-        action: 'WITHDRAWAL_REQUEST',
-        timestamp: new Date().toISOString(),
-        status: 'PENDING_REVIEW',
-        performedBy: userProfile.name,
-        details: `Disbursement of $${amount} to ${method?.name}`
+      // 1. Create Transaction Record
+      const { error: txError } = await supabase.from('transactions').insert({
+        amount: amount,
+        type: 'WITHDRAWAL',
+        status: 'PENDING',
+        date: new Date().toISOString()
       });
+      if (txError) throw txError;
+
+      // 2. Create Audit Log (Optional)
+      await supabase.from('action_logs').insert({
+        action: 'WITHDRAWAL_REQUEST',
+        details: `Requested $${amount} via ${methodId}`
+      });
+
       return { success: true };
     }
   },
 
   support: {
     getTickets: async () => {
-      await delay(400);
-      return tickets;
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*, messages:ticket_messages(*)')
+        .order('updatedAt', { ascending: false });
+
+      if (error) throw error;
+      return data as SupportTicket[];
     },
+
     createTicket: async (data: Partial<SupportTicket>) => {
-      await delay(800);
-      const newTicket: SupportTicket = {
-        id: `TKT-${Math.floor(1000 + Math.random() * 9000)}`,
-        subject: data.subject || 'Untitled',
-        category: data.category || 'OTHER',
-        status: 'OPEN',
-        priority: data.priority || 'MEDIUM',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        messages: [{
-          id: `msg-${Date.now()}`,
-          senderName: userProfile.name,
-          role: 'USER',
-          content: data.messages?.[0]?.content || '',
-          timestamp: new Date().toISOString()
-        }]
-      };
-      tickets = [newTicket, ...tickets];
-      return newTicket;
-    },
-    addMessage: async (ticketId: string, content: string) => {
-      await delay(500);
-      const ticket = tickets.find(t => t.id === ticketId);
-      if (ticket) {
-        ticket.messages.push({
-          id: `msg-${Date.now()}`,
-          senderName: userProfile.name,
-          role: 'USER',
-          content,
-          timestamp: new Date().toISOString()
-        });
-        ticket.updatedAt = new Date().toISOString();
-        ticket.status = 'OPEN'; // Re-open if closed
+      // 1. Create Ticket
+      const { data: ticket, error: tError } = await supabase
+        .from('support_tickets')
+        .insert({
+          subject: data.subject,
+          category: data.category,
+          priority: data.priority,
+          status: 'OPEN'
+        })
+        .select()
+        .single();
+
+      if (tError) throw tError;
+
+      // 2. Insert Initial Message
+      if (data.messages && data.messages.length > 0) {
+        await api.support.addMessage(ticket.id, data.messages[0].content);
       }
+
       return ticket;
+    },
+
+    addMessage: async (ticketId: string, content: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error } = await supabase.from('ticket_messages').insert({
+        ticket_id: ticketId,
+        content: content,
+        sender_id: user?.id,
+        role: 'USER'
+      });
+
+      if (error) throw error;
+
+      // Update ticket timestamp
+      await supabase
+        .from('support_tickets')
+        .update({ updatedAt: new Date().toISOString(), status: 'OPEN' })
+        .eq('id', ticketId);
+
+      // Return updated ticket structure
+      const { data: updatedTicket } = await supabase
+        .from('support_tickets')
+        .select('*, messages:ticket_messages(*)')
+        .eq('id', ticketId)
+        .single();
+
+      return updatedTicket;
     }
   }
 };
