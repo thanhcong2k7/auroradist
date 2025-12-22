@@ -96,7 +96,7 @@ const Labels: React.FC = () => {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-x-0 bottom-0 top-16 z-[100] flex justify-center items-start bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
               <h3 className="font-bold uppercase tracking-widest text-xs">Imprint Settings</h3>
