@@ -11,7 +11,6 @@ const Artists: React.FC = () => {
     const [editingId, setEditingId] = useState<number | null>(null);
 
     //UI
-
     const [loading, setLoading] = useState(false);
 
     //Artist loading
