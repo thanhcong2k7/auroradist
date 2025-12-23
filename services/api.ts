@@ -11,13 +11,25 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper to map DB snake_case to TS camelCase if your DB uses snake_case
-// In a real scenario, it is better to define Database types matching the DB exactly.
+// --- HELPER FUNCTIONS ---
+
 const handleError = (error: any) => {
   console.error("API Error:", error);
   throw new Error(error.message || "An unexpected error occurred");
 };
-export const uid = supabase.auth.getSession();
+
+/**
+ * Securely retrieves the current authenticated User ID.
+ * Throws an error if no session exists.
+ */
+const getUserId = async (): Promise<string> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated. Session invalid.");
+  return user.id;
+};
+
+// --- API EXPORT ---
+
 export const api = {
   auth: {
     login: async (email: string, pass: string) => {
@@ -33,13 +45,12 @@ export const api = {
     },
 
     getProfile: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No session");
+      const userId = await getUserId();
 
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId) // Profiles usually link 1:1 with auth.users id
         .single();
 
       if (error) throw error;
@@ -47,13 +58,12 @@ export const api = {
     },
 
     updateProfile: async (updates: Partial<UserProfile>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No session");
+      const userId = await getUserId();
 
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', user.id)
+        .eq('id', userId)
         .select()
         .single();
 
@@ -63,12 +73,11 @@ export const api = {
   },
 
   storage: {
-    /**
-     * Uploads a file to Cloudflare R2 via Supabase Edge Function
-     */
     upload: async (file: File): Promise<string> => {
       try {
-        // 1. Get Presigned URL from Backend
+        // Ensure user is logged in before uploading
+        await getUserId();
+
         const { data: signData, error: signError } = await supabase.functions.invoke('upload-signer', {
           body: {
             filename: file.name,
@@ -78,20 +87,16 @@ export const api = {
 
         if (signError) throw signError;
 
-        // 2. Upload directly to R2 using the presigned URL
         const uploadResponse = await fetch(signData.uploadUrl, {
           method: 'PUT',
           body: file,
-          headers: {
-            'Content-Type': file.type
-          }
+          headers: { 'Content-Type': file.type }
         });
 
         if (!uploadResponse.ok) {
           throw new Error('Failed to upload asset to storage node.');
         }
 
-        // 3. Return the public URL for the DB
         return signData.publicUrl;
       } catch (err) {
         handleError(err);
@@ -101,26 +106,35 @@ export const api = {
   },
 
   dashboard: {
-    // Best practice: Use a Postgres RPC (function) for complex aggregations
     getStats: async () => {
+      // NOTE: For RPC calls, you usually don't pass UID if the function 
+      // uses `auth.uid()` internally in SQL. If it expects a param, pass it here.
       const { data, error } = await supabase.rpc('get_dashboard_stats');
+
       if (error) {
-        console.warn("Stats RPC not found, falling back to mock or simple count");
+        console.warn("Stats RPC error or not found", error);
         return { totalStreams: "0", revenue: "$0.00", activeReleases: "0" };
       }
       return data;
     },
 
     getChartData: async () => {
-      const { data, error } = await supabase.from('analytics_monthly').select('*').order('month', { ascending: true });
+      const userId = await getUserId();
+      const { data, error } = await supabase
+        .from('analytics_monthly')
+        .select('*')
+        .eq('uid', userId) // Filter by UID
+        .order('month', { ascending: true });
       if (error) throw error;
       return data;
     },
 
     getRecentReleases: async () => {
+      const userId = await getUserId();
       const { data, error } = await supabase
         .from('releases')
         .select('*')
+        .eq('uid', userId) // Filter by UID
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -131,9 +145,11 @@ export const api = {
 
   catalog: {
     getReleases: async () => {
+      const userId = await getUserId();
       const { data, error } = await supabase
         .from('releases')
         .select('*')
+        .eq('uid', userId) // Filter by UID
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -141,31 +157,41 @@ export const api = {
     },
 
     deleteRelease: async (id: number) => {
-      const { error } = await supabase.from('releases').delete().eq('id', id);
+      const userId = await getUserId();
+      const { error } = await supabase
+        .from('releases')
+        .delete()
+        .eq('id', id)
+        .eq('uid', userId); // Ensure user owns the record before deleting
+
       if (error) throw error;
       return { success: true };
     },
 
     requestTakedown: async (id: number) => {
+      const userId = await getUserId();
       const { error } = await supabase
         .from('releases')
-        .update({ status: 'TAKENDOWN' }) // Or 'PENDING_TAKEDOWN'
-        .eq('id', id);
+        .update({ status: 'TAKENDOWN' })
+        .eq('id', id)
+        .eq('uid', userId); // Security check
 
       if (error) throw error;
       return { success: true };
     }
   },
+
   artists: {
     getAll: async () => {
+      const userId = await getUserId();
       const { data, error } = await supabase
         .from('artists')
         .select('*')
+        .eq('uid', userId) // Filter by UID
         .order('name', { ascending: true });
 
       if (error) throw error;
 
-      // Map DB snake_case back to TS camelCase
       return data.map(a => ({
         id: a.id,
         name: a.name,
@@ -175,12 +201,14 @@ export const api = {
         spotifyId: a.spotify_id,
         appleMusicId: a.apple_music_id,
         soundcloudId: a.soundcloud_id,
-        address: a.address
+        address: a.address,
+        // bio: a.bio // If you added bio to DB
       })) as Artist[];
     },
 
     save: async (artist: Partial<Artist>) => {
-      // Map TS camelCase to DB snake_case for the payload
+      const userId = await getUserId();
+
       const payload = {
         name: artist.name,
         legal_name: artist.legalName,
@@ -189,20 +217,22 @@ export const api = {
         spotify_id: artist.spotifyId,
         apple_music_id: artist.appleMusicId,
         soundcloud_id: artist.soundcloudId,
-        address: artist.address
+        address: artist.address,
+        uid: userId // AUTOMATICALLY INJECT UID
       };
 
       let result;
       if (artist.id) {
-        // Update
+        // Update: check ID and UID
         result = await supabase
           .from('artists')
           .update(payload)
           .eq('id', artist.id)
+          .eq('uid', userId)
           .select()
           .single();
       } else {
-        // Insert
+        // Insert: UID is in payload
         result = await supabase
           .from('artists')
           .insert(payload)
@@ -215,10 +245,12 @@ export const api = {
     },
 
     delete: async (id: number) => {
+      const userId = await getUserId();
       const { error } = await supabase
         .from('artists')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('uid', userId);
 
       if (error) throw error;
       return { success: true };
@@ -227,24 +259,43 @@ export const api = {
 
   labels: {
     getAll: async () => {
-      const { data, error } = await supabase.from('labels').select('*');
+      const userId = await getUserId();
+      const { data, error } = await supabase
+        .from('labels')
+        .select('*')
+        .eq('uid', userId);
+
       if (error) throw error;
       return data as Label[];
     },
 
     save: async (label: Partial<Label>) => {
+      const userId = await getUserId();
+      const payload = { ...label, uid: userId };
+
       if (label.id) {
-        const { error } = await supabase.from('labels').update(label).eq('id', label.id);
+        const { error } = await supabase
+          .from('labels')
+          .update(payload)
+          .eq('id', label.id)
+          .eq('uid', userId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('labels').insert(label);
+        // Remove ID if it's partial/undefined so DB auto-generates it
+        const { id, ...insertData } = payload;
+        const { error } = await supabase.from('labels').insert(insertData);
         if (error) throw error;
       }
       return { success: true };
     },
 
     delete: async (id: number) => {
-      const { error } = await supabase.from('labels').delete().eq('id', id);
+      const userId = await getUserId();
+      const { error } = await supabase
+        .from('labels')
+        .delete()
+        .eq('id', id)
+        .eq('uid', userId);
       if (error) throw error;
       return { success: true };
     }
@@ -252,17 +303,29 @@ export const api = {
 
   tracks: {
     getAll: async () => {
-      // Assuming simple structure. For relations, use .select('*, artists:track_artists(*)')
-      const { data, error } = await supabase.from('tracks').select('*');
+      const userId = await getUserId();
+      const { data, error } = await supabase
+        .from('tracks')
+        .select('*')
+        .eq('uid', userId);
+
       if (error) throw error;
       return data as Track[];
     },
 
     save: async (track: Track) => {
-      // Upsert handles both Insert and Update based on ID
+      const userId = await getUserId();
+
+      // Upsert needs the UID in the object to ensure the new row belongs to the user
+      // or to ensure we don't accidentally take over another user's row ID
+      const payload = {
+        ...track,
+        uid: userId
+      };
+
       const { data, error } = await supabase
         .from('tracks')
-        .upsert(track)
+        .upsert(payload)
         .select()
         .single();
 
@@ -273,16 +336,24 @@ export const api = {
 
   wallet: {
     getSummary: async () => {
-      const { data, error } = await supabase.from('wallet_summary').select('*').single();
-      // Handle empty state gracefully
+      const userId = await getUserId();
+      // Ensure your wallet_summary view or table has a uid column
+      const { data, error } = await supabase
+        .from('wallet_summary')
+        .select('*')
+        .eq('uid', userId)
+        .single();
+
       if (error && error.code !== 'PGRST116') throw error;
       return data || { availableBalance: 0, pendingClearance: 0, lifetimeEarnings: 0 };
     },
 
     getTransactions: async () => {
+      const userId = await getUserId();
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
+        .eq('uid', userId)
         .order('date', { ascending: false });
 
       if (error) throw error;
@@ -290,15 +361,22 @@ export const api = {
     },
 
     getPayoutMethods: async () => {
-      const { data, error } = await supabase.from('payout_methods').select('*');
+      const userId = await getUserId();
+      const { data, error } = await supabase
+        .from('payout_methods')
+        .select('*')
+        .eq('uid', userId);
       if (error) throw error;
       return data as PayoutMethod[];
     },
 
     savePayoutMethod: async (pm: Partial<PayoutMethod>) => {
+      const userId = await getUserId();
+      const payload = { ...pm, uid: userId };
+
       const { data, error } = await supabase
         .from('payout_methods')
-        .upsert(pm)
+        .upsert(payload)
         .select()
         .single();
       if (error) throw error;
@@ -306,25 +384,34 @@ export const api = {
     },
 
     deletePayoutMethod: async (id: string) => {
-      const { error } = await supabase.from('payout_methods').delete().eq('id', id);
+      const userId = await getUserId();
+      const { error } = await supabase
+        .from('payout_methods')
+        .delete()
+        .eq('id', id)
+        .eq('uid', userId);
       if (error) throw error;
       return { success: true };
     },
 
     requestWithdrawal: async (amount: number, methodId: string) => {
+      const userId = await getUserId();
+
       // 1. Create Transaction Record
       const { error: txError } = await supabase.from('transactions').insert({
         amount: amount,
         type: 'WITHDRAWAL',
         status: 'PENDING',
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        uid: userId // Assign to user
       });
       if (txError) throw txError;
 
-      // 2. Create Audit Log (Optional)
+      // 2. Create Audit Log
       await supabase.from('action_logs').insert({
         action: 'WITHDRAWAL_REQUEST',
-        details: `Requested $${amount} via ${methodId}`
+        details: `Requested $${amount} via ${methodId}`,
+        uid: userId // Assign to user
       });
 
       return { success: true };
@@ -333,9 +420,11 @@ export const api = {
 
   support: {
     getTickets: async () => {
+      const userId = await getUserId();
       const { data, error } = await supabase
         .from('support_tickets')
         .select('*, messages:ticket_messages(*)')
+        .eq('uid', userId) // Filter tickets by owner
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
@@ -343,6 +432,8 @@ export const api = {
     },
 
     createTicket: async (data: Partial<SupportTicket>) => {
+      const userId = await getUserId();
+
       // 1. Create Ticket
       const { data: ticket, error: tError } = await supabase
         .from('support_tickets')
@@ -350,7 +441,8 @@ export const api = {
           subject: data.subject,
           category: data.category,
           priority: data.priority,
-          status: 'OPEN'
+          status: 'OPEN',
+          uid: userId // Assign to user
         })
         .select()
         .single();
@@ -366,13 +458,17 @@ export const api = {
     },
 
     addMessage: async (ticketId: string, content: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const userId = await getUserId();
+
+      // Note: You might want to verify here that the ticketId belongs to the user 
+      // before inserting a message to it, though RLS should handle that.
 
       const { error } = await supabase.from('ticket_messages').insert({
         ticket_id: ticketId,
         content: content,
-        sender_id: user?.id,
-        role: 'USER'
+        sender_id: userId,
+        role: 'USER',
+        uid: userId // Assuming messages also have a uid column for RLS simplicity
       });
 
       if (error) throw error;
@@ -381,9 +477,10 @@ export const api = {
       await supabase
         .from('support_tickets')
         .update({ updated_at: new Date().toISOString(), status: 'OPEN' })
-        .eq('id', ticketId);
+        .eq('id', ticketId)
+        .eq('uid', userId);
 
-      // Return updated ticket structure
+      // Return updated ticket
       const { data: updatedTicket } = await supabase
         .from('support_tickets')
         .select('*, messages:ticket_messages(*)')
