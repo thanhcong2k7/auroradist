@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Release, Track, Label, PayoutMethod, UserProfile, SupportTicket, Transaction } from '../types';
+import { Release, Track, Label, PayoutMethod, UserProfile, SupportTicket, Transaction, Artist } from '../types';
 
 // Initialize Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -17,7 +17,7 @@ const handleError = (error: any) => {
   console.error("API Error:", error);
   throw new Error(error.message || "An unexpected error occurred");
 };
-
+export const uid = supabase.auth.getSession();
 export const api = {
   auth: {
     login: async (email: string, pass: string) => {
@@ -150,6 +150,75 @@ export const api = {
       const { error } = await supabase
         .from('releases')
         .update({ status: 'TAKENDOWN' }) // Or 'PENDING_TAKEDOWN'
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
+    }
+  },
+  artists: {
+    getAll: async () => {
+      const { data, error } = await supabase
+        .from('artists')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      // Map DB snake_case back to TS camelCase
+      return data.map(a => ({
+        id: a.id,
+        name: a.name,
+        legalName: a.legal_name,
+        email: a.email,
+        avatar: a.avatar,
+        spotifyId: a.spotify_id,
+        appleMusicId: a.apple_music_id,
+        soundcloudId: a.soundcloud_id,
+        address: a.address
+      })) as Artist[];
+    },
+
+    save: async (artist: Partial<Artist>) => {
+      // Map TS camelCase to DB snake_case for the payload
+      const payload = {
+        name: artist.name,
+        legal_name: artist.legalName,
+        email: artist.email,
+        avatar: artist.avatar,
+        spotify_id: artist.spotifyId,
+        apple_music_id: artist.appleMusicId,
+        soundcloud_id: artist.soundcloudId,
+        address: artist.address,
+        uid: uid
+      };
+
+      let result;
+      if (artist.id) {
+        // Update
+        result = await supabase
+          .from('artists')
+          .update(payload)
+          .eq('id', artist.id)
+          .select()
+          .single();
+      } else {
+        // Insert
+        result = await supabase
+          .from('artists')
+          .insert(payload)
+          .select()
+          .single();
+      }
+
+      if (result.error) throw result.error;
+      return result.data as Artist;
+    },
+
+    delete: async (id: number) => {
+      const { error } = await supabase
+        .from('artists')
+        .delete()
         .eq('id', id);
 
       if (error) throw error;

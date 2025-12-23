@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MOCK_RELEASES, MOCK_ARTISTS, MOCK_TRACKS, PERFORMER_ROLES } from '../constants';
+import { MOCK_ARTISTS, MOCK_TRACKS, PERFORMER_ROLES } from '../constants';
+import { api } from '../services/api';
 import FileUploader from '../components/FileUploader';
 import {
     Save, Send, X,
@@ -13,7 +14,20 @@ const ReleaseForm: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEdit = Boolean(id);
-    const [labels] = useState<LabelType[]>([]);
+    const [labels,setLabels] = useState<LabelType[]>([]);
+
+    //Get labels
+    useEffect(() => { loadData(); }, []);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [l, r] = await Promise.all([api.labels.getAll(), api.catalog.getReleases()]);
+            setLabels(l);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Wizard State
     const [currentStep, setCurrentStep] = useState(1); // 1: Overview, 2: Tracks, 3: Platforms
@@ -61,43 +75,74 @@ const ReleaseForm: React.FC = () => {
     const [selectedStores, setSelectedStores] = useState<string[]>(['Spotify', 'Apple Music', 'YouTube Music']);
 
     useEffect(() => {
-        if (isEdit && id) {
-            const release = MOCK_RELEASES.find(r => r.id === parseInt(id));
-            if (!release) {
-                navigate('/discography');
-                return;
-            }
-            if (release.status === 'CHECKING') {
-                setError("This release is currently being processed (CHECKING) and cannot be edited.");
-                return;
-            }
+        async function ok() {
+            if (isEdit && id) {
+                setLoading(true);
+                try {
+                    const releases = await api.catalog.getReleases();
+                    const release = releases.find(r => r.id === parseInt(id));
+                    if (!release) {
+                        navigate('/discography');
+                        return;
+                    }
+                    if (release.status === 'CHECKING') {
+                        setError("This release is currently being processed (CHECKING) and cannot be edited.");
+                        return;
+                    }
 
-            setTitle(release.title);
-            setVersion(release.version || '');
-            setLabelId(release.labelId || '');
-            setReleaseDate(release.releaseDate);
-            setOriginalReleaseDate(release.originalReleaseDate || '');
-            setUpc(release.upc);
-            setCoverArt(release.coverArt);
-            setCopyrightYear(release.copyrightYear || new Date().getFullYear().toString());
-            setCopyrightLine(release.copyrightLine || '');
-            setPhonogramYear(release.phonogramYear || new Date().getFullYear().toString());
-            setPhonogramLine(release.phonogramLine || '');
-            setStatus(release.status);
+                    setTitle(release.title);
+                    setVersion(release.version || '');
+                    setLabelId(release.labelId || '');
+                    setReleaseDate(release.releaseDate);
+                    setOriginalReleaseDate(release.originalReleaseDate || '');
+                    setUpc(release.upc);
+                    setCoverArt(release.coverArt);
+                    setCopyrightYear(release.copyrightYear || new Date().getFullYear().toString());
+                    setCopyrightLine(release.copyrightLine || '');
+                    setPhonogramYear(release.phonogramYear || new Date().getFullYear().toString());
+                    setPhonogramLine(release.phonogramLine || '');
+                    setStatus(release.status);
 
-            const tracks = MOCK_TRACKS.filter(t => t.releaseId === release.id);
-            setReleaseTracks(tracks);
+                    const tracks = MOCK_TRACKS.filter(t => t.releaseId === release.id);
+                    setReleaseTracks(tracks);
+                } catch (err) {
+                    setError("Failed to fetch release from database.");
+                } finally {
+                    setLoading(false);
+                }
+            }
+            setAvailableTracks(MOCK_TRACKS);
         }
-        setAvailableTracks(MOCK_TRACKS);
+        ok();
     }, [id, isEdit, navigate]);
 
-    const handleSave = (newStatus: Release['status']) => {
+    const handleSave = async (newStatus: Release['status']) => {
         setLoading(true);
-        setTimeout(() => {
-            console.log("Saving...", { status: newStatus, title, releaseTracks });
-            setLoading(false);
+        try {
+            const payload = {
+                title: title,
+                version: version,
+                label_id: labelId || null, // Matches labelId in your state
+                release_date: releaseDate,
+                original_release_date: originalReleaseDate,
+                upc: upc,
+                cover_art: coverArt,
+                copyright_year: copyrightYear,
+                copyright_line: copyrightLine,
+                phonogram_year: phonogramYear,
+                phonogram_line: phonogramLine,
+                status: newStatus
+            };
+
+            // Call your api.catalog save method (you might need to add this to api.ts)
+            await supabase.from('releases').upsert(payload);
+
             navigate('/discography');
-        }, 800);
+        } catch (err) {
+            alert("Save failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleAddTrackToRelease = (track: Track) => {
