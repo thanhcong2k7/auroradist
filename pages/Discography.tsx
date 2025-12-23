@@ -1,14 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Plus, Edit2, Trash2, Search, AlertCircle, Loader2, Info } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, AlertCircle, Loader2, Info, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Release } from '../types';
+import { Release, Track } from '../types';
+import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
+import { MOCK_TRACKS } from '../constants'; // Fallback for tracks
 
 const Discography: React.FC = () => {
   const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Preview State
+  const [previewRelease, setPreviewRelease] = useState<Release | null>(null);
+  const [previewTracks, setPreviewTracks] = useState<Track[]>([]);
 
   // Delete/Takedown Modal State
   const [confirmModal, setConfirmModal] = useState<{
@@ -35,6 +40,14 @@ const Discography: React.FC = () => {
     }
   };
 
+  const handlePreview = (release: Release) => {
+    // In a real app, you'd fetch specific tracks for this release ID
+    // For now, filtering mock tracks or existing tracks in state
+    const tracks = MOCK_TRACKS.filter(t => t.releaseId === release.id);
+    setPreviewTracks(tracks);
+    setPreviewRelease(release);
+  };
+
   const handleActionClick = (release: Release) => {
     const isAccepted = release.status === 'ACCEPTED';
     setConfirmModal({
@@ -46,13 +59,12 @@ const Discography: React.FC = () => {
 
   const executeAction = async () => {
     if (!confirmModal.release || !confirmModal.type) return;
-    
+
     setActionLoading(true);
     try {
       if (confirmModal.type === 'TAKEDOWN') {
         await api.catalog.requestTakedown(confirmModal.release.id);
-        // In real app, re-fetch or update local state
-        setReleases(prev => prev.map(r => 
+        setReleases(prev => prev.map(r =>
           r.id === confirmModal.release?.id ? { ...r, status: 'CHECKING' } : r
         ));
       } else {
@@ -67,8 +79,8 @@ const Discography: React.FC = () => {
     }
   };
 
-  const filteredReleases = releases.filter(r => 
-    r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredReleases = releases.filter(r =>
+    r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.artist.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -86,14 +98,14 @@ const Discography: React.FC = () => {
 
       <div className="flex gap-4 mb-6">
         <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-            <input 
-                type="text" 
-                placeholder="SEARCH ARCHIVES..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition font-mono placeholder-gray-700"
-            />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+          <input
+            type="text"
+            placeholder="SEARCH ARCHIVES..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition font-mono placeholder-gray-700"
+          />
         </div>
       </div>
 
@@ -105,59 +117,80 @@ const Discography: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredReleases.map((release) => (
-              <div key={release.id} className="group bg-surface border border-white/10 hover:border-blue-500/50 rounded-xl overflow-hidden transition-all duration-300">
-                  <div className="aspect-square relative overflow-hidden bg-black">
-                      {release.coverArt ? (
-                          <img src={release.coverArt} alt={release.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition duration-500" />
-                      ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-700 font-mono text-xs border border-white/5 m-4 rounded">NO_SIGNAL</div>
-                      )}
-                      
-                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {release.status !== 'CHECKING' && (
-                              <Link 
-                                  to={`/discography/edit/${release.id}`}
-                                  className="p-1.5 bg-black/80 text-white hover:text-blue-400 rounded backdrop-blur-sm border border-white/10"
-                              >
-                                  <Edit2 size={14} />
-                              </Link>
-                          )}
-                          <button 
-                            onClick={() => handleActionClick(release)}
-                            className="p-1.5 bg-black/80 text-white hover:text-red-400 rounded backdrop-blur-sm border border-white/10"
-                          >
-                              <Trash2 size={14} />
-                          </button>
-                      </div>
+            <div key={release.id} className="group bg-surface border border-white/10 hover:border-blue-500/50 rounded-xl overflow-hidden transition-all duration-300">
+              <div className="aspect-square relative overflow-hidden bg-black">
+                {release.coverArt ? (
+                  <img src={release.coverArt} alt={release.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition duration-500" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-700 font-mono text-xs border border-white/5 m-4 rounded">NO_SIGNAL</div>
+                )}
 
-                      <div className="absolute top-2 left-2">
-                           <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border backdrop-blur-md ${
-                              release.status === 'ACCEPTED' ? 'border-green-500/30 text-green-400 bg-green-900/50' :
-                              release.status === 'CHECKING' ? 'border-yellow-500/30 text-yellow-400 bg-yellow-900/50' :
-                              release.status === 'ERROR' || release.status === 'REJECTED' ? 'border-red-500/30 text-red-400 bg-red-900/50' :
-                              'border-gray-500/30 text-gray-300 bg-gray-900/50'
-                          }`}>
-                              {release.status}
-                          </span>
-                      </div>
-                  </div>
-                  
-                  <div className="p-4">
-                      <h3 className="font-bold text-lg leading-tight truncate mb-1">{release.title}</h3>
-                      <div className="flex justify-between items-end">
-                          <div>
-                               <p className="text-gray-400 text-xs font-mono">{release.artist}</p>
-                               <p className="text-gray-600 text-[10px] font-mono mt-1">UPC: {release.upc || 'PENDING'}</p>
-                          </div>
-                          <div className="text-[10px] text-gray-500 font-mono">
-                              {release.releaseDate || 'TBA'}
-                          </div>
-                      </div>
-                  </div>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Preview Button - Always Visible */}
+                  <button
+                    onClick={() => handlePreview(release)}
+                    className="p-1.5 bg-black/80 text-white hover:text-blue-400 rounded backdrop-blur-sm border border-white/10"
+                    title="Preview Release"
+                  >
+                    <Eye size={14} />
+                  </button>
+
+                  {/* Edit Button - Hide if Checking */}
+                  {release.status !== 'CHECKING' && (
+                    <Link
+                      to={`/discography/edit/${release.id}`}
+                      className="p-1.5 bg-black/80 text-white hover:text-green-400 rounded backdrop-blur-sm border border-white/10"
+                    >
+                      <Edit2 size={14} />
+                    </Link>
+                  )}
+
+                  {/* Delete/Takedown Button - Hide if Checking */}
+                  {release.status !== 'CHECKING' && (
+                    <button
+                      onClick={() => handleActionClick(release)}
+                      className="p-1.5 bg-black/80 text-white hover:text-red-400 rounded backdrop-blur-sm border border-white/10"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="absolute top-2 left-2">
+                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border backdrop-blur-md ${release.status === 'ACCEPTED' ? 'border-green-500/30 text-green-400 bg-green-900/50' :
+                      release.status === 'CHECKING' ? 'border-yellow-500/30 text-yellow-400 bg-yellow-900/50' :
+                        release.status === 'ERROR' || release.status === 'REJECTED' ? 'border-red-500/30 text-red-400 bg-red-900/50' :
+                          'border-gray-500/30 text-gray-300 bg-gray-900/50'
+                    }`}>
+                    {release.status}
+                  </span>
+                </div>
               </div>
+
+              <div className="p-4">
+                <h3 className="font-bold text-lg leading-tight truncate mb-1">{release.title}</h3>
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-gray-400 text-xs font-mono">{release.artist}</p>
+                    <p className="text-gray-600 text-[10px] font-mono mt-1">UPC: {release.upc || 'PENDING'}</p>
+                  </div>
+                  <div className="text-[10px] text-gray-500 font-mono">
+                    {release.releaseDate || 'TBA'}
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}
+
+      {/* Release Preview Modal */}
+      <ReleasePreviewDialog
+        isOpen={!!previewRelease}
+        onClose={() => setPreviewRelease(null)}
+        release={previewRelease}
+        tracks={previewTracks}
+      />
 
       {/* Confirmation Modal */}
       {confirmModal.show && (
@@ -171,7 +204,7 @@ const Discography: React.FC = () => {
                 {confirmModal.type === 'TAKEDOWN' ? 'Request Takedown?' : 'Confirm Deletion?'}
               </h3>
               <p className="text-gray-400 text-sm font-mono leading-relaxed">
-                {confirmModal.type === 'TAKEDOWN' 
+                {confirmModal.type === 'TAKEDOWN'
                   ? `You are about to request a professional takedown for "${confirmModal.release?.title}". This will notify all DSPs and move the status to CHECKING for admin review.`
                   : `This will permanently delete the draft "${confirmModal.release?.title}" and all associated metadata. This action is irreversible.`
                 }
@@ -179,25 +212,19 @@ const Discography: React.FC = () => {
             </div>
 
             <div className="p-4 bg-black/40 border-t border-white/5 flex gap-3">
-              <button 
+              <button
                 onClick={() => setConfirmModal({ show: false, release: null, type: null })}
                 className="flex-1 py-3 border border-white/10 text-gray-500 font-bold uppercase text-xs hover:bg-white/5 transition rounded-xl"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={executeAction}
                 disabled={actionLoading}
                 className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold uppercase text-xs transition rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.3)] flex items-center justify-center gap-2"
               >
                 {actionLoading ? <Loader2 size={14} className="animate-spin" /> : (confirmModal.type === 'TAKEDOWN' ? 'Confirm Takedown' : 'Delete Permanent')}
               </button>
-            </div>
-
-            <div className="px-8 pb-6 text-center">
-              <div className="flex items-center justify-center gap-2 text-[10px] font-mono text-gray-600 uppercase">
-                <Info size={10} /> Audit Log will be generated.
-              </div>
             </div>
           </div>
         </div>

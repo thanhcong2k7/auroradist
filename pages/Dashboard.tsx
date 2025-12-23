@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Activity, Disc, TrendingUp, DollarSign, ArrowRight, Loader2 } from 'lucide-react';
+import { Activity, Disc, TrendingUp, DollarSign, ArrowRight, Loader2, Eye } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Release } from '../types';
+import ReleasePreviewDialog from '../components/ReleasePreviewDialog'; // Import new component
 
 const StatCard: React.FC<{ label: string; value: string; icon: any; change?: string; loading?: boolean }> = ({ label, value, icon: Icon, change, loading }) => (
   <div className="bg-surface border border-white/5 p-5 rounded-xl hover:border-blue-500/20 transition-all group shadow-sm">
@@ -31,6 +31,9 @@ const Dashboard: React.FC = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [recentReleases, setRecentReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Preview State
+  const [previewRelease, setPreviewRelease] = useState<Release | null>(null);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -82,14 +85,14 @@ const Dashboard: React.FC = () => {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorStreams" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
                 <XAxis dataKey="name" stroke="#333" fontSize={10} tickLine={false} axisLine={false} tickMargin={10} />
                 <YAxis stroke="#333" fontSize={10} tickLine={false} axisLine={false} tickMargin={10} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#050505', border: '1px solid #111', borderRadius: '12px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}
                   itemStyle={{ color: '#3b82f6', fontSize: '10px', fontWeight: 900 }}
                   labelStyle={{ display: 'none' }}
@@ -109,13 +112,17 @@ const Dashboard: React.FC = () => {
               ))
             ) : (
               recentReleases.map((release) => (
-                <div key={release.id} className="flex items-center gap-3 p-3 bg-black/40 hover:bg-white/5 rounded-xl transition group border border-transparent hover:border-white/10">
+                <div
+                  key={release.id}
+                  onClick={() => setPreviewRelease(release)}
+                  className="flex items-center gap-3 p-3 bg-black/40 hover:bg-white/5 rounded-xl transition group border border-transparent hover:border-white/10 cursor-pointer"
+                >
                   <img src={release.coverArt || 'https://via.placeholder.com/40'} alt={release.title} className="w-10 h-10 rounded-lg object-cover" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-xs truncate uppercase tracking-tight">{release.title}</div>
+                    <div className="font-bold text-xs truncate uppercase tracking-tight group-hover:text-blue-400 transition-colors">{release.title}</div>
                     <div className="text-[9px] text-gray-600 font-mono truncate uppercase mt-0.5">{release.artist}</div>
                   </div>
-                  <div className="text-[8px] font-black font-mono px-2 py-0.5 rounded-full border border-blue-500/20 text-blue-500">
+                  <div className="text-[8px] font-black font-mono px-2 py-0.5 rounded-full border border-blue-500/20 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                     {release.status}
                   </div>
                 </div>
@@ -127,6 +134,12 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <ReleasePreviewDialog
+        isOpen={!!previewRelease}
+        onClose={() => setPreviewRelease(null)}
+        release={previewRelease}
+      />
     </div>
   );
 };
