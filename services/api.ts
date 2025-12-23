@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Release, Track, Label, PayoutMethod, UserProfile, SupportTicket, Transaction, Artist } from '../types';
+import { Release, Track, Label, PayoutMethod, UserProfile, SupportTicket, Transaction, Artist, DspChannel } from '../types';
 
 // Initialize Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -143,6 +143,28 @@ export const api = {
     }
   },
 
+  dsps: {
+    getAll: async () => {
+      // DSPs are system data, no need to filter by uid
+      const { data, error } = await supabase
+        .from('dsp_channels')
+        .select('*')
+        .eq('is_enabled', true)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+
+      // Map snake_case to camelCase
+      return data.map(d => ({
+        id: d.id,
+        name: d.name,
+        code: d.code,
+        logoUrl: d.logo_url,
+        isEnabled: d.is_enabled
+      })) as DspChannel[];
+    }
+  },
+
   catalog: {
     getReleases: async () => {
       const userId = await getUserId();
@@ -153,7 +175,60 @@ export const api = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Release[];
+      return data.map(r => ({
+        ...r,
+        labelId: r.label_id,
+        releaseDate: r.release_date,
+        originalReleaseDate: r.original_release_date,
+        coverArt: r.cover_art,
+        copyrightYear: r.copyright_year,
+        copyrightLine: r.copyright_line,
+        phonogramYear: r.phonogram_year,
+        phonogramLine: r.phonogram_line,
+        selectedDsps: r.selected_dsps // Map the new column
+      })) as Release[];
+    },
+
+    save: async (release: Partial<Release>) => {
+      const userId = await getUserId();
+
+      // Transform TS camelCase to DB snake_case
+      const payload = {
+        title: release.title,
+        version: release.version,
+        label_id: release.labelId || null,
+        release_date: release.releaseDate,
+        original_release_date: release.originalReleaseDate,
+        upc: release.upc,
+        cover_art: release.coverArt,
+        copyright_year: release.copyrightYear,
+        copyright_line: release.copyrightLine,
+        phonogram_year: release.phonogramYear,
+        phonogram_line: release.phonogramLine,
+        status: release.status,
+        selected_dsps: release.selectedDsps || [], // Save the DSPs
+        uid: userId
+      };
+
+      let result;
+      if (release.id) {
+        result = await supabase
+          .from('releases')
+          .update(payload)
+          .eq('id', release.id)
+          .eq('uid', userId)
+          .select()
+          .single();
+      } else {
+        result = await supabase
+          .from('releases')
+          .insert(payload)
+          .select()
+          .single();
+      }
+
+      if (result.error) throw result.error;
+      return result.data;
     },
 
     deleteRelease: async (id: number) => {

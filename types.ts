@@ -1,4 +1,12 @@
 
+export interface DspChannel {
+  id: number;
+  name: string;
+  code: string;
+  logoUrl?: string;
+  isEnabled: boolean;
+}
+
 export interface Release {
   id: number;
   upc: string;
@@ -14,6 +22,7 @@ export interface Release {
   copyrightLine?: string;
   phonogramYear?: string;
   phonogramLine?: string;
+  selectedDsps?: string[];
 }
 
 export interface Artist {
