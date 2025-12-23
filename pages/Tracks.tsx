@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Track, TrackArtist, TrackContributor, Artist } from '../types';
-import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle } from 'lucide-react'; // Added AlertCircle
+import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle } from 'lucide-react';
 import FileUploader from '../components/FileUploader';
-import { PERFORMER_ROLES, MOCK_ARTISTS } from '../constants';
+import { PERFORMER_ROLES } from '../constants'; // Removed MOCK_ARTISTS import as it's no longer used in render
 
 const Tracks: React.FC = () => {
   const [artistList, setArtistList] = useState<Artist[]>([]);
@@ -14,7 +14,7 @@ const Tracks: React.FC = () => {
   const [trackTab, setTrackTab] = useState<'GENERAL' | 'CREDITS' | 'LYRICS'>('GENERAL');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // NEW: Validation Error State
+  // Validation Error State
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [currentTrack, setCurrentTrack] = useState<Partial<Track>>({
@@ -57,7 +57,7 @@ const Tracks: React.FC = () => {
     setShowModal(true);
   };
 
-  // NEW: Robust Validation Logic
+  // Robust Validation Logic
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     let isValid = true;
@@ -66,7 +66,7 @@ const Tracks: React.FC = () => {
     if (!currentTrack.audioUrl) {
       newErrors.audioUrl = "Master audio file is required.";
       isValid = false;
-      setTrackTab('GENERAL'); // Auto-switch tab to show error
+      setTrackTab('GENERAL');
     }
     if (!currentTrack.name || currentTrack.name.trim().length < 2) {
       newErrors.name = "Track title is required.";
@@ -74,8 +74,7 @@ const Tracks: React.FC = () => {
       if (!newErrors.audioUrl) setTrackTab('GENERAL');
     }
 
-    // 2. Validate ISRC (Format: US-XXX-24-12345 or alphanumeric 12 chars)
-    // Removing dashes for length check, ensuring 12 characters
+    // 2. Validate ISRC
     const cleanIsrc = currentTrack.isrc?.replace(/-/g, '') || '';
     const isrcRegex = /^[A-Z]{2}[A-Z0-9]{3}\d{7}$/;
 
@@ -85,7 +84,7 @@ const Tracks: React.FC = () => {
       if (!newErrors.name) setTrackTab('GENERAL');
     }
 
-    // 3. Validate Artists (Must have at least 1 Primary)
+    // 3. Validate Artists
     const hasPrimary = currentTrack.artists?.some(a => a.role === 'Primary' && a.name.trim() !== '');
     if (!hasPrimary) {
       newErrors.artists = "At least one Primary Artist is required.";
@@ -93,10 +92,9 @@ const Tracks: React.FC = () => {
       if (isValid) setTrackTab('CREDITS');
     }
 
-    // 4. Validate Contributors (Must have Composer & Producer)
+    // 4. Validate Contributors
     const hasComposer = currentTrack.contributors?.some(c => c.role === 'Composer' && c.name.trim() !== '');
     const hasProducer = currentTrack.contributors?.some(c => c.role === 'Producer' && c.name.trim() !== '');
-    // NEW: Check for Lyricist if lyrics are present
     const hasLyricist = currentTrack.contributors?.some(c => c.role === 'Lyricist' && c.name.trim() !== '');
 
     if (!hasComposer || !hasProducer) {
@@ -106,7 +104,7 @@ const Tracks: React.FC = () => {
     } else if (currentTrack.hasLyrics && !hasLyricist) {
       newErrors.contributors = "A Lyricist credit is required when lyrics are present.";
       isValid = false;
-      setTrackTab('CREDITS'); // Switch to credits tab to fix
+      setTrackTab('CREDITS');
     }
 
     setErrors(newErrors);
@@ -114,7 +112,6 @@ const Tracks: React.FC = () => {
   };
 
   const handleSaveTrack = async () => {
-    // NEW: Run validation before submission
     if (!validateForm()) {
       return;
     }
@@ -186,7 +183,6 @@ const Tracks: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* ... Header and Search Code (Same as original) ... */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tight">Master Recordings</h1>
@@ -207,7 +203,6 @@ const Tracks: React.FC = () => {
       ) : (
         <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
           <table className="w-full text-left text-sm">
-            {/* ... Table Header ... */}
             <thead className="bg-black/50 text-[10px] font-mono text-gray-600 uppercase tracking-[0.2em]">
               <tr>
                 <th className="px-6 py-4">Recording</th>
@@ -247,7 +242,6 @@ const Tracks: React.FC = () => {
               <button onClick={() => setShowModal(false)}><X size={20} className="text-gray-500 hover:text-white" /></button>
             </div>
 
-            {/* Error Summary Banner */}
             {Object.keys(errors).length > 0 && (
               <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-3 flex items-start gap-3">
                 <AlertCircle size={16} className="text-red-500 mt-0.5" />
@@ -340,6 +334,7 @@ const Tracks: React.FC = () => {
                             }}
                             className="flex-1 bg-black border border-white/10 p-2 rounded-lg text-sm outline-none focus:border-blue-500"
                             placeholder="Artist Name"
+                            list="artist-suggestions" // Link to datalist
                           />
                           {currentTrack.artists!.length > 1 && (
                             <button
@@ -354,6 +349,10 @@ const Tracks: React.FC = () => {
                           )}
                         </div>
                       ))}
+                      {/* Datalist populated with real artists */}
+                      <datalist id="artist-suggestions">
+                        {artistList.map(a => <option key={a.id} value={a.name} />)}
+                      </datalist>
                     </div>
                   </div>
 
@@ -396,7 +395,6 @@ const Tracks: React.FC = () => {
 
               {trackTab === 'LYRICS' && (
                 <div className="space-y-6 animate-fade-in">
-                  {/* NEW: Lyrics Section */}
                   <div>
                     <label className="block text-xs font-mono text-gray-500 mb-2 uppercase">Language & Lyrics</label>
                     <div className="space-y-4">
@@ -440,7 +438,6 @@ const Tracks: React.FC = () => {
 
                   <div className="h-px bg-white/5"></div>
 
-                  {/* Existing: Explicit Content Section */}
                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
