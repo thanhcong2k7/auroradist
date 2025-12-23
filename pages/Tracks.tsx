@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Track, TrackArtist, TrackContributor } from '../types';
+import { Track, TrackArtist, TrackContributor, Artist } from '../types';
 import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle } from 'lucide-react'; // Added AlertCircle
 import FileUploader from '../components/FileUploader';
 import { PERFORMER_ROLES, MOCK_ARTISTS } from '../constants';
 
 const Tracks: React.FC = () => {
+  const [artistList, setArtistList] = useState<Artist[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -29,8 +30,12 @@ const Tracks: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await api.tracks.getAll();
-      setTracks(data);
+      const [tracksData, artistsData] = await Promise.all([
+        api.tracks.getAll(),
+        api.artists.getAll()
+      ]);
+      setTracks(tracksData);
+      setArtistList(artistsData);
     } finally {
       setLoading(false);
     }

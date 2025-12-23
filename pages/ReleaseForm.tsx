@@ -413,8 +413,8 @@ const ReleaseForm: React.FC = () => {
                                                     key={dsp.id}
                                                     onClick={() => toggleStore(dsp.code)}
                                                     className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 flex items-center justify-between group ${isSelected
-                                                            ? 'bg-blue-600/10 border-blue-500/50 text-white'
-                                                            : 'bg-black border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
+                                                        ? 'bg-blue-600/10 border-blue-500/50 text-white'
+                                                        : 'bg-black border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-3">

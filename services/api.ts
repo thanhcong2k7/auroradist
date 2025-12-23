@@ -50,7 +50,7 @@ export const api = {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId) // Profiles usually link 1:1 with auth.users id
+        .eq('id', userId)
         .single();
 
       if (error) throw error;
@@ -75,8 +75,7 @@ export const api = {
   storage: {
     upload: async (file: File): Promise<string> => {
       try {
-        // Ensure user is logged in before uploading
-        await getUserId();
+        await getUserId(); // Ensure auth
 
         const { data: signData, error: signError } = await supabase.functions.invoke('upload-signer', {
           body: {
@@ -107,10 +106,7 @@ export const api = {
 
   dashboard: {
     getStats: async () => {
-      // NOTE: For RPC calls, you usually don't pass UID if the function 
-      // uses `auth.uid()` internally in SQL. If it expects a param, pass it here.
       const { data, error } = await supabase.rpc('get_dashboard_stats');
-
       if (error) {
         console.warn("Stats RPC error or not found", error);
         return { totalStreams: "0", revenue: "$0.00", activeReleases: "0" };
@@ -123,7 +119,7 @@ export const api = {
       const { data, error } = await supabase
         .from('analytics_monthly')
         .select('*')
-        .eq('uid', userId) // Filter by UID
+        .eq('uid', userId)
         .order('month', { ascending: true });
       if (error) throw error;
       return data;
@@ -134,7 +130,7 @@ export const api = {
       const { data, error } = await supabase
         .from('releases')
         .select('*')
-        .eq('uid', userId) // Filter by UID
+        .eq('uid', userId)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -143,9 +139,9 @@ export const api = {
     }
   },
 
+  // --- NEW: DSP SERVICE ---
   dsps: {
     getAll: async () => {
-      // DSPs are system data, no need to filter by uid
       const { data, error } = await supabase
         .from('dsp_channels')
         .select('*')
@@ -171,10 +167,12 @@ export const api = {
       const { data, error } = await supabase
         .from('releases')
         .select('*')
-        .eq('uid', userId) // Filter by UID
+        .eq('uid', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Map DB snake_case to TS camelCase
       return data.map(r => ({
         ...r,
         labelId: r.label_id,
@@ -206,7 +204,7 @@ export const api = {
         phonogram_year: release.phonogramYear,
         phonogram_line: release.phonogramLine,
         status: release.status,
-        selected_dsps: release.selectedDsps || [], // Save the DSPs
+        selected_dsps: release.selectedDsps || [], // Save DSPs
         uid: userId
       };
 
@@ -237,7 +235,7 @@ export const api = {
         .from('releases')
         .delete()
         .eq('id', id)
-        .eq('uid', userId); // Ensure user owns the record before deleting
+        .eq('uid', userId);
 
       if (error) throw error;
       return { success: true };
@@ -249,7 +247,7 @@ export const api = {
         .from('releases')
         .update({ status: 'TAKENDOWN' })
         .eq('id', id)
-        .eq('uid', userId); // Security check
+        .eq('uid', userId);
 
       if (error) throw error;
       return { success: true };
@@ -262,7 +260,7 @@ export const api = {
       const { data, error } = await supabase
         .from('artists')
         .select('*')
-        .eq('uid', userId) // Filter by UID
+        .eq('uid', userId)
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -276,8 +274,7 @@ export const api = {
         spotifyId: a.spotify_id,
         appleMusicId: a.apple_music_id,
         soundcloudId: a.soundcloud_id,
-        address: a.address,
-        // bio: a.bio // If you added bio to DB
+        address: a.address
       })) as Artist[];
     },
 
@@ -293,12 +290,11 @@ export const api = {
         apple_music_id: artist.appleMusicId,
         soundcloud_id: artist.soundcloudId,
         address: artist.address,
-        uid: userId // AUTOMATICALLY INJECT UID
+        uid: userId
       };
 
       let result;
       if (artist.id) {
-        // Update: check ID and UID
         result = await supabase
           .from('artists')
           .update(payload)
@@ -307,7 +303,6 @@ export const api = {
           .select()
           .single();
       } else {
-        // Insert: UID is in payload
         result = await supabase
           .from('artists')
           .insert(payload)
@@ -356,7 +351,6 @@ export const api = {
           .eq('uid', userId);
         if (error) throw error;
       } else {
-        // Remove ID if it's partial/undefined so DB auto-generates it
         const { id, ...insertData } = payload;
         const { error } = await supabase.from('labels').insert(insertData);
         if (error) throw error;
@@ -390,13 +384,7 @@ export const api = {
 
     save: async (track: Track) => {
       const userId = await getUserId();
-
-      // Upsert needs the UID in the object to ensure the new row belongs to the user
-      // or to ensure we don't accidentally take over another user's row ID
-      const payload = {
-        ...track,
-        uid: userId
-      };
+      const payload = { ...track, uid: userId };
 
       const { data, error } = await supabase
         .from('tracks')
@@ -412,7 +400,6 @@ export const api = {
   wallet: {
     getSummary: async () => {
       const userId = await getUserId();
-      // Ensure your wallet_summary view or table has a uid column
       const { data, error } = await supabase
         .from('wallet_summary')
         .select('*')
@@ -472,21 +459,19 @@ export const api = {
     requestWithdrawal: async (amount: number, methodId: string) => {
       const userId = await getUserId();
 
-      // 1. Create Transaction Record
       const { error: txError } = await supabase.from('transactions').insert({
         amount: amount,
         type: 'WITHDRAWAL',
         status: 'PENDING',
         date: new Date().toISOString(),
-        uid: userId // Assign to user
+        uid: userId
       });
       if (txError) throw txError;
 
-      // 2. Create Audit Log
       await supabase.from('action_logs').insert({
         action: 'WITHDRAWAL_REQUEST',
         details: `Requested $${amount} via ${methodId}`,
-        uid: userId // Assign to user
+        uid: userId
       });
 
       return { success: true };
@@ -499,7 +484,7 @@ export const api = {
       const { data, error } = await supabase
         .from('support_tickets')
         .select('*, messages:ticket_messages(*)')
-        .eq('uid', userId) // Filter tickets by owner
+        .eq('uid', userId)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
@@ -509,7 +494,6 @@ export const api = {
     createTicket: async (data: Partial<SupportTicket>) => {
       const userId = await getUserId();
 
-      // 1. Create Ticket
       const { data: ticket, error: tError } = await supabase
         .from('support_tickets')
         .insert({
@@ -517,14 +501,13 @@ export const api = {
           category: data.category,
           priority: data.priority,
           status: 'OPEN',
-          uid: userId // Assign to user
+          uid: userId
         })
         .select()
         .single();
 
       if (tError) throw tError;
 
-      // 2. Insert Initial Message
       if (data.messages && data.messages.length > 0) {
         await api.support.addMessage(ticket.id, data.messages[0].content);
       }
@@ -535,27 +518,22 @@ export const api = {
     addMessage: async (ticketId: string, content: string) => {
       const userId = await getUserId();
 
-      // Note: You might want to verify here that the ticketId belongs to the user 
-      // before inserting a message to it, though RLS should handle that.
-
       const { error } = await supabase.from('ticket_messages').insert({
         ticket_id: ticketId,
         content: content,
         sender_id: userId,
         role: 'USER',
-        uid: userId // Assuming messages also have a uid column for RLS simplicity
+        uid: userId
       });
 
       if (error) throw error;
 
-      // Update ticket timestamp
       await supabase
         .from('support_tickets')
         .update({ updated_at: new Date().toISOString(), status: 'OPEN' })
         .eq('id', ticketId)
         .eq('uid', userId);
 
-      // Return updated ticket
       const { data: updatedTicket } = await supabase
         .from('support_tickets')
         .select('*, messages:ticket_messages(*)')
