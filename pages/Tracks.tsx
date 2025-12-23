@@ -44,7 +44,7 @@ const Tracks: React.FC = () => {
   const openEditor = (track?: Track) => {
     setErrors({}); // Clear errors on open
     setCurrentTrack(track ? { ...track } : {
-      id: Date.now(),
+      //id: Date.now(),
       name: '',
       isrc: '',
       artists: [{ name: '', role: 'Primary' }],
@@ -179,7 +179,23 @@ const Tracks: React.FC = () => {
       contributors: prev.contributors?.filter((_, i) => i !== index)
     }));
   };
+  const [playingTrackId, setPlayingTrackId] = useState<number | null>(null);
+  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
 
+  const toggleAudio = (track: Track) => {
+    if (playingTrackId === track.id && audioPlayer) {
+      audioPlayer.pause();
+      setPlayingTrackId(null);
+      setAudioPlayer(null);
+    } else {
+      if (audioPlayer) audioPlayer.pause();
+      const newAudio = new Audio(track.audioUrl);
+      newAudio.play();
+      newAudio.onended = () => setPlayingTrackId(null);
+      setAudioPlayer(newAudio);
+      setPlayingTrackId(track.id!);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -217,7 +233,12 @@ const Tracks: React.FC = () => {
                 <tr key={track.id} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <button className="p-2 bg-white/5 rounded-lg text-gray-500 hover:bg-blue-600 hover:text-white transition"><Play size={12} fill="currentColor" /></button>
+                      <button
+                        onClick={() => toggleAudio(track)}
+                        className={`p-2 rounded-lg transition ${playingTrackId === track.id ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'}`}
+                      >
+                        {playingTrackId === track.id ? <div className="animate-pulse">||</div> : <Play size={12} fill="currentColor" />}
+                      </button>
                       <div className="font-bold uppercase tracking-tight">{track.name}</div>
                     </div>
                   </td>
