@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-//import { MOCK_ARTISTS } from '../constants';
-import { User, Mail, Music2, Plus, X, Save, MapPin, Edit2 } from 'lucide-react';
+import { User, Mail, Music2, Plus, X, Save, MapPin, Edit2, Trash2, Search, Loader2 } from 'lucide-react';
 import { Artist } from '../types';
 import FileUploader from '../components/FileUploader';
 import { api } from '@/services/api';
@@ -10,7 +9,9 @@ const Artists: React.FC = () => {
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
 
-    //UI
+    // MISSING FEATURE 1: Search State
+    const [searchQuery, setSearchQuery] = useState('');
+
     const [loading, setLoading] = useState(false);
 
     //Artist loading
@@ -19,12 +20,13 @@ const Artists: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [a] = await Promise.all([api.artists.getAll()]);
+            const a = await api.artists.getAll();
             setArtists(a);
         } finally {
             setLoading(false);
         }
     };
+
     // Form State
     const [formData, setFormData] = useState<Partial<Artist>>({
         name: '',
@@ -65,27 +67,23 @@ const Artists: React.FC = () => {
 
         setLoading(true);
         try {
-            // Use the API instead of MOCK_ARTISTS
             await api.artists.save(formData);
-            await loadData(); // Refresh the list from the database
+            await loadData();
             setShowModal(false);
         } catch (err: any) {
             alert("Failed to save artist: " + err.message);
         } finally {
             setLoading(false);
         }
-
-        setShowModal(false);
     };
-    const handleDelete = async (id: number) => {
 
-        //Currently not implemented in UI, but function exists
+    const handleDelete = async (id: number) => {
         if (!confirm("Are you sure you want to remove this artist? This cannot be undone.")) return;
 
         setLoading(true);
         try {
             await api.artists.delete(id);
-            await loadData(); // Refresh list
+            await loadData();
         } catch (err: any) {
             alert("Failed to delete artist: " + err.message);
         } finally {
@@ -93,9 +91,15 @@ const Artists: React.FC = () => {
         }
     };
 
+    // MISSING FEATURE 2: Filter Logic
+    const filteredArtists = artists.filter(artist => 
+        artist.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (artist.email && artist.email.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-end border-b border-white/10 pb-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
                 <div>
                     <h1 className="text-3xl font-black uppercase mb-1">Artist Roster</h1>
                     <p className="text-gray-400 font-mono text-sm">Manage profiles, IDs and contact details.</p>
@@ -108,46 +112,74 @@ const Artists: React.FC = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {artists.map(artist => (
-                    <div key={artist.id} className="relative bg-surface border border-white/10 rounded-xl p-6 flex gap-6 hover:border-white/30 transition group">
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition">
-                            <button
-                                onClick={() => handleOpenModal(artist)}
-                                className="p-2 bg-white/5 hover:bg-blue-600 hover:text-white rounded-lg text-gray-400 transition"
-                            >
-                                <Edit2 size={16} />
-                            </button>
-                        </div>
-
-                        <img src={artist.avatar} alt={artist.name} className="w-24 h-24 rounded-full object-cover border-2 border-white/10 group-hover:border-blue-500/50 transition" />
-                        <div className="flex-1 min-w-0">
-                            <h3 className="text-xl font-bold mb-1">{artist.name}</h3>
-                            {artist.legalName && <p className="text-xs text-gray-500 font-mono mb-3">LEGAL: {artist.legalName}</p>}
-
-                            <div className="space-y-1 mb-4">
-                                {artist.email && (
-                                    <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
-                                        <Mail size={12} className="text-blue-500" /> {artist.email}
-                                    </div>
-                                )}
-                                {artist.spotifyId && (
-                                    <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
-                                        <Music2 size={12} className="text-green-500" /> Spotify: {artist.spotifyId}
-                                    </div>
-                                )}
-                                {artist.appleMusicId && (
-                                    <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
-                                        <Music2 size={12} className="text-red-500" /> Apple: {artist.appleMusicId}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                ))}
+            {/* MISSING FEATURE 1: Search Bar UI */}
+            <div className="relative max-w-md group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={16} />
+                <input 
+                    type="text" 
+                    placeholder="SEARCH ROSTER..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition font-mono uppercase placeholder:text-gray-700"
+                />
             </div>
 
-            {/* New/Edit Artist Modal */}
+            {loading && artists.length === 0 ? (
+                <div className="h-64 flex items-center justify-center">
+                    <Loader2 className="animate-spin text-blue-500" size={32} />
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {filteredArtists.map(artist => (
+                        <div key={artist.id} className="relative bg-surface border border-white/10 rounded-xl p-6 flex gap-6 hover:border-white/30 transition group">
+                            
+                            {/* MISSING FEATURE 3: Action Buttons (Edit + Delete) */}
+                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition flex gap-2">
+                                <button
+                                    onClick={() => handleOpenModal(artist)}
+                                    className="p-2 bg-white/5 hover:bg-blue-600 hover:text-white rounded-lg text-gray-400 transition"
+                                    title="Edit Profile"
+                                >
+                                    <Edit2 size={16} />
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(artist.id)}
+                                    className="p-2 bg-white/5 hover:bg-red-600 hover:text-white rounded-lg text-gray-400 transition"
+                                    title="Delete Artist"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+
+                            <img src={artist.avatar || 'https://via.placeholder.com/150'} alt={artist.name} className="w-24 h-24 rounded-full object-cover border-2 border-white/10 group-hover:border-blue-500/50 transition" />
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-xl font-bold mb-1">{artist.name}</h3>
+                                {artist.legalName && <p className="text-xs text-gray-500 font-mono mb-3">LEGAL: {artist.legalName}</p>}
+
+                                <div className="space-y-1 mb-4">
+                                    {artist.email && (
+                                        <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
+                                            <Mail size={12} className="text-blue-500" /> {artist.email}
+                                        </div>
+                                    )}
+                                    {artist.spotifyId && (
+                                        <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
+                                            <Music2 size={12} className="text-green-500" /> Spotify: {artist.spotifyId}
+                                        </div>
+                                    )}
+                                    {artist.appleMusicId && (
+                                        <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
+                                            <Music2 size={12} className="text-red-500" /> Apple: {artist.appleMusicId}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* New/Edit Artist Modal - (Existing code remains mostly the same) */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-surface border border-white/10 rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -180,7 +212,9 @@ const Artists: React.FC = () => {
 
                                 {/* Right Side: Fields */}
                                 <div className="flex-1 space-y-8">
-
+                                    {/* ... Existing Input Fields (Identity, Profiles, Contact) ... */}
+                                    {/* (No changes needed here based on request, existing fields are fine) */}
+                                    
                                     {/* Identity */}
                                     <div className="space-y-4">
                                         <h4 className="text-xs font-bold uppercase text-blue-400 flex items-center gap-2 border-b border-white/5 pb-2">
