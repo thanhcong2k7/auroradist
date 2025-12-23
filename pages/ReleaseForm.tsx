@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MOCK_RELEASES, MOCK_ARTISTS, MOCK_TRACKS, MOCK_LABELS, PERFORMER_ROLES } from '../constants';
+import { MOCK_RELEASES, MOCK_ARTISTS, MOCK_TRACKS, PERFORMER_ROLES } from '../constants';
 import FileUploader from '../components/FileUploader';
 import {
     Save, Send, X,
     AlertTriangle, Disc, Globe, Plus, Trash2, CheckCircle2,
     ArrowLeft, ArrowRight, Search, Check, Mic2, Users, FileAudio, UploadCloud
 } from 'lucide-react';
-import { Release, Track, TrackArtist, TrackContributor } from '../types';
+import { Label as LabelType, Release, Track, TrackArtist, TrackContributor } from '../types';
 
 const ReleaseForm: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEdit = Boolean(id);
+    const [labels] = useState<LabelType[]>([]);
 
     // Wizard State
     const [currentStep, setCurrentStep] = useState(1); // 1: Overview, 2: Tracks, 3: Platforms
@@ -328,7 +329,7 @@ const ReleaseForm: React.FC = () => {
                                         <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Record Label</label>
                                         <select value={labelId} onChange={(e) => setLabelId(Number(e.target.value))} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition appearance-none">
                                             <option value="">-- Independent --</option>
-                                            {MOCK_LABELS.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                            {labels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                                         </select>
                                     </div>
 
