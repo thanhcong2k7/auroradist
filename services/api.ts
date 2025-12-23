@@ -189,8 +189,7 @@ export const api = {
         spotify_id: artist.spotifyId,
         apple_music_id: artist.appleMusicId,
         soundcloud_id: artist.soundcloudId,
-        address: artist.address,
-        uid: uid
+        address: artist.address
       };
 
       let result;
