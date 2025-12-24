@@ -139,7 +139,6 @@ export const api = {
     }
   },
 
-  // --- NEW: DSP SERVICE ---
   dsps: {
     getAll: async () => {
       const { data, error } = await supabase
@@ -150,7 +149,6 @@ export const api = {
 
       if (error) throw error;
 
-      // Map snake_case to camelCase
       return data.map(d => ({
         id: d.id,
         name: d.name,
@@ -172,7 +170,7 @@ export const api = {
 
       if (error) throw error;
 
-      // Map DB snake_case to TS camelCase
+      // UPDATED: Map DB snake_case to TS camelCase including new SoundOn fields
       return data.map(r => ({
         ...r,
         labelId: r.label_id,
@@ -183,14 +181,20 @@ export const api = {
         copyrightLine: r.copyright_line,
         phonogramYear: r.phonogram_year,
         phonogramLine: r.phonogram_line,
-        selectedDsps: r.selected_dsps // Map the new column
+        selectedDsps: r.selected_dsps,
+        // New Fields
+        genre: r.genre,
+        subGenre: r.sub_genre,
+        language: r.language,
+        format: r.format,
+        territories: r.territories
       })) as Release[];
     },
 
-    save: async (release: Partial<Release>) => {
+    save: async (release: any) => { // using any to accept new fields before types.ts update
       const userId = await getUserId();
 
-      // Transform TS camelCase to DB snake_case
+      // UPDATED: Transform TS camelCase to DB snake_case for new fields
       const payload = {
         title: release.title,
         version: release.version,
@@ -204,7 +208,14 @@ export const api = {
         phonogram_year: release.phonogramYear,
         phonogram_line: release.phonogramLine,
         status: release.status,
-        selected_dsps: release.selectedDsps || [], // Save DSPs
+        selected_dsps: release.selectedDsps || [],
+        // New SoundOn Fields
+        genre: release.genre,
+        sub_genre: release.subGenre, // subGenre -> sub_genre
+        language: release.language,
+        format: release.format,
+        territories: release.territories,
+
         uid: userId
       };
 
@@ -379,12 +390,50 @@ export const api = {
         .eq('uid', userId);
 
       if (error) throw error;
-      return data as Track[];
+
+      // UPDATED: Manually map fields to ensure camelCase for frontend
+      return data.map((t: any) => ({
+        id: t.id,
+        releaseId: t.release_id,
+        isrc: t.isrc,
+        name: t.name,
+        version: t.version,
+        duration: t.duration,
+        status: t.status,
+        audioUrl: t.audio_url,
+        filename: t.filename,
+        hasLyrics: t.has_lyrics,
+        lyricsLanguage: t.lyrics_language,
+        lyricsText: t.lyrics_text,
+        isExplicit: t.is_explicit,
+        hasExplicitVersion: t.has_explicit_version,
+        tiktokClipStartTime: t.tiktok_clip_start_time,
+      })) as Track[];
     },
 
-    save: async (track: Track) => {
+    save: async (track: any) => { // Using any to allow new field
       const userId = await getUserId();
-      const payload = { ...track, uid: userId };
+
+      // UPDATED: Manual payload construction to handle snake_case conversion
+      const payload = {
+        id: track.id, // If present
+        release_id: track.releaseId,
+        isrc: track.isrc,
+        name: track.name,
+        version: track.version,
+        duration: track.duration,
+        status: track.status,
+        audio_url: track.audioUrl,
+        filename: track.filename,
+        has_lyrics: track.hasLyrics,
+        lyrics_language: track.lyricsLanguage,
+        lyrics_text: track.lyricsText,
+        is_explicit: track.isExplicit,
+        has_explicit_version: track.hasExplicitVersion,
+        // NEW: Map TikTok clip time
+        tiktok_clip_start_time: track.tiktokClipStartTime,
+        uid: userId
+      };
 
       const { data, error } = await supabase
         .from('tracks')
@@ -393,7 +442,12 @@ export const api = {
         .single();
 
       if (error) throw error;
-      return data as Track;
+
+      // We return the raw data, but re-mapped might be safer for immediate UI updates
+      return {
+        ...data,
+        tiktokClipStartTime: data.tiktok_clip_start_time
+      } as unknown as Track;
     }
   },
 
