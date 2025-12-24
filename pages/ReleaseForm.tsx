@@ -289,7 +289,7 @@ const ReleaseForm: React.FC = () => {
     };
 
     return (
-        <div className="-m-6 lg:-m-8 flex flex-col min-h-full relative font-sans">
+        <div className="-m-6 lg:-m-8 flex flex-col h-[calc(100vh-64px)] relative font-sans">
             {/* Sticky Header */}
             <div className="sticky top-0 z-30 bg-[#0A0A0A] border-b border-white/10 px-6 lg:px-8 pt-6 lg:pt-8 pb-4 backdrop-blur-md bg-opacity-90">
                 <div className="max-w-6xl mx-auto w-full flex justify-between items-end">
@@ -319,219 +319,221 @@ const ReleaseForm: React.FC = () => {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 px-6 lg:px-8 pt-0 pb-24 max-w-6xl mx-auto w-full space-y-6">
-                {/* Steps Navigation */}
-                <div className="flex border-b border-white/10 mt-6">
-                    {[1, 2, 3].map(step => (
-                        <button key={step} onClick={() => setCurrentStep(step)} className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2 border-b-2 ${currentStep === step ? 'text-blue-500 border-blue-500' : 'text-gray-600 hover:text-gray-400 border-transparent'}`}>
-                            {step === 1 ? '1. Metadata' : step === 2 ? '2. Assets' : '3. Delivery'}
-                        </button>
-                    ))}
-                </div>
+            <div className="flex-1 overflow-y-auto px-6 lg:px-8 pt-6 pb-24 w-full space-y-6">
+                <div className="max-w-6xl mx-auto w-full space-y-6">
+                    {/* Steps Navigation */}
+                    <div className="flex border-b border-white/10 mt-6">
+                        {[1, 2, 3].map(step => (
+                            <button key={step} onClick={() => setCurrentStep(step)} className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2 border-b-2 ${currentStep === step ? 'text-blue-500 border-blue-500' : 'text-gray-600 hover:text-gray-400 border-transparent'}`}>
+                                {step === 1 ? '1. Metadata' : step === 2 ? '2. Assets' : '3. Delivery'}
+                            </button>
+                        ))}
+                    </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* STEP 1: METADATA */}
-                    {currentStep === 1 && (
-                        <>
-                            <div className="lg:col-span-4 space-y-6">
-                                <div className="bg-surface border border-white/5 p-6 rounded-xl">
-                                    <FileUploader
-                                        label="Artwork Asset *"
-                                        type="image"
-                                        accept="image/*"
-                                        currentUrl={coverArt}
-                                        onUploadComplete={(url) => setCoverArt(url)}
-                                    />
-                                    <p className="mt-2 text-[10px] text-gray-500 font-mono text-center">Required: 3000x3000px JPG/PNG</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* STEP 1: METADATA */}
+                        {currentStep === 1 && (
+                            <>
+                                <div className="lg:col-span-4 space-y-6">
+                                    <div className="bg-surface border border-white/5 p-6 rounded-xl">
+                                        <FileUploader
+                                            label="Artwork Asset *"
+                                            type="image"
+                                            accept="image/*"
+                                            currentUrl={coverArt}
+                                            onUploadComplete={(url) => setCoverArt(url)}
+                                        />
+                                        <p className="mt-2 text-[10px] text-gray-500 font-mono text-center">Required: 3000x3000px JPG/PNG</p>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="lg:col-span-8 space-y-6">
-                                <div className="bg-surface border border-white/5 p-8 rounded-xl space-y-6">
-                                    {/* Primary Info */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="md:col-span-2">
-                                            <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Album Title <span className="text-red-500">*</span></label>
-                                            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold text-lg" placeholder="e.g. Neon Horizon" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Version</label>
-                                            <input type="text" value={version} onChange={(e) => setVersion(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold" placeholder="e.g. Remix" />
-                                        </div>
-                                    </div>
-
-                                    {/* Format & Label */}
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Format <span className="text-red-500">*</span></label>
-                                            <select value={format} onChange={(e) => setFormat(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition">
-                                                {RELEASE_FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Label Imprint</label>
-                                            <select value={labelId} onChange={(e) => setLabelId(Number(e.target.value))} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition">
-                                                <option value="">-- Independent --</option>
-                                                {labels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    {/* Classification (NEW) */}
-                                    <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg space-y-4">
-                                        <h3 className="text-xs font-bold uppercase text-blue-400">Classification</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="lg:col-span-8 space-y-6">
+                                    <div className="bg-surface border border-white/5 p-8 rounded-xl space-y-6">
+                                        {/* Primary Info */}
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Album Title <span className="text-red-500">*</span></label>
+                                                <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold text-lg" placeholder="e.g. Neon Horizon" />
+                                            </div>
                                             <div>
-                                                <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label>
-                                                <select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
-                                                    <option value="">Select Genre</option>
-                                                    {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Version</label>
+                                                <input type="text" value={version} onChange={(e) => setVersion(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold" placeholder="e.g. Remix" />
+                                            </div>
+                                        </div>
+
+                                        {/* Format & Label */}
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Format <span className="text-red-500">*</span></label>
+                                                <select value={format} onChange={(e) => setFormat(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition">
+                                                    {RELEASE_FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Sub-Genre</label>
-                                                <input type="text" value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs" placeholder="Optional" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label>
-                                                <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
-                                                    {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Label Imprint</label>
+                                                <select value={labelId} onChange={(e) => setLabelId(Number(e.target.value))} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition">
+                                                    <option value="">-- Independent --</option>
+                                                    {labels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                                                 </select>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Dates */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Release Date <span className="text-red-500">*</span></label><input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
-                                        <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Orig. Release Date</label><input type="date" value={originalReleaseDate} onChange={(e) => setOriginalReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
-                                    </div>
-
-                                    {/* Rights */}
-                                    <div className="space-y-2">
-                                        <h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">©</span> Copyright <span className="text-red-500">*</span></h3>
-                                        <div className="flex gap-4">
-                                            <div className="w-24"><input type="text" value={copyrightYear} onChange={(e) => setCopyrightYear(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center" placeholder="Year" /></div>
-                                            <div className="flex-1"><input type="text" value={copyrightLine} onChange={(e) => setCopyrightLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2 mt-4">
-                                        <h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">℗</span> Phonogram <span className="text-red-500">*</span></h3>
-                                        <div className="flex gap-4">
-                                            <div className="w-24"><input type="text" value={phonogramYear} onChange={(e) => setPhonogramYear(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center" placeholder="Year" /></div>
-                                            <div className="flex-1"><input type="text" value={phonogramLine} onChange={(e) => setPhonogramLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2 mt-4">
-                                        <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">UPC / Barcode</label>
-                                        <input type="text" value={upc} onChange={(e) => setUpc(e.target.value)} maxLength={12} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition" placeholder="Auto-assigned if empty" />
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {/* STEP 2: TRACKS */}
-                    {currentStep === 2 && (
-                        <div className="lg:col-span-12">
-                            <div className="bg-surface border border-white/5 rounded-xl overflow-hidden">
-                                <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                                    <h3 className="font-bold uppercase tracking-wider text-sm flex items-center gap-2"><Disc size={16} /> Tracklist <span className="text-red-500">*</span></h3>
-                                    <button onClick={openTrackManager} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs flex items-center gap-2 transition"><Plus size={14} /> Add Tracks</button>
-                                </div>
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-black/50 text-gray-400 font-mono text-xs uppercase">
-                                        <tr>
-                                            <th className="px-6 py-4 w-16">#</th>
-                                            <th className="px-6 py-4">Title</th>
-                                            <th className="px-6 py-4">Artists</th>
-                                            <th className="px-6 py-4">TikTok Clip</th>
-                                            <th className="px-6 py-4 text-right">Duration</th>
-                                            <th className="px-6 py-4 w-24">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/5">
-                                        {releaseTracks.map((track, idx) => (
-                                            <tr key={track.id} onClick={() => openEditTrackModal(track)} className="hover:bg-white/5 transition cursor-pointer group">
-                                                <td className="px-6 py-4 font-mono text-gray-500">{idx + 1}</td>
-                                                <td className="px-6 py-4 font-bold">{track.name}</td>
-                                                <td className="px-6 py-4 text-gray-400">{track.artists?.map(a => a.name).join(', ') || '-'}</td>
-                                                {/* Show TikTok Time if available */}
-                                                <td className="px-6 py-4 font-mono text-xs text-blue-400">{(track as any).tiktokClipStartTime || <span className="text-red-500">MISSING</span>}</td>
-                                                <td className="px-6 py-4 text-right font-mono text-gray-400">{track.duration}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <button onClick={(e) => { e.stopPropagation(); handleRemoveTrack(track.id); }} className="text-gray-600 hover:text-red-500 transition"><Trash2 size={16} /></button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* STEP 3: PLATFORMS */}
-                    {currentStep === 3 && (
-                        <div className="lg:col-span-12 space-y-6">
-                            {/* Territory Section (NEW) */}
-                            <div className="bg-surface border border-white/5 rounded-xl p-6">
-                                <h3 className="font-bold uppercase tracking-wider text-sm mb-4 flex items-center gap-2"><Globe size={16} /> Territories</h3>
-                                <div className="p-4 bg-black/40 border border-white/5 rounded-lg flex items-center justify-between">
-                                    <div>
-                                        <p className="font-bold text-sm text-white">Worldwide Distribution</p>
-                                        <p className="text-xs text-gray-500">Distribute to all 200+ available countries and regions.</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs font-mono text-green-500 uppercase">Active</span>
-                                        <div className="w-10 h-5 bg-green-500/20 rounded-full border border-green-500/50 relative">
-                                            <div className="absolute right-0.5 top-0.5 w-3.5 h-3.5 bg-green-500 rounded-full shadow-[0_0_10px_green]"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* DSPs */}
-                            <div className="bg-surface border border-white/5 rounded-xl p-8">
-                                <h3 className="font-bold uppercase tracking-wider text-sm mb-6 flex items-center gap-2"><Globe size={16} /> Digital Service Providers <span className="text-red-500">*</span></h3>
-                                <div className="mb-4">
-                                    <button
-                                        onClick={toggleAllStores}
-                                        className="text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-white transition"
-                                    >
-                                        {selectedStores.length === availableDsps.length ? '( Deselect All )' : '( Select All )'}
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {availableDsps.map((dsp) => {
-                                        const isSelected = selectedStores.includes(dsp.code);
-                                        return (
-                                            <div
-                                                key={dsp.id}
-                                                onClick={() => toggleStore(dsp.code)}
-                                                className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 flex items-center justify-between group ${isSelected
-                                                    ? 'bg-blue-600/10 border-blue-500/50 text-white'
-                                                    : 'bg-black border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    {dsp.logoUrl && <img src={dsp.logoUrl} alt={dsp.name} className="w-5 h-5 rounded-sm" />}
-                                                    <span className="font-bold text-sm">{dsp.name}</span>
+                                        {/* Classification (NEW) */}
+                                        <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg space-y-4">
+                                            <h3 className="text-xs font-bold uppercase text-blue-400">Classification</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label>
+                                                    <select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
+                                                        <option value="">Select Genre</option>
+                                                        {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                                                    </select>
                                                 </div>
-                                                {isSelected && <CheckCircle2 size={16} className="text-blue-400" />}
+                                                <div>
+                                                    <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Sub-Genre</label>
+                                                    <input type="text" value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs" placeholder="Optional" />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label>
+                                                    <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
+                                                        {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+                                                    </select>
+                                                </div>
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+
+                                        {/* Dates */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Release Date <span className="text-red-500">*</span></label><input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
+                                            <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Orig. Release Date</label><input type="date" value={originalReleaseDate} onChange={(e) => setOriginalReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
+                                        </div>
+
+                                        {/* Rights */}
+                                        <div className="space-y-2">
+                                            <h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">©</span> Copyright <span className="text-red-500">*</span></h3>
+                                            <div className="flex gap-4">
+                                                <div className="w-24"><input type="text" value={copyrightYear} onChange={(e) => setCopyrightYear(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center" placeholder="Year" /></div>
+                                                <div className="flex-1"><input type="text" value={copyrightLine} onChange={(e) => setCopyrightLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2 mt-4">
+                                            <h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">℗</span> Phonogram <span className="text-red-500">*</span></h3>
+                                            <div className="flex gap-4">
+                                                <div className="w-24"><input type="text" value={phonogramYear} onChange={(e) => setPhonogramYear(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center" placeholder="Year" /></div>
+                                                <div className="flex-1"><input type="text" value={phonogramLine} onChange={(e) => setPhonogramLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2 mt-4">
+                                            <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">UPC / Barcode</label>
+                                            <input type="text" value={upc} onChange={(e) => setUpc(e.target.value)} maxLength={12} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition" placeholder="Auto-assigned if empty" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* STEP 2: TRACKS */}
+                        {currentStep === 2 && (
+                            <div className="lg:col-span-12">
+                                <div className="bg-surface border border-white/5 rounded-xl overflow-hidden">
+                                    <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                                        <h3 className="font-bold uppercase tracking-wider text-sm flex items-center gap-2"><Disc size={16} /> Tracklist <span className="text-red-500">*</span></h3>
+                                        <button onClick={openTrackManager} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs flex items-center gap-2 transition"><Plus size={14} /> Add Tracks</button>
+                                    </div>
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-black/50 text-gray-400 font-mono text-xs uppercase">
+                                            <tr>
+                                                <th className="px-6 py-4 w-16">#</th>
+                                                <th className="px-6 py-4">Title</th>
+                                                <th className="px-6 py-4">Artists</th>
+                                                <th className="px-6 py-4">TikTok Clip</th>
+                                                <th className="px-6 py-4 text-right">Duration</th>
+                                                <th className="px-6 py-4 w-24">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {releaseTracks.map((track, idx) => (
+                                                <tr key={track.id} onClick={() => openEditTrackModal(track)} className="hover:bg-white/5 transition cursor-pointer group">
+                                                    <td className="px-6 py-4 font-mono text-gray-500">{idx + 1}</td>
+                                                    <td className="px-6 py-4 font-bold">{track.name}</td>
+                                                    <td className="px-6 py-4 text-gray-400">{track.artists?.map(a => a.name).join(', ') || '-'}</td>
+                                                    {/* Show TikTok Time if available */}
+                                                    <td className="px-6 py-4 font-mono text-xs text-blue-400">{(track as any).tiktokClipStartTime || <span className="text-red-500">MISSING</span>}</td>
+                                                    <td className="px-6 py-4 text-right font-mono text-gray-400">{track.duration}</td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveTrack(track.id); }} className="text-gray-600 hover:text-red-500 transition"><Trash2 size={16} /></button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+
+                        {/* STEP 3: PLATFORMS */}
+                        {currentStep === 3 && (
+                            <div className="lg:col-span-12 space-y-6">
+                                {/* Territory Section (NEW) */}
+                                <div className="bg-surface border border-white/5 rounded-xl p-6">
+                                    <h3 className="font-bold uppercase tracking-wider text-sm mb-4 flex items-center gap-2"><Globe size={16} /> Territories</h3>
+                                    <div className="p-4 bg-black/40 border border-white/5 rounded-lg flex items-center justify-between">
+                                        <div>
+                                            <p className="font-bold text-sm text-white">Worldwide Distribution</p>
+                                            <p className="text-xs text-gray-500">Distribute to all 200+ available countries and regions.</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-mono text-green-500 uppercase">Active</span>
+                                            <div className="w-10 h-5 bg-green-500/20 rounded-full border border-green-500/50 relative">
+                                                <div className="absolute right-0.5 top-0.5 w-3.5 h-3.5 bg-green-500 rounded-full shadow-[0_0_10px_green]"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* DSPs */}
+                                <div className="bg-surface border border-white/5 rounded-xl p-8">
+                                    <h3 className="font-bold uppercase tracking-wider text-sm mb-6 flex items-center gap-2"><Globe size={16} /> Digital Service Providers <span className="text-red-500">*</span></h3>
+                                    <div className="mb-4">
+                                        <button
+                                            onClick={toggleAllStores}
+                                            className="text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-white transition"
+                                        >
+                                            {selectedStores.length === availableDsps.length ? '( Deselect All )' : '( Select All )'}
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {availableDsps.map((dsp) => {
+                                            const isSelected = selectedStores.includes(dsp.code);
+                                            return (
+                                                <div
+                                                    key={dsp.id}
+                                                    onClick={() => toggleStore(dsp.code)}
+                                                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 flex items-center justify-between group ${isSelected
+                                                        ? 'bg-blue-600/10 border-blue-500/50 text-white'
+                                                        : 'bg-black border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        {dsp.logoUrl && <img src={dsp.logoUrl} alt={dsp.name} className="w-5 h-5 rounded-sm" />}
+                                                        <span className="font-bold text-sm">{dsp.name}</span>
+                                                    </div>
+                                                    {isSelected && <CheckCircle2 size={16} className="text-blue-400" />}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* Bottom Navigation */}
-            <div className="fixed bottom-0 right-0 left-0 lg:left-64 z-40 bg-[#0A0A0A] border-t border-white/10 px-6 lg:px-8 py-4 transition-all duration-300">
+            <div className="z-40 bg-[#0A0A0A] border-t border-white/10 px-6 lg:px-8 py-4 w-full">
                 <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
                     <div className="w-1/3 flex justify-start">
                         {currentStep > 1 && (
