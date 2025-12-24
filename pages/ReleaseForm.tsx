@@ -219,6 +219,13 @@ const ReleaseForm: React.FC = () => {
             setSelectedStores([...selectedStores, code]);
         }
     };
+    const toggleAllStores = () => {
+        if (selectedStores.length === availableDsps.length) {
+            setSelectedStores([]); // Deselect all
+        } else {
+            setSelectedStores(availableDsps.map(d => d.code)); // Select all
+        }
+    };
 
     // --- TRACK LOGIC ---
     const handleAddTrackToRelease = (track: Track) => {
@@ -488,6 +495,14 @@ const ReleaseForm: React.FC = () => {
                             {/* DSPs */}
                             <div className="bg-surface border border-white/5 rounded-xl p-8">
                                 <h3 className="font-bold uppercase tracking-wider text-sm mb-6 flex items-center gap-2"><Globe size={16} /> Digital Service Providers <span className="text-red-500">*</span></h3>
+                                <div className="mb-4">
+                                    <button
+                                        onClick={toggleAllStores}
+                                        className="text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-white transition"
+                                    >
+                                        {selectedStores.length === availableDsps.length ? '( Deselect All )' : '( Select All )'}
+                                    </button>
+                                </div>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {availableDsps.map((dsp) => {
                                         const isSelected = selectedStores.includes(dsp.code);
@@ -516,7 +531,7 @@ const ReleaseForm: React.FC = () => {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0A0A0A] border-t border-white/10 px-6 lg:px-8 py-4 w-full">
+            <div className="fixed bottom-0 right-0 left-0 lg:left-64 z-40 bg-[#0A0A0A] border-t border-white/10 px-6 lg:px-8 py-4 transition-all duration-300">
                 <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
                     <div className="w-1/3 flex justify-start">
                         {currentStep > 1 && (
@@ -576,7 +591,28 @@ const ReleaseForm: React.FC = () => {
                             ) : (
                                 <div className="space-y-6">
                                     <h4 className="text-xs font-bold uppercase text-blue-500 border-b border-blue-500/20 pb-2">Essential Metadata</h4>
-
+                                    <div className="grid grid-cols-2 gap-4 mb-4 mt-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase font-bold text-gray-500">ISRC Code</label>
+                                            <input
+                                                type="text"
+                                                value={currentTrack.isrc || ''}
+                                                onChange={(e) => setCurrentTrack({ ...currentTrack, isrc: e.target.value })}
+                                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none uppercase"
+                                                placeholder="US-XXX-24-00001"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] uppercase font-bold text-gray-500">Duration</label>
+                                            <input
+                                                type="text"
+                                                value={currentTrack.duration || ''}
+                                                onChange={(e) => setCurrentTrack({ ...currentTrack, duration: e.target.value })}
+                                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none"
+                                                placeholder="03:45"
+                                            />
+                                        </div>
+                                    </div>
                                     {/* TikTok Clip Editor Section */}
                                     <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl flex items-center justify-between">
                                         <div>
