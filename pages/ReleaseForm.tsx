@@ -526,6 +526,11 @@ const ReleaseForm: React.FC = () => {
                             </button>
                         )}
                     </div>
+                    <div className="w-1/3 flex justify-center">
+                        <div className="text-[10px] font-mono font-bold text-gray-600 uppercase tracking-widest border border-white/10 px-3 py-1 rounded bg-black">
+                            Step {currentStep} / 3
+                        </div>
+                    </div>
                     <div className="w-1/3 flex justify-end">
                         {currentStep < 3 && (
                             <button onClick={goNext} className="flex items-center gap-2 group hover:opacity-80 transition">
