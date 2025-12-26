@@ -1,16 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Disc, 
-  Users, 
-  Music, 
-  BarChart2, 
-  Wallet, 
-  Settings, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Disc,
+  Users,
+  Music,
+  BarChart2,
+  Wallet,
+  Settings,
+  LogOut,
+  Menu,
   X,
   Tags,
   MessageSquare
@@ -46,13 +46,13 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   return (
     <div className="flex h-screen overflow-hidden bg-background text-white font-sans selection:bg-blue-500 selection:text-white">
       {/* Sidebar Overlay */}
-      <div 
+      <div
         className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden transition-opacity ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-surface border-r border-white/10 transform transition-transform duration-300 lg:transform-none flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="p-6 border-b border-white/10 flex justify-between items-center">
@@ -73,11 +73,10 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                  isActive 
-                    ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20' 
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
+                    ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20'
                     : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
-                }`}
+                  }`}
               >
                 <item.icon size={18} className={isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-white'} />
                 <span className="font-mono uppercase text-[10px] tracking-widest">{item.label}</span>
@@ -106,7 +105,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-transparent">
         <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 lg:px-8 bg-background/50 backdrop-blur-md sticky top-0 z-30">
-          <button 
+          <button
             onClick={() => setIsMobileMenuOpen(true)}
             className="lg:hidden text-gray-400 hover:text-white"
           >
@@ -114,17 +113,17 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </button>
 
           <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-gray-500 uppercase tracking-widest">
-             <span className="text-blue-500">SYS.STATUS: ONLINE</span>
-             <span>//</span>
-             <span>{currentTime.toLocaleDateString()}</span>
-             <span>//</span>
-             <span>{currentTime.toLocaleTimeString()}</span>
+            <span className="text-blue-500">SYS.STATUS: ONLINE</span>
+            <span>//</span>
+            <span>{currentTime.toLocaleDateString()}</span>
+            <span>//</span>
+            <span>{currentTime.toLocaleTimeString()}</span>
           </div>
 
           <div className="flex items-center gap-4">
-             <Link to="/discography/new" className="px-4 py-1.5 text-[10px] font-black border border-white/20 hover:bg-white hover:text-black transition uppercase rounded-full tracking-widest">
-               Upload
-             </Link>
+            <Link to="/discography/new" className="px-4 py-1.5 text-[10px] font-black border border-white/20 hover:bg-white hover:text-black transition uppercase rounded-full tracking-widest">
+              Upload
+            </Link>
           </div>
         </header>
 
