@@ -15,6 +15,8 @@ import {
   Tags,
   MessageSquare
 } from 'lucide-react';
+import { UserProfile } from '@/types';
+import { api } from '@/services/api';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -22,14 +24,21 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    loadData();
     return () => clearInterval(timer);
   }, []);
+
+  const loadData = async () => {
+    const [prof] = await Promise.all([api.auth.getProfile()]);
+    setProfile(prof);
+  };
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -74,8 +83,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                 to={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                    ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20'
-                    : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
+                  ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20'
+                  : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
               >
                 <item.icon size={18} className={isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-white'} />
@@ -89,11 +98,11 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
         <div className="p-4 border-t border-white/10 bg-black/20">
           <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-xs">
-              UN
+              {profile.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold truncate">Unknown Brain</p>
-              <p className="text-xs text-gray-500 truncate font-mono">Artist Account</p>
+              <p className="text-sm font-bold truncate">{profile.name}</p>
+              <p className="text-xs text-gray-500 truncate font-mono">{profile.role}</p>
             </div>
             <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition">
               <LogOut size={16} />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { PayoutMethod, UserProfile } from '../types';
@@ -108,7 +107,7 @@ const Settings: React.FC = () => {
                             <div className="flex items-center gap-6">
                                 <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 shadow-lg">
                                     <div className="w-full h-full rounded-full bg-[#080808] flex items-center justify-center text-3xl font-black border-2 border-white/5 relative">
-                                        {profile.name.charAt(0)}
+                                        {profile.name.charAt(0).toUpperCase()}
                                         <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 border-2 border-[#080808] rounded-full shadow-[0_0_10px_green]"></div>
                                     </div>
                                 </div>
