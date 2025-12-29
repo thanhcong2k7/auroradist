@@ -4,6 +4,7 @@ import { Activity, Disc, TrendingUp, DollarSign, ArrowRight, Loader2, Eye } from
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Release } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog'; // Import new component
+import { getResizedImage } from '@/services/utils';
 
 const StatCard: React.FC<{ label: string; value: string; icon: any; change?: string; loading?: boolean }> = ({ label, value, icon: Icon, change, loading }) => (
   <div className="bg-surface border border-white/5 p-5 rounded-xl hover:border-blue-500/20 transition-all group shadow-sm">
@@ -117,7 +118,7 @@ const Dashboard: React.FC = () => {
                   onClick={() => setPreviewRelease(release)}
                   className="flex items-center gap-3 p-3 bg-black/40 hover:bg-white/5 rounded-xl transition group border border-transparent hover:border-white/10 cursor-pointer"
                 >
-                  <img src={release.coverArt || 'https://via.placeholder.com/40'} alt={release.title} className="w-10 h-10 rounded-lg object-cover" />
+                  <img src={getResizedImage(release.coverArt, 80)} alt={release.title} className="w-10 h-10 rounded-lg object-cover" />
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-xs truncate uppercase tracking-tight group-hover:text-blue-400 transition-colors">{release.title}</div>
                     <div className="text-xs text-gray-400 font-mono truncate uppercase mt-0.5">{release.artist}</div>

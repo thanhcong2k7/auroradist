@@ -135,7 +135,16 @@ export const api = {
         .limit(5);
 
       if (error) throw error;
-      return data as Release[];
+      return data.map((r: any) => ({
+        ...r,
+        id: r.id,
+        title: r.title,
+        artist: r.artist, // Lưu ý: Cần chắc chắn DB có cột artist, nếu không sẽ cần join bảng
+        status: r.status,
+        coverArt: r.cover_art,
+        releaseDate: r.release_date,
+        version: r.version
+      })) as Release[];
     }
   },
 
