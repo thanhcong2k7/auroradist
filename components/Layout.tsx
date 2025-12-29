@@ -103,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold truncate">{profile.name}</p>
-                <p className="text-xs text-gray-500 truncate font-mono">{profile.role}</p>
+                <p className="text-xs text-gray-500 truncate font-mono">ROLE: {profile.role}</p>
               </div>
               <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition">
                 <LogOut size={16} />
@@ -111,6 +111,11 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
             </div>
           </div>)
         }
+        {!profile && (
+          <div className="p-4 border-t border-white/10 animate-pulse">
+            <div className="h-8 bg-white/10 rounded w-full"></div>
+          </div>
+        )}
       </aside>
 
       {/* Main Content */}
