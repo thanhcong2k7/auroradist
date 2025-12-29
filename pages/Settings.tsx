@@ -18,6 +18,7 @@ const Settings: React.FC = () => {
     const [pmAccount, setPmAccount] = useState('');
     const [pmExtra, setPmExtra] = useState('');
     const [pmHolder, setPmHolder] = useState('');
+    const [pmBankName, setPmBankName] = useState('');
 
     useEffect(() => { loadData(); }, []);
 
@@ -49,12 +50,13 @@ const Settings: React.FC = () => {
             name: pmName,
             details: details,
             account_holder: pmHolder,
-            swift_code: pmExtra
+            swift_code: pmExtra,
+            bank_name: pmBankName
         });
         await loadData();
         setIsSubmitting(false);
         setShowPayoutModal(false);
-        setPmName(''); setPmAccount(''); setPmExtra(''); setPmHolder('');
+        setPmName(''); setPmAccount(''); setPmExtra(''); setPmHolder(''); setPmBankName('');
     };
 
     const handleDeletePayout = async (id: string) => {
@@ -138,8 +140,8 @@ const Settings: React.FC = () => {
                         <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-blue-500 mb-6"><Shield size={16}/> Access Control</div>
                         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-black/40 p-5 rounded-xl border border-white/5">
                             <div>
-                                <p className="text-xs font-black uppercase tracking-tight">System Passcode</p>
-                                <p className="text-xs text-gray-700 font-mono uppercase mt-1">Global Authorization Override</p>
+                                <p className="text-xs font-black uppercase">System Passcode</p>
+                                <p className="text-xs text-gray-500 font-mono uppercase mt-1">Global Authorization Override</p>
                             </div>
                             <button className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Rotate Key</button>
                         </div>
@@ -160,7 +162,7 @@ const Settings: React.FC = () => {
                                      <div key={pm.id} className="p-4 bg-black/40 border border-white/5 rounded-xl flex items-center justify-between group hover:border-blue-500/20 transition-all">
                                          <div className="flex items-center gap-4">
                                              <div className="p-3 bg-white/5 rounded-lg text-gray-400 group-hover:text-blue-400 transition-colors">{pm.type === 'BANK' ? <CreditCard size={18}/> : <Smartphone size={18}/>}</div>
-                                             <div><p className="text-xs font-black uppercase tracking-tight">{pm.name}</p><p className="text-[8px] font-mono text-gray-700 tracking-tighter">{pm.details}</p></div>
+                                             <div><p className="text-xs font-black uppercase tracking-wide">{pm.name}</p><p className="text-[11px] font-mono text-gray-500">{pm.details}</p></div>
                                          </div>
                                          <button onClick={() => handleDeletePayout(pm.id)} className="p-2 text-gray-800 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
                                      </div>
@@ -186,15 +188,23 @@ const Settings: React.FC = () => {
                             </div>
                             <div className="space-y-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Nickname</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Nickname</label>
                                     <input type="text" value={pmName} onChange={e => setPmName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="e.g. Asset Accumulator" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Holder</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Holder</label>
                                     <input type="text" value={pmHolder} onChange={e => setPmHolder(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="Legal Name" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">{pmType === 'BANK' ? 'Account Number' : 'Provider Identity (Email)'}</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Holder</label>
+                                    <input type="text" value={pmExtra} onChange={e => setPmExtra(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="SWIFT Code" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Holder</label>
+                                    <input type="text" value={pmBankName} onChange={e => setPmBankName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="SWIFT Code" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">{pmType === 'BANK' ? 'Account Number' : 'Provider Identity (Email)'}</label>
                                     <input type={pmType === 'BANK' ? 'password' : 'email'} value={pmAccount} onChange={e => setPmAccount(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none font-mono" placeholder={pmType === 'BANK' ? '••••••••' : 'identity@aurora.net'} />
                                 </div>
                             </div>
