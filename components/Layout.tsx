@@ -95,20 +95,22 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/10 bg-black/20">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-xs">
-              {profile.name.charAt(0).toUpperCase()}
+        {profile && (
+          <div className="p-4 border-t border-white/10 bg-black/20">
+            <div className="flex items-center gap-3 px-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-xs">
+                {profile.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold truncate">{profile.name}</p>
+                <p className="text-xs text-gray-500 truncate font-mono">{profile.role}</p>
+              </div>
+              <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition">
+                <LogOut size={16} />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold truncate">{profile.name}</p>
-              <p className="text-xs text-gray-500 truncate font-mono">{profile.role}</p>
-            </div>
-            <button onClick={onLogout} className="text-gray-500 hover:text-red-400 transition">
-              <LogOut size={16} />
-            </button>
-          </div>
-        </div>
+          </div>)
+        }
       </aside>
 
       {/* Main Content */}
