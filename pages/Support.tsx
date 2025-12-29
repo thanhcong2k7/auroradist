@@ -19,7 +19,6 @@ const Support: React.FC = () => {
   // New Ticket Form
   const [newSubject, setNewSubject] = useState('');
   const [newCategory, setNewCategory] = useState<SupportTicket['category']>('TECHNICAL');
-  const [newPriority, setNewPriority] = useState<SupportTicket['priority']>('MEDIUM');
   const [newContent, setNewContent] = useState('');
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -49,7 +48,6 @@ const Support: React.FC = () => {
       await api.support.createTicket({
         subject: newSubject,
         category: newCategory,
-        priority: newPriority,
         messages: [{ content: newContent } as any]
       });
       setShowNewModal(false);

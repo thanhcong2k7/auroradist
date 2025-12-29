@@ -553,7 +553,6 @@ export const api = {
         .insert({
           subject: data.subject,
           category: data.category,
-          priority: data.priority,
           status: 'OPEN',
           uid: userId
         })

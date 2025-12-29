@@ -68,12 +68,12 @@ export interface PayoutMethod {
   type: 'BANK' | 'PAYPAL';
   name: string;
   details: string; 
-  accountHolder?: string;
-  bankName?: string;
-  routingNumber?: string;
-  accountNumber?: string;
-  swiftCode?: string;
-  paypalEmail?: string;
+  account_holder?: string;
+  bank_name?: string;
+  routing_number?: string;
+  account_number?: string;
+  swift_code?: string;
+  paypal_email?: string;
 }
 
 export interface TrackArtist {
@@ -132,7 +132,6 @@ export interface SupportTicket {
   subject: string;
   category: 'TECHNICAL' | 'FINANCIAL' | 'DISTRIBUTION' | 'OTHER';
   status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
   createdAt: string;
   updatedAt: string;
   messages: TicketMessage[];

@@ -49,8 +49,8 @@ const Settings: React.FC = () => {
             type: pmType,
             name: pmName,
             details: details,
-            accountHolder: pmHolder,
-            swiftCode: pmExtra
+            account_holder: pmHolder,
+            swift_code: pmExtra
         });
         await loadData();
         setIsSubmitting(false);
