@@ -124,8 +124,8 @@ const Labels: React.FC = () => {
                 <h3 className="text-xl font-bold uppercase tracking-tight mb-1">{label.name}</h3>
                 <div className="flex items-center gap-2 text-xs text-gray-500 font-mono"><Mail size={12} /> {label.email}</div>
 
-                <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-[10px] font-mono font-bold uppercase tracking-widest">
-                  <span className="text-gray-600">State</span>
+                <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-xs font-mono font-bold uppercase tracking-widest">
+                  <span className="text-gray-400">State</span>
                   <span className={used ? 'text-blue-500' : 'text-gray-700'}>
                     {used ? 'ACTIVE' : 'IDLE'}
                   </span>
@@ -146,17 +146,17 @@ const Labels: React.FC = () => {
             </div>
             <div className="p-8 space-y-6">
               <div className="space-y-1">
-                <label className="text-[10px] font-mono text-gray-600 uppercase tracking-widest ml-1">Label Name</label>
+                <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Label Name</label>
                 <input type="text" value={editingLabel?.name} onChange={e => setEditingLabel({ ...editingLabel!, name: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition" placeholder="e.g. Aurora Neon" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-mono text-gray-600 uppercase tracking-widest ml-1">Contact Email</label>
+                <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Contact Email</label>
                 <input type="email" value={editingLabel?.email} onChange={e => setEditingLabel({ ...editingLabel!, email: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition" placeholder="contact@label.com" />
               </div>
             </div>
             <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-3 text-[10px] font-black uppercase text-gray-500 hover:text-white transition">Cancel</button>
-              <button onClick={handleSave} disabled={isSubmitting} className="flex-1 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2">
+              <button onClick={() => setShowModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-gray-500 hover:text-white transition">Cancel</button>
+              <button onClick={handleSave} disabled={isSubmitting} className="flex-1 py-3 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2">
                 {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Commit</>}
               </button>
             </div>

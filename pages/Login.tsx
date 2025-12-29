@@ -42,7 +42,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="text-5xl font-black tracking-tighter uppercase mb-2">
             Aurora<span className="text-blue-500">.</span>
           </div>
-          <p className="text-gray-500 font-mono text-[10px] tracking-[0.3em] uppercase opacity-50">Global Distribution Node</p>
+          <p className="text-gray-500 font-mono text-xs tracking-[0.3em] uppercase opacity-50">Global Distribution Node</p>
         </div>
 
         <div className="bg-surface/50 border border-white/10 p-10 rounded-3xl shadow-2xl backdrop-blur-xl">
@@ -52,13 +52,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-white uppercase tracking-tight">Encrypted Portal</h3>
-              <p className="text-[10px] text-gray-500 font-mono">TLS 1.3 // AES-256 Enabled</p>
+              <p className="text-xs text-gray-500 font-mono">TLS 1.3 // AES-256 Enabled</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-[10px] font-mono text-gray-600 uppercase tracking-widest ml-1">Identity</label>
+              <label className="block text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Identity</label>
               <input 
                 type="email" 
                 value={email}
@@ -69,7 +69,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-mono text-gray-600 uppercase tracking-widest ml-1">Access Key</label>
+              <label className="block text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Access Key</label>
               <div className="relative">
                 <input 
                   type="password" 
@@ -83,7 +83,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
 
             {error && (
-              <div className="text-[10px] text-red-500 font-mono font-bold bg-red-500/5 p-4 rounded-xl border border-red-500/10 text-center animate-shake uppercase tracking-widest">
+              <div className="text-xs text-red-500 font-mono font-bold bg-red-500/5 p-4 rounded-xl border border-red-500/10 text-center animate-shake uppercase tracking-widest">
                 {error}
               </div>
             )}
@@ -101,14 +101,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </button>
           </form>
 
-          <div className="mt-8 flex justify-between items-center text-[10px] font-mono text-gray-600 uppercase tracking-widest border-t border-white/5 pt-6">
+          <div className="mt-8 flex justify-between items-center text-xs font-mono text-gray-400 uppercase tracking-widest border-t border-white/5 pt-6">
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div> SYS.LIVE</span>
              <a href="#" className="hover:text-blue-400 transition-colors">Request Access</a>
           </div>
         </div>
 
         <div className="mt-10 text-center">
-            <p className="text-[10px] text-gray-700 font-mono tracking-widest uppercase opacity-40">
+            <p className="text-xs text-gray-700 font-mono tracking-widest uppercase opacity-40">
                 © 2025 AURORA MUSIC // NEURAL NETWORK SECURED
             </p>
         </div>

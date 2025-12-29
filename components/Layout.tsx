@@ -88,7 +88,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   }`}
               >
                 <item.icon size={18} className={isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-white'} />
-                <span className="font-mono uppercase text-[10px] tracking-widest">{item.label}</span>
+                <span className="font-mono uppercase text-xs tracking-widest">{item.label}</span>
                 {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />}
               </Link>
             );
@@ -137,7 +137,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link to="/discography/new" className="px-4 py-1.5 text-[10px] font-black border border-white/20 hover:bg-white hover:text-black transition uppercase rounded-full tracking-widest">
+            <Link to="/discography/new" className="px-4 py-1.5 text-xs font-black border border-white/20 hover:bg-white hover:text-black transition uppercase rounded-full tracking-widest">
               Upload
             </Link>
           </div>

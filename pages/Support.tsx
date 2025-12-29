@@ -91,9 +91,9 @@ const Support: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/5 pb-4">
         <div>
           <h1 className="text-2xl font-black uppercase tracking-tight">Communications</h1>
-          <p className="text-gray-600 font-mono text-[10px] uppercase tracking-widest opacity-60">Technical & Operational Liaison</p>
+          <p className="text-gray-400 font-mono text-xs uppercase tracking-widest opacity-60">Technical & Operational Liaison</p>
         </div>
-        <button onClick={() => setShowNewModal(true)} className="px-5 py-2.5 bg-blue-600 text-white font-black uppercase hover:bg-white hover:text-black transition-all shadow-lg flex items-center gap-2 text-[10px] rounded-xl tracking-widest">
+        <button onClick={() => setShowNewModal(true)} className="px-5 py-2.5 bg-blue-600 text-white font-black uppercase hover:bg-white hover:text-black transition-all shadow-lg flex items-center gap-2 text-xs rounded-xl tracking-widest">
           <Plus size={16} /> New Transmission
         </button>
       </div>
@@ -108,7 +108,7 @@ const Support: React.FC = () => {
               placeholder="FILTER LEDGER..." 
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
-              className="w-full bg-surface border border-white/5 rounded-xl py-3 pl-10 pr-4 text-[10px] font-mono focus:border-blue-500 transition-all outline-none uppercase placeholder:text-gray-800" 
+              className="w-full bg-surface border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs font-mono focus:border-blue-500 transition-all outline-none uppercase placeholder:text-gray-800" 
             />
           </div>
 
@@ -118,7 +118,7 @@ const Support: React.FC = () => {
             ) : filtered.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center border border-white/5 border-dashed rounded-2xl opacity-20">
                 <MessageSquare size={32} className="mb-2" />
-                <p className="text-[10px] font-mono uppercase">No Active Channels</p>
+                <p className="text-xs font-mono uppercase">No Active Channels</p>
               </div>
             ) : (
               filtered.map(ticket => (
@@ -128,13 +128,13 @@ const Support: React.FC = () => {
                   className={`p-5 rounded-2xl border transition-all cursor-pointer group ${selectedTicket?.id === ticket.id ? 'bg-blue-600/5 border-blue-500/50' : 'bg-surface border-white/5 hover:border-white/10'}`}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-[9px] font-mono text-blue-500 font-bold">{ticket.id}</span>
+                    <span className="text-xs font-mono text-blue-500 font-bold">{ticket.id}</span>
                     <span className={`text-[8px] font-black px-2 py-0.5 rounded border uppercase tracking-tighter ${getStatusColor(ticket.status)}`}>
                       {ticket.status}
                     </span>
                   </div>
                   <h3 className="text-xs font-bold uppercase tracking-tight mb-3 line-clamp-1 group-hover:text-blue-400 transition-colors">{ticket.subject}</h3>
-                  <div className="flex justify-between items-center text-[9px] font-mono text-gray-600 uppercase">
+                  <div className="flex justify-between items-center text-xs font-mono text-gray-400 uppercase">
                     <span>{ticket.category}</span>
                     <span>{new Date(ticket.updatedAt).toLocaleDateString()}</span>
                   </div>
@@ -153,11 +153,11 @@ const Support: React.FC = () => {
                   <button onClick={() => setSelectedTicket(null)} className="lg:hidden p-2 text-gray-500 hover:text-white"><ChevronRight className="rotate-180" size={20} /></button>
                   <div>
                     <h3 className="text-xs font-black uppercase tracking-widest text-blue-500">{selectedTicket.subject}</h3>
-                    <p className="text-[9px] font-mono text-gray-600 uppercase mt-1">Status: {selectedTicket.status} // ID: {selectedTicket.id}</p>
+                    <p className="text-xs font-mono text-gray-400 uppercase mt-1">Status: {selectedTicket.status} // ID: {selectedTicket.id}</p>
                   </div>
                 </div>
                 <div className="hidden md:flex gap-2">
-                  <div className={`text-[8px] font-black px-3 py-1 rounded-full uppercase border ${selectedTicket.priority === 'HIGH' ? 'border-red-500/20 text-red-500' : 'border-white/10 text-gray-600'}`}>
+                  <div className={`text-[8px] font-black px-3 py-1 rounded-full uppercase border ${selectedTicket.priority === 'HIGH' ? 'border-red-500/20 text-red-500' : 'border-white/10 text-gray-400'}`}>
                     PRIO: {selectedTicket.priority}
                   </div>
                 </div>
@@ -168,7 +168,7 @@ const Support: React.FC = () => {
                   <div key={msg.id} className={`flex ${msg.role === 'USER' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
                     <div className={`max-w-[80%] flex flex-col ${msg.role === 'USER' ? 'items-end' : 'items-start'}`}>
                       <div className="flex items-center gap-2 mb-1.5 px-1">
-                        <span className="text-[9px] font-mono text-gray-700 uppercase">{msg.senderName}</span>
+                        <span className="text-xs font-mono text-gray-700 uppercase">{msg.senderName}</span>
                         <span className="text-[8px] font-mono text-gray-800">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <div className={`p-4 rounded-2xl text-xs leading-relaxed ${msg.role === 'USER' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'}`}>
@@ -216,19 +216,19 @@ const Support: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
           <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
-              <h3 className="font-bold uppercase tracking-widest text-[10px] text-blue-500">Initialize Support Session</h3>
+              <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Initialize Support Session</h3>
               <button onClick={() => setShowNewModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
             </div>
             <form onSubmit={handleCreateTicket} className="p-8 space-y-6">
               <div className="space-y-1">
-                <label className="text-[9px] font-mono text-gray-700 uppercase tracking-widest ml-1">Transmission Subject</label>
+                <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Transmission Subject</label>
                 <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="e.g. Asset Ingestion Failure" required />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-mono text-gray-700 uppercase tracking-widest ml-1">Category</label>
-                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-[10px] uppercase font-black tracking-widest focus:border-blue-500 outline-none">
+                  <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Category</label>
+                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs uppercase font-black tracking-widest focus:border-blue-500 outline-none">
                     <option value="TECHNICAL">Technical</option>
                     <option value="FINANCIAL">Financial</option>
                     <option value="DISTRIBUTION">Distribution</option>
@@ -236,8 +236,8 @@ const Support: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-mono text-gray-700 uppercase tracking-widest ml-1">Priority</label>
-                  <select value={newPriority} onChange={e => setNewPriority(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-[10px] uppercase font-black tracking-widest focus:border-blue-500 outline-none">
+                  <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Priority</label>
+                  <select value={newPriority} onChange={e => setNewPriority(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs uppercase font-black tracking-widest focus:border-blue-500 outline-none">
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
                     <option value="HIGH">High</option>
@@ -246,7 +246,7 @@ const Support: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-mono text-gray-700 uppercase tracking-widest ml-1">Payload Content</label>
+                <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Payload Content</label>
                 <textarea 
                   value={newContent} 
                   onChange={e => setNewContent(e.target.value)} 
@@ -256,7 +256,7 @@ const Support: React.FC = () => {
                 />
               </div>
 
-              <button type="submit" disabled={isSubmitting || !newSubject || !newContent} className="w-full py-4 bg-blue-600 text-white font-black uppercase text-[10px] tracking-[0.2em] rounded-xl shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-30">
+              <button type="submit" disabled={isSubmitting || !newSubject || !newContent} className="w-full py-4 bg-blue-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-xl shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-30">
                 {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : 'Commit Transmission'}
               </button>
             </form>

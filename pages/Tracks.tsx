@@ -219,7 +219,7 @@ const Tracks: React.FC = () => {
       ) : (
         <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
           <table className="w-full text-left text-sm">
-            <thead className="bg-black/50 text-[10px] font-mono text-gray-600 uppercase tracking-[0.2em]">
+            <thead className="bg-black/50 text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
               <tr>
                 <th className="px-6 py-4">Recording</th>
                 <th className="px-6 py-4">Primary Artist</th>
@@ -246,7 +246,7 @@ const Tracks: React.FC = () => {
                   <td className="px-6 py-4 text-gray-500 font-mono text-xs">{track.isrc || 'PENDING'}</td>
                   <td className="px-6 py-4 text-right text-gray-500 font-mono">{track.duration}</td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={() => openEditor(track)} className="p-2 text-gray-600 hover:text-blue-400 transition opacity-0 group-hover:opacity-100"><Plus size={16} /></button>
+                    <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-0 group-hover:opacity-100"><Plus size={16} /></button>
                   </td>
                 </tr>
               ))}
@@ -266,7 +266,7 @@ const Tracks: React.FC = () => {
             {Object.keys(errors).length > 0 && (
               <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-3 flex items-start gap-3">
                 <AlertCircle size={16} className="text-red-500 mt-0.5" />
-                <div className="text-[10px] text-red-400 font-mono uppercase">
+                <div className="text-xs text-red-400 font-mono uppercase">
                   <p className="font-bold mb-1">Validation Errors Detected:</p>
                   <ul className="list-disc pl-4 space-y-1">
                     {Object.values(errors).map((err, i) => <li key={i}>{err}</li>)}
@@ -276,9 +276,9 @@ const Tracks: React.FC = () => {
             )}
 
             <div className="flex border-b border-white/5 bg-black/60">
-              <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'GENERAL' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-600'} ${(errors.name || errors.audioUrl || errors.isrc) && trackTab !== 'GENERAL' ? 'text-red-400' : ''}`}>1. Audio</button>
-              <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'CREDITS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-600'} ${(errors.artists || errors.contributors) && trackTab !== 'CREDITS' ? 'text-red-400' : ''}`}>2. Credits</button>
-              <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'LYRICS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-600'}`}>3. Content</button>
+              <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'GENERAL' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${(errors.name || errors.audioUrl || errors.isrc) && trackTab !== 'GENERAL' ? 'text-red-400' : ''}`}>1. Audio</button>
+              <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'CREDITS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${(errors.artists || errors.contributors) && trackTab !== 'CREDITS' ? 'text-red-400' : ''}`}>2. Credits</button>
+              <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'LYRICS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'}`}>3. Content</button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-10 bg-[#080808]">
@@ -290,7 +290,7 @@ const Tracks: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-mono text-gray-600 uppercase tracking-widest">Title <span className="text-red-500">*</span></label>
+                      <label className="text-xs font-mono text-gray-400 uppercase tracking-widest">Title <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={currentTrack.name}
@@ -300,7 +300,7 @@ const Tracks: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-mono text-gray-600 uppercase tracking-widest">ISRC</label>
+                      <label className="text-xs font-mono text-gray-400 uppercase tracking-widest">ISRC</label>
                       <input
                         type="text"
                         value={currentTrack.isrc}
@@ -318,13 +318,13 @@ const Tracks: React.FC = () => {
                   {/* Artists Section */}
                   <div className={errors.artists ? "p-4 border border-red-500/20 bg-red-500/5 rounded-xl" : ""}>
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Performing Artists <span className="text-red-500">*</span></h4>
+                      <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest">Performing Artists <span className="text-red-500">*</span></h4>
                       <button
                         onClick={() => setCurrentTrack({
                           ...currentTrack,
                           artists: [...(currentTrack.artists || []), { name: '', role: 'Featured' }]
                         })}
-                        className="text-[10px] text-gray-400 hover:text-blue-400 transition uppercase font-bold"
+                        className="text-xs text-gray-400 hover:text-blue-400 transition uppercase font-bold"
                       >
                         + Add Artist
                       </button>
@@ -363,7 +363,7 @@ const Tracks: React.FC = () => {
                                 const copy = currentTrack.artists!.filter((_, idx) => idx !== i);
                                 setCurrentTrack({ ...currentTrack, artists: copy });
                               }}
-                              className="p-2 text-gray-600 hover:text-red-500 transition"
+                              className="p-2 text-gray-400 hover:text-red-500 transition"
                             >
                               <X size={14} />
                             </button>
@@ -380,10 +380,10 @@ const Tracks: React.FC = () => {
                   {/* Contributors Section */}
                   <div className={errors.contributors ? "p-4 border border-red-500/20 bg-red-500/5 rounded-xl" : ""}>
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Contributors <span className="text-red-500">*</span></h4>
+                      <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest">Contributors <span className="text-red-500">*</span></h4>
                       <button
                         onClick={addContributor}
-                        className="text-[10px] text-gray-400 hover:text-blue-400 transition uppercase font-bold"
+                        className="text-xs text-gray-400 hover:text-blue-400 transition uppercase font-bold"
                       >
                         + Add Credit
                       </button>
@@ -399,14 +399,14 @@ const Tracks: React.FC = () => {
                               <option value="Performer">Performer</option>
                             </select>
                             {contributor.role === 'Performer' && (
-                              <select value={contributor.instrument || ''} onChange={(e) => updateContributor(idx, 'instrument', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-[10px] focus:outline-none">
+                              <select value={contributor.instrument || ''} onChange={(e) => updateContributor(idx, 'instrument', e.target.value)} className="w-full bg-white/5 border border-white/10 rounded px-2 py-1 text-xs focus:outline-none">
                                 <option value="">Select Role...</option>
                                 {PERFORMER_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                               </select>
                             )}
                           </div>
                           <input type="text" value={contributor.name} onChange={(e) => updateContributor(idx, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-sm focus:outline-none" placeholder="Full Name" />
-                          <button onClick={() => removeContributor(idx)} className="p-2 text-gray-600 hover:text-red-500 mt-1"><X size={14} /></button>
+                          <button onClick={() => removeContributor(idx)} className="p-2 text-gray-400 hover:text-red-500 mt-1"><X size={14} /></button>
                         </div>
                       ))}
                     </div>
@@ -430,7 +430,7 @@ const Tracks: React.FC = () => {
                       {currentTrack.hasLyrics && (
                         <div className="space-y-4 pl-4 border-l-2 border-white/10 animate-fade-in">
                           <div>
-                            <label className="block text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-1">Lyrics Language</label>
+                            <label className="block text-xs font-mono text-gray-400 uppercase tracking-widest mb-1">Lyrics Language</label>
                             <select
                               value={currentTrack.lyricsLanguage || 'English'}
                               onChange={(e) => setCurrentTrack({ ...currentTrack, lyricsLanguage: e.target.value })}
@@ -444,7 +444,7 @@ const Tracks: React.FC = () => {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-1">Lyrics Transcription</label>
+                            <label className="block text-xs font-mono text-gray-400 uppercase tracking-widest mb-1">Lyrics Transcription</label>
                             <textarea
                               value={currentTrack.lyricsText || ''}
                               onChange={(e) => setCurrentTrack({ ...currentTrack, lyricsText: e.target.value })}
@@ -463,7 +463,7 @@ const Tracks: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-bold text-sm uppercase">Explicit Content</p>
-                        <p className="text-[10px] text-gray-600 font-mono uppercase">Sensitive vocabulary detected?</p>
+                        <p className="text-xs text-gray-400 font-mono uppercase">Sensitive vocabulary detected?</p>
                       </div>
                       <input type="checkbox" checked={currentTrack.isExplicit} onChange={e => setCurrentTrack({ ...currentTrack, isExplicit: e.target.checked })} className="w-5 h-5 accent-blue-600" />
                     </div>
@@ -473,8 +473,8 @@ const Tracks: React.FC = () => {
             </div>
 
             <div className="p-6 border-t border-white/5 bg-black/60 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-6 py-3 text-[10px] font-black uppercase text-gray-500 hover:text-white transition">Cancel</button>
-              <button onClick={handleSaveTrack} disabled={isSubmitting} className="px-10 py-3 bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-lg flex items-center justify-center gap-2">
+              <button onClick={() => setShowModal(false)} className="px-6 py-3 text-xs font-black uppercase text-gray-500 hover:text-white transition">Cancel</button>
+              <button onClick={handleSaveTrack} disabled={isSubmitting} className="px-10 py-3 bg-blue-600 text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-lg flex items-center justify-center gap-2">
                 {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Synchronize</>}
               </button>
             </div>

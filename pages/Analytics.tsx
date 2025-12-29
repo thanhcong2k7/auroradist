@@ -30,17 +30,17 @@ const Analytics: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-10">
                <div>
                   <h3 className="font-bold uppercase text-[10px] tracking-widest text-blue-500 mb-1">Weekly Yield</h3>
-                  <p className="text-gray-600 text-[10px] font-mono uppercase tracking-widest">Cross-Platform Frequency</p>
+                  <p className="text-gray-400 text-[10px] font-mono uppercase tracking-widest">Cross-Platform Frequency</p>
                </div>
                
                <div className="flex gap-4 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
-                   <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400">
                        <div className="w-2 h-2 rounded-full bg-[#1DB954]"></div> Spotify
                    </div>
-                   <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400">
                        <div className="w-2 h-2 rounded-full bg-[#FA243C]"></div> Apple
                    </div>
-                   <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                   <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-400">
                        <div className="w-2 h-2 rounded-full bg-[#FF0000]"></div> YouTube
                    </div>
                </div>
@@ -67,19 +67,19 @@ const Analytics: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-surface border border-white/5 p-6 rounded-2xl">
-               <h4 className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-3">Dominant Locale</h4>
+               <h4 className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-3">Dominant Locale</h4>
                <div className="text-xl font-black uppercase tracking-tight">United States</div>
-               <div className="text-[9px] text-green-400 font-mono mt-1">+12.4% Relative</div>
+               <div className="text-xs text-green-400 font-mono mt-1">+12.4% Relative</div>
             </div>
             <div className="bg-surface border border-white/5 p-6 rounded-2xl">
-               <h4 className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-3">Retention</h4>
+               <h4 className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-3">Retention</h4>
                <div className="text-xl font-black uppercase tracking-tight">64.5% Active</div>
-               <div className="text-[9px] text-blue-400 font-mono mt-1">Sustainment Target Meta</div>
+               <div className="text-xs text-blue-400 font-mono mt-1">Sustainment Target Meta</div>
             </div>
             <div className="bg-surface border border-white/5 p-6 rounded-2xl">
-               <h4 className="text-[10px] font-mono text-gray-600 uppercase tracking-widest mb-3">Primary Channel</h4>
+               <h4 className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-3">Primary Channel</h4>
                <div className="text-xl font-black uppercase tracking-tight">System Search</div>
-               <div className="text-[9px] text-gray-600 font-mono mt-1">45.2% Overall Yield</div>
+               <div className="text-xs text-gray-400 font-mono mt-1">45.2% Overall Yield</div>
             </div>
         </div>
     </div>

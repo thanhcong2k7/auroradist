@@ -157,7 +157,7 @@ const Discography: React.FC = () => {
                 </div>
 
                 <div className="absolute top-2 left-2">
-                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border backdrop-blur-md ${release.status === 'ACCEPTED' ? 'border-green-500/30 text-green-400 bg-green-900/50' :
+                  <span className={`text-xs font-mono px-1.5 py-0.5 rounded border backdrop-blur-md ${release.status === 'ACCEPTED' ? 'border-green-500/30 text-green-400 bg-green-900/50' :
                       release.status === 'CHECKING' ? 'border-yellow-500/30 text-yellow-400 bg-yellow-900/50' :
                         release.status === 'ERROR' || release.status === 'REJECTED' ? 'border-red-500/30 text-red-400 bg-red-900/50' :
                           'border-gray-500/30 text-gray-300 bg-gray-900/50'
@@ -172,9 +172,9 @@ const Discography: React.FC = () => {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-gray-400 text-xs font-mono">{release.artist}</p>
-                    <p className="text-gray-600 text-[10px] font-mono mt-1">UPC: {release.upc || 'PENDING'}</p>
+                    <p className="text-gray-400 text-xs font-mono mt-1">UPC: {release.upc || 'PENDING'}</p>
                   </div>
-                  <div className="text-[10px] text-gray-500 font-mono">
+                  <div className="text-xs text-gray-500 font-mono">
                     {release.releaseDate || 'TBA'}
                   </div>
                 </div>

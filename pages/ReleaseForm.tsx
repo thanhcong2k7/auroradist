@@ -300,7 +300,7 @@ const ReleaseForm: React.FC = () => {
                             <span className={`px-2 py-0.5 rounded border ${status === 'CHECKING' ? 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10' : 'border-gray-500/30 text-gray-400 bg-gray-500/10'}`}>{status}</span>
                         </div>
                         <h1 className="text-3xl font-black uppercase tracking-tight">
-                            {title || 'Untitled Release'} <span className="text-gray-600 font-normal">{version ? `(${version})` : ''}</span>
+                            {title || 'Untitled Release'} <span className="text-gray-400 font-normal">{version ? `(${version})` : ''}</span>
                         </h1>
                     </div>
                     <div className="flex gap-3">
@@ -324,7 +324,7 @@ const ReleaseForm: React.FC = () => {
                     {/* Steps Navigation */}
                     <div className="flex border-b border-white/10 mt-6">
                         {[1, 2, 3].map(step => (
-                            <button key={step} onClick={() => setCurrentStep(step)} className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2 border-b-2 ${currentStep === step ? 'text-blue-500 border-blue-500' : 'text-gray-600 hover:text-gray-400 border-transparent'}`}>
+                            <button key={step} onClick={() => setCurrentStep(step)} className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2 border-b-2 ${currentStep === step ? 'text-blue-500 border-blue-500' : 'text-gray-400 hover:text-gray-400 border-transparent'}`}>
                                 {step === 1 ? '1. Metadata' : step === 2 ? '2. Assets' : '3. Delivery'}
                             </button>
                         ))}
@@ -343,7 +343,7 @@ const ReleaseForm: React.FC = () => {
                                             currentUrl={coverArt}
                                             onUploadComplete={(url) => setCoverArt(url)}
                                         />
-                                        <p className="mt-2 text-[10px] text-gray-500 font-mono text-center">Required: 3000x3000px JPG/PNG</p>
+                                        <p className="mt-2 text-xs text-gray-500 font-mono text-center">Required: 3000x3000px JPG/PNG</p>
                                     </div>
                                 </div>
 
@@ -383,18 +383,18 @@ const ReleaseForm: React.FC = () => {
                                             <h3 className="text-xs font-bold uppercase text-blue-400">Classification</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div>
-                                                    <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label>
+                                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label>
                                                     <select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
                                                         <option value="">Select Genre</option>
                                                         {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Sub-Genre</label>
+                                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Sub-Genre</label>
                                                     <input type="text" value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs" placeholder="Optional" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-mono text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label>
+                                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label>
                                                     <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
                                                         {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
                                                     </select>
@@ -463,7 +463,7 @@ const ReleaseForm: React.FC = () => {
                                                     <td className="px-6 py-4 font-mono text-xs text-blue-400">{(track as any).tiktokClipStartTime || <span className="text-red-500">MISSING</span>}</td>
                                                     <td className="px-6 py-4 text-right font-mono text-gray-400">{track.duration}</td>
                                                     <td className="px-6 py-4 text-center">
-                                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveTrack(track.id); }} className="text-gray-600 hover:text-red-500 transition"><Trash2 size={16} /></button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveTrack(track.id); }} className="text-gray-400 hover:text-red-500 transition"><Trash2 size={16} /></button>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -499,7 +499,7 @@ const ReleaseForm: React.FC = () => {
                                     <div className="mb-4">
                                         <button
                                             onClick={toggleAllStores}
-                                            className="text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-white transition"
+                                            className="text-xs font-bold uppercase tracking-widest text-blue-500 hover:text-white transition"
                                         >
                                             {selectedStores.length === availableDsps.length ? '( Deselect All )' : '( Select All )'}
                                         </button>
@@ -544,7 +544,7 @@ const ReleaseForm: React.FC = () => {
                         )}
                     </div>
                     <div className="w-1/3 flex justify-center">
-                        <div className="text-[10px] font-mono font-bold text-gray-600 uppercase tracking-widest border border-white/10 px-3 py-1 rounded bg-black">
+                        <div className="text-xs font-mono font-bold text-gray-400 uppercase tracking-widest border border-white/10 px-3 py-1 rounded bg-black">
                             Step {currentStep} / 3
                         </div>
                     </div>
@@ -595,7 +595,7 @@ const ReleaseForm: React.FC = () => {
                                     <h4 className="text-xs font-bold uppercase text-blue-500 border-b border-blue-500/20 pb-2">Essential Metadata</h4>
                                     <div className="grid grid-cols-2 gap-4 mb-4 mt-4">
                                         <div className="space-y-1">
-                                            <label className="text-[10px] uppercase font-bold text-gray-500">ISRC Code</label>
+                                            <label className="text-xs uppercase font-bold text-gray-500">ISRC Code</label>
                                             <input
                                                 type="text"
                                                 value={currentTrack.isrc || ''}
@@ -605,7 +605,7 @@ const ReleaseForm: React.FC = () => {
                                             />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] uppercase font-bold text-gray-500">Duration</label>
+                                            <label className="text-xs uppercase font-bold text-gray-500">Duration</label>
                                             <input
                                                 type="text"
                                                 value={currentTrack.duration || ''}
@@ -632,7 +632,7 @@ const ReleaseForm: React.FC = () => {
 
                                     {/* Artist Editor (Simplified for brevity as it was in original) */}
                                     <div className="space-y-2">
-                                        <label className="text-[10px] uppercase font-bold text-gray-500">Artists</label>
+                                        <label className="text-xs uppercase font-bold text-gray-500">Artists</label>
                                         {currentTrack.artists?.map((a, i) => (
                                             <div key={i} className="flex gap-2">
                                                 <input value={a.name} onChange={e => updateArtist(i, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-2 py-1 text-sm" />
