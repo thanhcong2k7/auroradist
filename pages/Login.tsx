@@ -1,7 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Key, ArrowRight, Loader2, ShieldCheck, Globe } from 'lucide-react';
+import { Key, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -12,32 +11,37 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // LOGIC MỚI: Cập nhật thông báo lỗi Google chi tiết hơn
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
     try {
       await api.auth.loginWithGoogle();
-      // Lưu ý: OAuth sẽ redirect trang web, nên onLogin() có thể sẽ không được gọi ngay tại đây 
-      // mà sẽ được xử lý bởi useEffect trong App.tsx khi redirect quay lại.
+      // Lưu ý: OAuth sẽ redirect trang web
     } catch (err: any) {
-      setError('GOOGLE_AUTH_FAILED: ' + err.message);
       setLoading(false);
+      setError("Google Auth Error: " + err.message);
     }
   };
+
+  // LOGIC MỚI: Bỏ lưu token thủ công, Bỏ check null thủ công, Dùng error message động
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return setError('Identity required.');
+    
+    // Logic cũ: if (!email || !password) return setError('Identity required.'); -> Đã bỏ, dùng 'required' ở input
 
     setLoading(true);
     setError('');
 
     try {
-      const response = await api.auth.login(email, password);
-      // In production, you'd store the actual token
-      localStorage.setItem('aurora_token', response.token);
+      await api.auth.login(email, password);
+      // Logic cũ: localStorage.setItem(...) -> Đã bỏ theo code mới
       onLogin();
-    } catch (err) {
-      setError('AUTHENTICATION_FAILED: ACCESS_DENIED');
+    } catch (err: any) {
+      // Logic cũ: setError('AUTHENTICATION_FAILED: ACCESS_DENIED');
+      // Logic mới: Lấy message từ server
+      setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);
     }
@@ -45,7 +49,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-background text-white font-sans flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background FX */}
+      {/* Background FX - GIỮ NGUYÊN GIAO DIỆN CŨ */}
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.1),transparent_70%)] pointer-events-none"></div>
 
       <div className="w-full max-w-md relative z-10">
@@ -76,6 +80,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
                 placeholder="user@aurora.com"
+                required // LOGIC MỚI: Thêm required để thay thế check tay JS
               />
             </div>
 
@@ -88,6 +93,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
                   placeholder="••••••••"
+                  required // LOGIC MỚI: Thêm required
                 />
                 <Key className="absolute right-5 top-4 text-gray-700" size={18} />
               </div>
@@ -122,7 +128,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               disabled={loading}
               className="w-full py-4 bg-white text-black hover:bg-gray-200 uppercase tracking-wide rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
             >
-              {/* SVG Google Icon */}
+              {/* SVG Google Icon - GIỮ NGUYÊN */}
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
