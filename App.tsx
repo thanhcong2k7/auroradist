@@ -12,56 +12,88 @@ import Wallet from './pages/Wallet';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Login from './pages/Login';
-import { supabase } from './services/api';
+import { supabase } from './services/api'; // Dùng instance từ api.ts
 
 const App: React.FC = () => {
+  // isAuth = null nghĩa là đang "Loading/Checking", chưa quyết định
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+    let mounted = true;
+
+    const checkUserSession = async () => {
+      try {
+        // [QUAN TRỌNG] Dùng getUser() để verify token với server Supabase
+        // Nếu token ở local storage hết hạn, hàm này sẽ trả về error ngay.
+        const { data: { user }, error } = await supabase.auth.getUser();
+
+        if (mounted) {
+          if (error || !user) {
+            setIsAuthenticated(false);
+            // Xóa rác nếu có
+            localStorage.removeItem('aurora_session');
+          } else {
+            setIsAuthenticated(true);
+            localStorage.setItem('aurora_session', 'active');
+          }
+        }
+      } catch (err) {
+        if (mounted) setIsAuthenticated(false);
+      }
     };
-    checkSession();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-      if (session) {
+
+    checkUserSession();
+
+    // Lắng nghe sự kiện thay đổi auth (Login, Logout, Auto-refresh token)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth Event:', event);
+
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setIsAuthenticated(true);
         localStorage.setItem('aurora_session', 'active');
-      } else {
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
         localStorage.removeItem('aurora_session');
       }
     });
+
+    // Lắng nghe sự kiện force-logout từ api.ts (Phòng hờ)
     const handleForceLogout = () => {
-      console.warn("Received force-logout signal due to 403 error");
-      supabase.auth.signOut();
+      console.warn("Force logout triggered");
       setIsAuthenticated(false);
       localStorage.removeItem('aurora_session');
     };
-
     window.addEventListener('force-logout', handleForceLogout);
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
       window.removeEventListener('force-logout', handleForceLogout);
     };
   }, []);
 
-  const handleLogin = () => {
-    localStorage.setItem('aurora_session', 'active');
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
+  // Màn hình Loading trong lúc chờ check server (tránh flash Dashboard)
   if (isAuthenticated === null) {
-    return <div className="h-screen bg-black flex items-center justify-center text-white">Initializing Aurora Node...</div>;
+    return (
+      <div className="h-screen w-screen bg-black flex items-center justify-center text-white font-mono">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs uppercase tracking-widest text-gray-500">Establishing Uplink...</span>
+        </div>
+      </div>
+    );
   }
 
+  // Nếu chưa auth -> Render Login
+  if (!isAuthenticated) {
+    // Truyền đr callback rỗng hoặc xử lý nhẹ, vì onAuthStateChange đã lo việc set state
+    return <Login onLogin={() => { }} />;
+  }
+
+  // Nếu đã auth -> Render App
   return (
     <Router>
-      <Layout onLogout={handleLogout}>
+      <Layout onLogout={() => supabase.auth.signOut()}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/discography" element={<Discography />} />
