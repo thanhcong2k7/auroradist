@@ -29,6 +29,7 @@ const App: React.FC = () => {
 
   // Check for session (mock)
   useEffect(() => {
+    const session2 = localStorage.getItem('aurora_session');
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession(); // Cần access supabase client
       if (session) {
@@ -37,8 +38,7 @@ const App: React.FC = () => {
       }
     };
     checkSession();
-    const session = localStorage.getItem('aurora_session');
-    if (session) {
+    if (session2) {
       setIsAuthenticated(true);
     }
   }, []);
