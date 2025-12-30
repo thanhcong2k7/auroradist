@@ -44,7 +44,7 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Khởi tạo Audio Element 1 lần duy nhất
   useEffect(() => {
     audioRef.current = new Audio();
-
+    audioRef.current.crossOrigin = "anonymous";
     const audio = audioRef.current;
 
     const updateProgress = () => {
@@ -87,12 +87,10 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     if (audioRef.current && track.audioUrl) {
       audioRef.current.src = track.audioUrl;
-
-      // [FIX AbortError] Xử lý promise của play()
+      audioRef.current.load();
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch(error => {
-          // Bỏ qua lỗi AbortError (do bị pause ngắt ngang)
           if (error.name !== 'AbortError') {
             console.error("Playback error:", error);
             setIsPlaying(false);
@@ -101,7 +99,22 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
     }
   };
-
+  const addToQueue = (track: Track) => {
+    if (playlist.length === 0) {
+      // Nếu playlist trống -> Play luôn
+      playTrack(track, [track]);
+    } else {
+      // Nếu đang có nhạc -> Thêm vào đuôi playlist (nếu chưa có)
+      const exists = playlist.some(t => t.id === track.id);
+      if (!exists) {
+        setPlaylist(prev => [...prev, track]);
+        // Optional: Hiển thị toast thông báo "Added to queue"
+        console.log("Added to queue:", track.name);
+      } else {
+        console.log("Track already in queue");
+      }
+    }
+  };
   // Trong hàm togglePlay
   const togglePlay = () => {
     if (audioRef.current) {

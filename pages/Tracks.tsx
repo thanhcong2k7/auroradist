@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Track, TrackArtist, TrackContributor, Artist } from '../types';
-import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2 } from 'lucide-react';
+import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2, ListPlus, Check } from 'lucide-react';
 import FileUploader from '../components/FileUploader';
 import { PERFORMER_ROLES } from '../constants';
 import { useMusicPlayer } from '../components/MusicPlayerContext';
@@ -14,7 +14,7 @@ const Tracks: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [trackTab, setTrackTab] = useState<'GENERAL' | 'CREDITS' | 'LYRICS'>('GENERAL');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { playTrack, currentTrack: globalTrack, isPlaying, togglePlay } = useMusicPlayer();
+  const { playTrack, currentTrack: globalTrack, addToQueue, isPlaying, togglePlay, playlist } = useMusicPlayer();
   // Validation Error State
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -58,6 +58,9 @@ const Tracks: React.FC = () => {
       alert("Delete failed: " + err.message);
       setLoading(false);
     }
+  };
+  const handleAddToQueue = (track: Track) => {
+    addToQueue(track);
   };
   const openEditor = (track?: Track) => {
     setErrors({}); // Clear errors on open
@@ -239,22 +242,34 @@ const Tracks: React.FC = () => {
                 {filtered.map(track => {
                   const isCurrent = globalTrack?.id === track.id;
                   const isActive = isCurrent && isPlaying;
+                  const isInQueue = playlist.some(t => t.id === track.id);
                   return (
                     <tr key={track.id} className={`transition-colors group ${isCurrent ? 'bg-blue-600/10' : 'hover:bg-white/[0.02]'}`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() => handlePlayClick(track)}
+                            onClick={() => handleAddToQueue(track)}
                             disabled={!track.audioUrl}
-                            className={`p-2 rounded-lg transition ${isActive ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'}`}
+                            className={`p-2 rounded-lg transition ${isActive
+                                ? 'bg-blue-600 text-white'
+                                : isInQueue
+                                  ? 'bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white' // Style khi đã có trong queue
+                                  : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'
+                              }`}
+                            title={isActive ? "Now Playing" : isInQueue ? "In Queue" : "Add to Playlist"}
                           >
                             {isActive ? (
+                              // Đang play thì hiện sóng nhạc
                               <div className="flex gap-1 h-3 items-center justify-center w-3">
                                 <div className="w-1 h-3 bg-white animate-pulse"></div>
                                 <div className="w-1 h-3 bg-white animate-pulse delay-75"></div>
                               </div>
+                            ) : isInQueue && !isCurrent ? (
+                              // Nếu đã trong queue nhưng không play -> Hiện dấu tích
+                              <Check size={12} strokeWidth={4} />
                             ) : (
-                              <Play size={12} fill="currentColor" />
+                              // Mặc định hiện icon Add Playlist
+                              <ListPlus size={14} strokeWidth={2.5} />
                             )}
                           </button>
                           <button
