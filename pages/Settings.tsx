@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { PayoutMethod, UserProfile } from '../types';
-import { User, Bell, Shield, Plus, Trash2, CreditCard, Banknote, Save, CheckCircle2, X, Smartphone, Loader2, Lock, Fingerprint } from 'lucide-react';
+import { User, Bell, Shield, Plus, Trash2, CreditCard, Banknote, Save, CheckCircle2, X, Smartphone, Loader2, Lock, Fingerprint, Camera } from 'lucide-react';
+import AvatarUploadModal from '../components/AvatarUploadModal';
 
 const Settings: React.FC = () => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -19,6 +20,7 @@ const Settings: React.FC = () => {
     const [pmExtra, setPmExtra] = useState('');
     const [pmHolder, setPmHolder] = useState('');
     const [pmBankName, setPmBankName] = useState('');
+    const [showAvatarModal, setShowAvatarModal] = useState(false);
 
     useEffect(() => { loadData(); }, []);
 
@@ -27,6 +29,18 @@ const Settings: React.FC = () => {
         setProfile(prof);
         setPayoutMethods(payouts);
         setTempProfile(prof);
+    };
+    
+    const handleAvatarSuccess = async (url: string) => {
+        // Cập nhật ngay lập tức vào DB
+        try {
+            const updated = await api.auth.updateProfile({ avatar: url });
+            setProfile(updated); // Update UI
+            setTempProfile(prev => ({ ...prev, avatar: url }));
+            triggerFeedback();
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     const handleSaveProfile = async () => {
@@ -107,6 +121,27 @@ const Settings: React.FC = () => {
                         </div>
                         <div className="p-8 space-y-8">
                             <div className="flex items-center gap-6">
+                                <div className="relative group cursor-pointer" onClick={() => isEditingProfile && setShowAvatarModal(true)}>
+                                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 shadow-lg overflow-hidden relative">
+                                        <div className="w-full h-full rounded-full bg-[#080808] flex items-center justify-center relative overflow-hidden">
+                                            {/* Logic: Nếu có avatar thì hiện ảnh, không thì hiện chữ cái đầu */}
+                                            {profile.avatar ? (
+                                                <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-3xl font-black text-white">
+                                                    {profile.name.charAt(0).toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {isEditingProfile && (
+                                        <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Camera size={20} className="text-white" />
+                                        </div>
+                                    )}
+
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 border-2 border-[#080808] rounded-full shadow-[0_0_10px_green]"></div>
+                                </div>
                                 <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 shadow-lg">
                                     <div className="w-full h-full rounded-full bg-[#080808] flex items-center justify-center text-3xl font-black border-2 border-white/5 relative">
                                         {profile.name.charAt(0).toUpperCase()}
@@ -218,6 +253,11 @@ const Settings: React.FC = () => {
                     </div>
                 </div>
             )}
+            <AvatarUploadModal 
+                isOpen={showAvatarModal} 
+                onClose={() => setShowAvatarModal(false)}
+                onUploadSuccess={handleAvatarSuccess}
+            />
         </div>
     );
 };
