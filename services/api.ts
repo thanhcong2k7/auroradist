@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("Missing Supabase Environment Variables");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- HELPER FUNCTIONS ---
 
@@ -23,8 +23,11 @@ const handleError = (error: any) => {
  * Throws an error if no session exists.
  */
 const getUserId = async (): Promise<string> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated. Session invalid.");
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    window.dispatchEvent(new Event('force-logout'));
+    throw new Error("User not authenticated. Session invalid.");
+  }
   return user.id;
 };
 

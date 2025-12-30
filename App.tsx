@@ -12,35 +12,38 @@ import Wallet from './pages/Wallet';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Login from './pages/Login';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing Supabase Environment Variables");
-}
-const supabase = createClient(supabaseUrl, supabaseKey);
-
+import { supabase } from './services/api';
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  // Check for session (mock)
   useEffect(() => {
-    const session2 = localStorage.getItem('aurora_session');
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession(); // Cần access supabase client
-      if (session) {
-        setIsAuthenticated(true);
-        localStorage.setItem('aurora_session', 'active'); // Giữ logic cũ của bạn để tương thích
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
     };
     checkSession();
-    if (session2) {
-      setIsAuthenticated(true);
-    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      if (session) {
+        localStorage.setItem('aurora_session', 'active');
+      } else {
+        localStorage.removeItem('aurora_session');
+      }
+    });
+    const handleForceLogout = () => {
+      console.warn("Received force-logout signal due to 403 error");
+      supabase.auth.signOut();
+      setIsAuthenticated(false);
+      localStorage.removeItem('aurora_session');
+    };
+
+    window.addEventListener('force-logout', handleForceLogout);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('force-logout', handleForceLogout);
+    };
   }, []);
 
   const handleLogin = () => {
@@ -48,13 +51,12 @@ const App: React.FC = () => {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('aurora_session');
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+  if (isAuthenticated === null) {
+    return <div className="h-screen bg-black flex items-center justify-center text-white">Initializing Aurora Node...</div>;
   }
 
   return (
