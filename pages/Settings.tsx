@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { PayoutMethod, UserProfile } from '../types';
-import { User, Bell, Shield, Plus, Trash2, CreditCard, Banknote, Save, CheckCircle2, X, Smartphone, Loader2, Lock, Fingerprint, Camera } from 'lucide-react';
+import { User, Bell, Shield, Plus, Trash2, CreditCard, Banknote, Save, CheckCircle2, X, Smartphone, Loader2, Lock, Fingerprint, Camera, KeyRound } from 'lucide-react';
 import AvatarUploadModal from '../components/AvatarUploadModal';
 
 const Settings: React.FC = () => {
@@ -21,6 +21,9 @@ const Settings: React.FC = () => {
     const [pmHolder, setPmHolder] = useState('');
     const [pmBankName, setPmBankName] = useState('');
     const [showAvatarModal, setShowAvatarModal] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     useEffect(() => { loadData(); }, []);
 
@@ -30,7 +33,29 @@ const Settings: React.FC = () => {
         setPayoutMethods(payouts);
         setTempProfile(prof);
     };
+    const handleUpdatePassword = async () => {
+        if (!newPassword || newPassword.length < 6) {
+            alert("Password must be at least 6 characters.");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            alert("Passwords do not match.");
+            return;
+        }
 
+        setIsSubmitting(true);
+        try {
+            await api.auth.updatePassword(newPassword);
+            alert("Security Protocol Updated: Password changed successfully.");
+            setShowPasswordModal(false);
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (err: any) {
+            alert("Update Failed: " + err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     const handleAvatarSuccess = async (url: string) => {
         // Cập nhật ngay lập tức vào DB
         try {
@@ -170,13 +195,21 @@ const Settings: React.FC = () => {
                     </div>
 
                     <div className="bg-surface border border-white/5 rounded-2xl p-6 group hover:border-blue-500/10 transition-all">
-                        <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-blue-500 mb-6"><Shield size={16} /> Access Control</div>
+                        <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-blue-500 mb-6">
+                            <Shield size={16} /> Access Control
+                        </div>
                         <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-black/40 p-5 rounded-xl border border-white/5">
                             <div>
                                 <p className="text-xs font-black uppercase">System Passcode</p>
                                 <p className="text-xs text-gray-500 font-mono uppercase mt-1">Global Authorization Override</p>
                             </div>
-                            <button className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Rotate Key</button>
+                            {/* Nút bấm mở modal */}
+                            <button
+                                onClick={() => setShowPasswordModal(true)}
+                                className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all flex items-center gap-2"
+                            >
+                                <KeyRound size={14} /> Rotate Key
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -256,6 +289,65 @@ const Settings: React.FC = () => {
                 onClose={() => setShowAvatarModal(false)}
                 onUploadSuccess={handleAvatarSuccess}
             />
+            {showPasswordModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
+                    <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
+                            <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Security Override</h3>
+                            <button onClick={() => setShowPasswordModal(false)}>
+                                <X size={18} className="text-gray-500 hover:text-white" />
+                            </button>
+                        </div>
+                        <div className="p-8 space-y-6">
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">New Passcode</label>
+                                    <div className="relative">
+                                        <input
+                                            type="password"
+                                            value={newPassword}
+                                            onChange={e => setNewPassword(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition font-mono"
+                                            placeholder="••••••••"
+                                        />
+                                        <Lock size={14} className="absolute right-4 top-3.5 text-gray-600" />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Confirm Passcode</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition font-mono"
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/10 flex gap-4 text-xs text-gray-500 font-mono uppercase leading-relaxed tracking-widest">
+                                <Shield size={18} className="text-yellow-500 shrink-0" />
+                                Action will revoke all active tokens on other devices immediately.
+                            </div>
+                        </div>
+                        <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
+                            <button
+                                onClick={() => setShowPasswordModal(false)}
+                                className="flex-1 py-3 text-xs font-black uppercase text-gray-700 hover:text-white transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleUpdatePassword}
+                                disabled={isSubmitting || !newPassword}
+                                className="flex-1 py-3 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 shadow-xl disabled:opacity-30"
+                            >
+                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Update Matrix'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
