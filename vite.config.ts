@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA': JSON.stringify(env.VERCEL_GIT_COMMIT_SHA || env.CF_PAGES_COMMIT_SHA || ''),
         'import.meta.env.VITE_APP_VERSION': JSON.stringify(process.env.npm_package_version),
+        'import.meta.env.VITE_APP_PROD': JSON.stringify("Beta"),
       },
       resolve: {
         alias: {

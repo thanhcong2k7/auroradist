@@ -28,6 +28,7 @@ const About: React.FC = () => {
         : 'dev-local';
 
     const buildEnv = import.meta.env.MODE || 'development';
+    const buildProd = import.meta.env.VITE_APP_PROD;
 
     const handleCopyHash = () => {
         navigator.clipboard.writeText(buildHash);
@@ -67,7 +68,7 @@ const About: React.FC = () => {
                         <h2 className="text-2xl font-black uppercase tracking-tight text-white">Aurora<span className="text-blue-500">.</span></h2>
                         <span className="text-xs font-mono text-gray-500 uppercase tracking-widest mt-2">Distribution Client</span>
                         <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-orange-400 mt-4 border border-orange-500/20">
-                            BETA BUILD
+                            {buildProd.toUpperCase()} BUILD
                         </span>
                     </div>
 
@@ -93,7 +94,7 @@ const About: React.FC = () => {
                                 )}
                             </div>
                             <div className="text-xs text-gray-500 font-mono flex items-center gap-2 mt-1">
-                                <span>Version {appVersion} (Official Build)</span>
+                                <span>Version {appVersion} ({buildProd} Build)</span>
                                 <span className="text-gray-700">|</span>
                                 <span>{buildEnv}</span>
                             </div>
