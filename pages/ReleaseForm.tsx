@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MOCK_TRACKS } from '../constants';
 import { api } from '../services/api';
 import FileUploader from '../components/FileUploader';
 import {
@@ -124,12 +123,16 @@ const ReleaseForm: React.FC = () => {
     const loadInitialData = async () => {
         setLoading(true);
         try {
-            const [fetchedLabels, fetchedDsps] = await Promise.all([
+            // [THAY ĐỔI] Gọi api.tracks.getAll() thay vì dùng MOCK
+            const [fetchedLabels, fetchedDsps, fetchedTracks] = await Promise.all([
                 api.labels.getAll(),
-                api.dsps.getAll()
+                api.dsps.getAll(),
+                api.tracks.getAll()
             ]);
+
             setLabels(fetchedLabels);
             setAvailableDsps(fetchedDsps);
+            setAvailableTracks(fetchedTracks); // Set dữ liệu thật vào state Catalog
 
             if (!isEdit) {
                 setSelectedStores(fetchedDsps.map(d => d.code));
@@ -162,25 +165,21 @@ const ReleaseForm: React.FC = () => {
                 setPhonogramLine(release.phonogramLine || '');
                 setStatus(release.status);
 
-                // Load New Fields (using 'any' cast to handle Typescript until types.ts is updated)
+                // Load New Fields
                 const r = release as any;
                 setGenre(r.genre || '');
                 setSubGenre(r.sub_genre || '');
                 setLanguage(r.language || 'English');
                 setFormat(r.format || 'SINGLE');
                 setTerritories(r.territories || ['WORLDWIDE']);
-
                 if (release.selectedDsps && release.selectedDsps.length > 0) {
                     setSelectedStores(release.selectedDsps);
                 }
 
-                // In a real app, you would fetch tracks with their new tiktok_clip_start_time field here
-                // For this demo, we use the releaseTracks state logic from before
-                const tracks = MOCK_TRACKS.filter(t => t.releaseId === release.id);
-                setReleaseTracks(tracks);
+                // [THAY ĐỔI] Lọc track của release này từ danh sách thật đã fetch
+                const currentReleaseTracks = fetchedTracks.filter(t => t.releaseId === release.id);
+                setReleaseTracks(currentReleaseTracks);
             }
-            setAvailableTracks(MOCK_TRACKS);
-
         } catch (err) {
             console.error(err);
             setError("Failed to load release data.");
@@ -224,7 +223,7 @@ const ReleaseForm: React.FC = () => {
 
         setLoading(true);
         try {
-            // Using 'any' to bypass strict Release type check for new fields
+            // 1. Lưu Release Metadata (Code cũ)
             const releaseData: any = {
                 id: isEdit && id ? parseInt(id) : undefined,
                 title: title || 'Untitled Draft',
@@ -240,7 +239,6 @@ const ReleaseForm: React.FC = () => {
                 phonogramLine,
                 status: newStatus,
                 selectedDsps: selectedStores,
-                // SoundOn Specific Fields
                 genre,
                 sub_genre: subGenre,
                 language,
@@ -248,9 +246,31 @@ const ReleaseForm: React.FC = () => {
                 territories
             };
 
-            await api.catalog.save(releaseData);
+            // Nhận về Release đã lưu (có ID mới nếu là tạo mới)
+            const savedRelease = await api.catalog.save(releaseData);
+
+            // [MỚI] 2. Liên kết các Tracks với Release ID này
+            if (releaseTracks.length > 0) {
+                // Tạo mảng Promise để update song song
+                const trackUpdates = releaseTracks.map(track => {
+                    // Cập nhật releaseId cho track
+                    return api.tracks.save({
+                        ...track,
+                        releaseId: savedRelease.id, // Link với Release vừa lưu
+                        status: newStatus === 'CHECKING' ? 'PROCESSING' : 'READY' // Update status track theo release
+                    });
+                });
+                await Promise.all(trackUpdates);
+            }
+
+            // [MỚI] 3. Xử lý các track bị xóa khỏi release (Optional logic)
+            // Nếu bạn muốn track bị xóa khỏi list sẽ mất releaseId (trở về mồ côi)
+            // Cần logic phức tạp hơn chút: lấy list cũ so với list mới. 
+            // Ở mức độ cơ bản này, ta chỉ cần đảm bảo track thêm vào được link.
+
             navigate('/discography');
         } catch (err: any) {
+            console.error(err);
             alert("Save failed: " + err.message);
         } finally {
             setLoading(false);
@@ -629,54 +649,49 @@ const ReleaseForm: React.FC = () => {
             {showTrackModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-surface border border-white/10 rounded-xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+
+                        {/* Header */}
                         <div className="p-5 border-b border-white/10 flex justify-between items-center bg-black/40">
                             <div>
-                                <h3 className="font-bold uppercase text-lg">Track Manager</h3>
-                                <p className="text-xs text-gray-400 font-mono mt-1">{modalView === 'BROWSE' ? 'Select from catalog' : 'Edit Track Metadata'}</p>
+                                <h3 className="font-bold uppercase text-lg text-blue-500">
+                                    {modalView === 'BROWSE' ? 'Select from Catalog' : 'Track Metadata'}
+                                </h3>
+                                <p className="text-xs text-gray-400 font-mono mt-1">
+                                    {modalView === 'BROWSE' ? 'Reuse existing masters' : 'Edit details & credits'}
+                                </p>
                             </div>
-                            <button onClick={() => setShowTrackModal(false)} className="text-gray-500 hover:text-white"><X size={20} /></button>
+                            <button onClick={() => setShowTrackModal(false)}><X size={20} className="text-gray-500 hover:text-white" /></button>
                         </div>
 
+                        {/* Error Banner (Edit Mode Only) */}
+                        {modalView === 'EDIT' && Object.keys(trackErrors).length > 0 && (
+                            <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2 flex items-center gap-2">
+                                <AlertCircle size={14} className="text-red-500" />
+                                <span className="text-xs text-red-400 font-mono font-bold">Please fix errors in highlighted tabs.</span>
+                            </div>
+                        )}
+
+                        {/* Tab Navigation (Edit Mode Only) */}
+                        {modalView === 'EDIT' && (
+                            <div className="flex border-b border-white/5 bg-black/60">
+                                <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'GENERAL' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${trackErrors.name ? 'text-red-400' : ''}`}>1. General</button>
+                                <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'CREDITS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${(trackErrors.artists || trackErrors.contributors) ? 'text-red-400' : ''}`}>2. Credits</button>
+                                <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'LYRICS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'}`}>3. Content</button>
+                            </div>
+                        )}
+
+                        {/* Body Content */}
                         <div className="flex-1 overflow-y-auto p-6 bg-[#080808]">
                             {modalView === 'BROWSE' ? (
-                                <div className="space-y-4">
-                                    {/* [MỚI] Nút tạo track mới - Đồng bộ logic khởi tạo với Tracks.tsx */}
-                                    <button
-                                        onClick={() => {
-                                            // Reset form về trạng thái trống (giống hàm openEditor bên Tracks.tsx)
-                                            setCurrentTrack({
-                                                name: '',
-                                                isrc: '',
-                                                artists: [{ name: '', role: 'Primary' }],
-                                                contributors: [{ name: '', role: 'Composer' }, { name: '', role: 'Producer' }],
-                                                hasLyrics: false,
-                                                isExplicit: false,
-                                                status: 'READY'
-                                            });
-                                            setModalView('EDIT');
-                                            setTrackTab('GENERAL');
-                                        }}
-                                        className="w-full py-4 border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-xl flex flex-col items-center justify-center gap-2 transition group"
-                                    >
-                                        <div className="p-3 bg-white/5 rounded-full group-hover:bg-blue-500 group-hover:text-white transition">
-                                            <Plus size={24} />
+                                // --- BROWSE MODE: CHỈ CÒN DANH SÁCH TRACK ---
+                                <div className="space-y-1">
+                                    {availableTracks.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-64 text-gray-500 gap-2">
+                                            <Disc size={32} className="opacity-50" />
+                                            <p className="text-xs font-mono">No tracks in vault. Add a new one below.</p>
                                         </div>
-                                        <div className="text-center">
-                                            <p className="font-bold text-sm text-white uppercase">Create New Master</p>
-                                            <p className="text-xs text-gray-500 font-mono">Upload & Input Metadata from scratch</p>
-                                        </div>
-                                    </button>
-
-                                    {/* Separator */}
-                                    <div className="flex items-center gap-4 py-2">
-                                        <div className="h-px bg-white/10 flex-1"></div>
-                                        <span className="text-[10px] font-mono uppercase text-gray-500 tracking-widest">OR SELECT FROM VAULT</span>
-                                        <div className="h-px bg-white/10 flex-1"></div>
-                                    </div>
-
-                                    {/* Danh sách track có sẵn (Code cũ của bạn) */}
-                                    <div className="space-y-1">
-                                        {availableTracks.map(track => {
+                                    ) : (
+                                        availableTracks.map(track => {
                                             const isAdded = releaseTracks.some(t => t.id === track.id);
                                             return (
                                                 <div key={track.id} onClick={() => !isAdded && handleAddTrackToRelease(track)} className={`p-3 flex items-center justify-between border border-transparent rounded-lg hover:bg-white/5 transition cursor-pointer group ${isAdded ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -696,69 +711,199 @@ const ReleaseForm: React.FC = () => {
                                                     {isAdded ? <CheckCircle2 size={16} className="text-green-500" /> : <Plus size={16} className="text-gray-600 group-hover:text-white" />}
                                                 </div>
                                             )
-                                        })}
-                                        {availableTracks.length === 0 && (
-                                            <p className="text-center text-gray-500 text-xs py-4 font-mono">No existing tracks found.</p>
-                                        )}
-                                    </div>
+                                        })
+                                    )}
                                 </div>
                             ) : (
-                                <div className="space-y-6">
-                                    <h4 className="text-xs font-bold uppercase text-blue-500 border-b border-blue-500/20 pb-2">Essential Metadata</h4>
-                                    <div className="grid grid-cols-2 gap-4 mb-4 mt-4">
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase font-bold text-gray-500">ISRC Code</label>
-                                            <input
-                                                type="text"
-                                                value={currentTrack.isrc || ''}
-                                                onChange={(e) => setCurrentTrack({ ...currentTrack, isrc: e.target.value })}
-                                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none uppercase"
-                                                placeholder="US-XXX-24-00001"
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs uppercase font-bold text-gray-500">Duration</label>
-                                            <input
-                                                type="text"
-                                                value={currentTrack.duration || ''}
-                                                onChange={(e) => setCurrentTrack({ ...currentTrack, duration: e.target.value })}
-                                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none"
-                                                placeholder="03:45"
-                                            />
-                                        </div>
-                                    </div>
-                                    {/* TikTok Clip Editor Section */}
-                                    <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-bold text-white flex items-center gap-2"><Clock size={16} /> TikTok Clip Start Time</p>
-                                            <p className="text-xs text-gray-400 mt-1">Define the 60-second viral preview window.</p>
-                                        </div>
-                                        <input
-                                            type="text"
-                                            value={currentTrack.tiktokClipStartTime || ''}
-                                            onChange={(e) => setCurrentTrack({ ...currentTrack, tiktokClipStartTime: e.target.value })}
-                                            placeholder="00:30"
-                                            className="w-24 bg-black border border-white/20 rounded-lg px-3 py-2 text-center font-mono font-bold text-white focus:border-blue-500 outline-none"
-                                        />
-                                    </div>
+                                // --- EDIT MODE: FORM ĐẦY ĐỦ 3 TAB + TIKTOK ---
+                                <div className="space-y-6 animate-fade-in">
 
-                                    {/* Artist Editor (Simplified for brevity as it was in original) */}
-                                    <div className="space-y-2">
-                                        <label className="text-xs uppercase font-bold text-gray-500">Artists</label>
-                                        {currentTrack.artists?.map((a, i) => (
-                                            <div key={i} className="flex gap-2">
-                                                <input value={a.name} onChange={e => updateArtist(i, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-2 py-1 text-sm" />
+                                    {/* TAB 1: GENERAL */}
+                                    {trackTab === 'GENERAL' && (
+                                        <div className="space-y-6">
+                                            {/* Audio Upload */}
+                                            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                                                <FileUploader
+                                                    type="audio"
+                                                    accept="audio/wav,audio/flac,audio/mp3"
+                                                    label="Master File *"
+                                                    currentUrl={currentTrack.audioUrl}
+                                                    onUploadComplete={(url) => setCurrentTrack({ ...currentTrack, audioUrl: url })}
+                                                />
                                             </div>
-                                        ))}
-                                    </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1 col-span-2">
+                                                    <label className="text-xs uppercase font-bold text-gray-500">Track Title <span className="text-red-500">*</span></label>
+                                                    <input
+                                                        type="text"
+                                                        value={currentTrack.name || ''}
+                                                        onChange={(e) => setCurrentTrack({ ...currentTrack, name: e.target.value })}
+                                                        className={`w-full bg-black border ${trackErrors.name ? 'border-red-500' : 'border-white/10'} rounded-lg px-4 py-3 text-sm font-bold focus:border-blue-500 outline-none`}
+                                                        placeholder="Song Name"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-xs uppercase font-bold text-gray-500">ISRC Code</label>
+                                                    <input
+                                                        type="text"
+                                                        value={currentTrack.isrc || ''}
+                                                        onChange={(e) => setCurrentTrack({ ...currentTrack, isrc: e.target.value.toUpperCase() })}
+                                                        className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none uppercase"
+                                                        placeholder="US-XXX-24..."
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-xs uppercase font-bold text-gray-500">Duration</label>
+                                                    <input
+                                                        type="text"
+                                                        value={currentTrack.duration || ''}
+                                                        onChange={(e) => setCurrentTrack({ ...currentTrack, duration: e.target.value })}
+                                                        className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none"
+                                                        placeholder="03:45"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* TikTok Section (Field Độc Quyền của ReleaseForm) */}
+                                            <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-sm font-bold text-white flex items-center gap-2"><Clock size={16} /> TikTok Clip Start</p>
+                                                    <p className="text-xs text-gray-400 mt-1">Preview window (60s).</p>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={currentTrack.tiktokClipStartTime || ''}
+                                                    onChange={(e) => setCurrentTrack({ ...currentTrack, tiktokClipStartTime: e.target.value })}
+                                                    placeholder="00:30"
+                                                    className="w-24 bg-black border border-white/20 rounded-lg px-3 py-2 text-center font-mono font-bold text-white focus:border-blue-500 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* TAB 2: CREDITS */}
+                                    {trackTab === 'CREDITS' && (
+                                        <div className="space-y-8">
+                                            {/* Artists */}
+                                            <div className={trackErrors.artists ? "p-3 border border-red-500/30 bg-red-500/5 rounded-xl" : ""}>
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <label className="text-xs uppercase font-bold text-blue-500">Performing Artists <span className="text-red-500">*</span></label>
+                                                    <button onClick={() => setCurrentTrack({ ...currentTrack, artists: [...(currentTrack.artists || []), { name: '', role: 'Featured' }] })} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {currentTrack.artists?.map((a, i) => (
+                                                        <div key={i} className="flex gap-2">
+                                                            <select value={a.role} onChange={e => updateArtist(i, 'role', e.target.value)} className="w-24 bg-black border border-white/10 rounded px-2 py-2 text-xs outline-none">
+                                                                <option value="Primary">Primary</option>
+                                                                <option value="Featured">Featured</option>
+                                                                <option value="Remixer">Remixer</option>
+                                                            </select>
+                                                            <input value={a.name} onChange={e => updateArtist(i, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none" placeholder="Artist Name" />
+                                                            <button onClick={() => {
+                                                                const copy = currentTrack.artists!.filter((_, idx) => idx !== i);
+                                                                setCurrentTrack({ ...currentTrack, artists: copy });
+                                                            }} className="p-2 text-gray-500 hover:text-red-500"><X size={14} /></button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Contributors */}
+                                            <div className={trackErrors.contributors ? "p-3 border border-red-500/30 bg-red-500/5 rounded-xl" : ""}>
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <label className="text-xs uppercase font-bold text-blue-500">Credits (Composer/Producer) <span className="text-red-500">*</span></label>
+                                                    <button onClick={addContributor} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {currentTrack.contributors?.map((c, i) => (
+                                                        <div key={i} className="flex gap-2">
+                                                            <div className="w-1/3 flex flex-col gap-1">
+                                                                <select value={c.role} onChange={e => updateContributor(i, 'role', e.target.value)} className="w-full bg-black border border-white/10 rounded px-2 py-2 text-xs outline-none">
+                                                                    <option value="Composer">Composer</option>
+                                                                    <option value="Producer">Producer</option>
+                                                                    <option value="Lyricist">Lyricist</option>
+                                                                    <option value="Performer">Performer</option>
+                                                                </select>
+                                                            </div>
+                                                            <input value={c.name} onChange={e => updateContributor(i, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none" placeholder="Full Name" />
+                                                            <button onClick={() => removeContributor(i)} className="p-2 text-gray-500 hover:text-red-500"><X size={14} /></button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* TAB 3: CONTENT */}
+                                    {trackTab === 'LYRICS' && (
+                                        <div className="space-y-6">
+                                            <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-bold">Explicit Content?</span>
+                                                    <input type="checkbox" checked={currentTrack.isExplicit} onChange={e => setCurrentTrack({ ...currentTrack, isExplicit: e.target.checked })} className="w-5 h-5 accent-red-500" />
+                                                </div>
+                                                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                                    <span className="text-sm font-bold">Instrumental? (No Lyrics)</span>
+                                                    <input type="checkbox" checked={!currentTrack.hasLyrics} onChange={e => setCurrentTrack({ ...currentTrack, hasLyrics: !e.target.checked })} className="w-5 h-5 accent-blue-500" />
+                                                </div>
+                                            </div>
+
+                                            {currentTrack.hasLyrics && (
+                                                <div className="space-y-3 animate-fade-in">
+                                                    <label className="text-xs uppercase font-bold text-gray-500">Lyrics Text</label>
+                                                    <textarea
+                                                        value={currentTrack.lyricsText || ''}
+                                                        onChange={e => setCurrentTrack({ ...currentTrack, lyricsText: e.target.value })}
+                                                        className="w-full h-40 bg-black border border-white/10 rounded-xl p-4 text-xs font-mono focus:border-blue-500 outline-none"
+                                                        placeholder="Paste lyrics here..."
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
 
+                        {/* Footer Actions */}
                         <div className="p-4 border-t border-white/10 bg-black/40 flex justify-end gap-2">
-                            <button onClick={() => setShowTrackModal(false)} className="px-4 py-2 border border-white/10 rounded text-xs text-white">Close</button>
+                            {/* Nút Close luôn hiển thị */}
+                            <button onClick={() => setShowTrackModal(false)} className="px-4 py-2 border border-white/10 rounded text-xs text-white hover:bg-white/5 transition">
+                                Close
+                            </button>
+
+                            {/* [MỚI] Nút ADD NEW TRACK ở chế độ BROWSE */}
+                            {modalView === 'BROWSE' && (
+                                <button
+                                    onClick={() => {
+                                        // Reset form để thêm mới (logic giống Tracks.tsx)
+                                        setCurrentTrack({
+                                            name: '',
+                                            isrc: '',
+                                            artists: [{ name: '', role: 'Primary' }],
+                                            contributors: [{ name: '', role: 'Composer' }, { name: '', role: 'Producer' }],
+                                            hasLyrics: false,
+                                            isExplicit: false,
+                                            status: 'READY'
+                                        });
+                                        setModalView('EDIT');
+                                        setTrackTab('GENERAL');
+                                    }}
+                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs shadow-lg flex items-center gap-2"
+                                >
+                                    <Plus size={14} /> Add New Track
+                                </button>
+                            )}
+
+                            {/* Nút Confirm ở chế độ EDIT */}
                             {modalView === 'EDIT' && (
-                                <button onClick={() => handleSaveTrack(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs">Save & Add</button>
+                                <button
+                                    onClick={() => handleSaveTrackAdvanced(true)}
+                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs shadow-lg flex items-center gap-2"
+                                >
+                                    <Save size={14} /> Confirm & Add
+                                </button>
                             )}
                         </div>
                     </div>
