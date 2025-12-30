@@ -14,6 +14,7 @@ interface MusicPlayerContextType {
   isPlayerCollapsed: boolean; // Trạng thái "hạ xuống"
 
   playTrack: (track: Track, list?: Track[]) => void;
+  addToQueue: (track: Track) => void;
   togglePlay: () => void;
   toggleLoop: () => void;
   toggleShuffle: () => void;
