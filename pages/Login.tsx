@@ -42,7 +42,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="text-5xl font-black tracking-tighter uppercase mb-2">
             Aurora<span className="text-blue-500">.</span>
           </div>
-          <p className="text-gray-500 font-mono text-xs tracking-[0.3em] uppercase opacity-50">Global Distribution Node</p>
+          <p className="text-gray-400 font-mono text-xs tracking-[0.3em] uppercase opacity-50">Global Distribution Node</p>
         </div>
 
         <div className="bg-surface/50 border border-white/10 p-10 rounded-3xl shadow-2xl backdrop-blur-xl">
@@ -103,7 +103,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           <div className="mt-8 flex justify-between items-center text-xs font-mono text-gray-400 uppercase tracking-widest border-t border-white/5 pt-6">
              <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div> SYS.LIVE</span>
-             <a href="#" className="hover:text-blue-400 transition-colors">Request Access</a>
+             <a href="https://auroramusicvietnam.net/#contact" className="hover:text-blue-400 transition-colors">Request Access</a>
           </div>
         </div>
 
