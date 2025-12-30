@@ -6,10 +6,11 @@ import FileUploader from '../components/FileUploader';
 import {
     Save, Send, X, Clock,
     AlertTriangle, Disc, Globe, Plus, Trash2, CheckCircle2,
-    ArrowLeft, ArrowRight, Search, Check, Mic2, Users, FileAudio, UploadCloud, Loader2, Eye
+    ArrowLeft, ArrowRight, Search, Check, Mic2, Users, FileAudio, UploadCloud, Loader2, Eye, AlertCircle, Play
 } from 'lucide-react';
 import { Label as LabelType, Release, Track, TrackArtist, TrackContributor, DspChannel } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
+import { PERFORMER_ROLES } from '../constants';
 
 // --- CONSTANTS FOR SOUNDON COMPLIANCE ---
 const RELEASE_FORMATS = ['SINGLE', 'EP', 'ALBUM'];
@@ -70,11 +71,55 @@ const ReleaseForm: React.FC = () => {
     const [releaseTracks, setReleaseTracks] = useState<Track[]>([]);
     const [availableTracks, setAvailableTracks] = useState<Track[]>([]);
     const [selectedStores, setSelectedStores] = useState<string[]>([]);
+    const [trackErrors, setTrackErrors] = useState<Record<string, string>>({});
+    const [isTrackSubmitting, setIsTrackSubmitting] = useState(false);
 
     // --- INITIALIZATION ---
     useEffect(() => {
         loadInitialData();
     }, [id, isEdit]);
+
+    const validateTrackForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
+        let isValid = true;
+        const t = currentTrack; // Alias cho ngắn gọn
+
+        // 1. Audio & Title
+        // Lưu ý: Ở ReleaseForm có thể cho phép upload sau, nhưng metadata thì cần strict
+        if (!t.name || t.name.trim().length < 2) {
+            newErrors.name = "Track title is required.";
+            isValid = false;
+            setTrackTab('GENERAL');
+        }
+
+        // 2. Artists
+        const hasPrimary = t.artists?.some(a => a.role === 'Primary' && a.name.trim() !== '');
+        if (!hasPrimary) {
+            newErrors.artists = "At least one Primary Artist is required.";
+            isValid = false;
+            if (isValid) setTrackTab('CREDITS');
+        }
+
+        // 3. Contributors (Bắt buộc Composer & Producer)
+        const hasComposer = t.contributors?.some(c => c.role === 'Composer' && c.name.trim() !== '');
+        const hasProducer = t.contributors?.some(c => c.role === 'Producer' && c.name.trim() !== '');
+
+        if (!hasComposer || !hasProducer) {
+            newErrors.contributors = "Composer & Producer are mandatory.";
+            isValid = false;
+            if (isValid) setTrackTab('CREDITS'); // Ưu tiên chuyển tab
+        }
+
+        setTrackErrors(newErrors);
+        return isValid;
+    };
+
+    const handleSaveTrackAdvanced = async (addToRelease: boolean) => {
+        if (modalView === 'EDIT' && !validateTrackForm()) return;
+
+        // Logic cũ của bạn, nhưng bọc thêm validation
+        handleSaveTrack(addToRelease);
+    };
 
     const loadInitialData = async () => {
         setLoading(true);
@@ -341,8 +386,26 @@ const ReleaseForm: React.FC = () => {
                                             type="image"
                                             accept="image/*"
                                             currentUrl={coverArt}
-                                            onUploadComplete={(url) => setCoverArt(url)}
+                                            onUploadComplete={async (url) => {
+                                                // Nếu đã có ảnh cũ và nó khác ảnh mới (trường hợp replace), xóa ảnh cũ
+                                                if (coverArt && coverArt !== url) {
+                                                    await api.storage.delete(coverArt);
+                                                }
+                                                setCoverArt(url);
+                                            }}
                                         />
+                                        {coverArt && (
+                                            <button
+                                                onClick={async () => {
+                                                    if (!confirm("Remove cover art?")) return;
+                                                    await api.storage.delete(coverArt);
+                                                    setCoverArt('');
+                                                }}
+                                                className="mt-2 w-full py-2 text-xs font-bold text-red-500 hover:bg-red-500/10 rounded transition"
+                                            >
+                                                Remove Artwork
+                                            </button>
+                                        )}
                                         <p className="mt-2 text-xs text-gray-500 font-mono text-center">Required: 3000x3000px JPG/PNG</p>
                                     </div>
                                 </div>
@@ -440,7 +503,7 @@ const ReleaseForm: React.FC = () => {
                                 <div className="bg-surface border border-white/5 rounded-xl overflow-hidden">
                                     <div className="p-6 border-b border-white/10 flex justify-between items-center">
                                         <h3 className="font-bold uppercase tracking-wider text-sm flex items-center gap-2"><Disc size={16} /> Tracklist <span className="text-red-500">*</span></h3>
-                                        <button onClick={openTrackManager} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs flex items-center gap-2 transition"><Plus size={14} /> Add Tracks</button>
+                                        <button onClick={openTrackManager} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs flex items-center gap-2 transition"><Plus size={14} /> Choose Tracks</button>
                                     </div>
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-black/50 text-gray-400 font-sans text-xs uppercase">
@@ -576,19 +639,68 @@ const ReleaseForm: React.FC = () => {
 
                         <div className="flex-1 overflow-y-auto p-6 bg-[#080808]">
                             {modalView === 'BROWSE' ? (
-                                <div className="space-y-1">
-                                    {availableTracks.map(track => {
-                                        const isAdded = releaseTracks.some(t => t.id === track.id);
-                                        return (
-                                            <div key={track.id} onClick={() => !isAdded && handleAddTrackToRelease(track)} className={`p-3 flex items-center justify-between border border-transparent rounded-lg hover:bg-white/5 transition cursor-pointer group ${isAdded ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-white/5 rounded flex items-center justify-center text-gray-500 font-mono text-xs border border-white/5">{track.id.toString().slice(-2)}</div>
-                                                    <div><div className="font-bold text-sm text-white group-hover:text-blue-400 transition">{track.name}</div></div>
+                                <div className="space-y-4">
+                                    {/* [MỚI] Nút tạo track mới - Đồng bộ logic khởi tạo với Tracks.tsx */}
+                                    <button
+                                        onClick={() => {
+                                            // Reset form về trạng thái trống (giống hàm openEditor bên Tracks.tsx)
+                                            setCurrentTrack({
+                                                name: '',
+                                                isrc: '',
+                                                artists: [{ name: '', role: 'Primary' }],
+                                                contributors: [{ name: '', role: 'Composer' }, { name: '', role: 'Producer' }],
+                                                hasLyrics: false,
+                                                isExplicit: false,
+                                                status: 'READY'
+                                            });
+                                            setModalView('EDIT');
+                                            setTrackTab('GENERAL');
+                                        }}
+                                        className="w-full py-4 border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-xl flex flex-col items-center justify-center gap-2 transition group"
+                                    >
+                                        <div className="p-3 bg-white/5 rounded-full group-hover:bg-blue-500 group-hover:text-white transition">
+                                            <Plus size={24} />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="font-bold text-sm text-white uppercase">Create New Master</p>
+                                            <p className="text-xs text-gray-500 font-mono">Upload & Input Metadata from scratch</p>
+                                        </div>
+                                    </button>
+
+                                    {/* Separator */}
+                                    <div className="flex items-center gap-4 py-2">
+                                        <div className="h-px bg-white/10 flex-1"></div>
+                                        <span className="text-[10px] font-mono uppercase text-gray-500 tracking-widest">OR SELECT FROM VAULT</span>
+                                        <div className="h-px bg-white/10 flex-1"></div>
+                                    </div>
+
+                                    {/* Danh sách track có sẵn (Code cũ của bạn) */}
+                                    <div className="space-y-1">
+                                        {availableTracks.map(track => {
+                                            const isAdded = releaseTracks.some(t => t.id === track.id);
+                                            return (
+                                                <div key={track.id} onClick={() => !isAdded && handleAddTrackToRelease(track)} className={`p-3 flex items-center justify-between border border-transparent rounded-lg hover:bg-white/5 transition cursor-pointer group ${isAdded ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-white/5 rounded flex items-center justify-center text-gray-500 font-mono text-xs border border-white/5">
+                                                            <FileAudio size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-sm text-white group-hover:text-blue-400 transition">{track.name}</div>
+                                                            <div className="text-xs text-gray-500 font-mono flex gap-2">
+                                                                <span>{track.isrc || 'NO ISRC'}</span>
+                                                                <span>•</span>
+                                                                <span>{track.artists[0]?.name}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {isAdded ? <CheckCircle2 size={16} className="text-green-500" /> : <Plus size={16} className="text-gray-600 group-hover:text-white" />}
                                                 </div>
-                                                {isAdded && <Check size={16} className="text-green-500" />}
-                                            </div>
-                                        )
-                                    })}
+                                            )
+                                        })}
+                                        {availableTracks.length === 0 && (
+                                            <p className="text-center text-gray-500 text-xs py-4 font-mono">No existing tracks found.</p>
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="space-y-6">

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Track, TrackArtist, TrackContributor, Artist } from '../types';
-import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle } from 'lucide-react';
+import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2 } from 'lucide-react';
 import FileUploader from '../components/FileUploader';
 import { PERFORMER_ROLES } from '../constants'; // Removed MOCK_ARTISTS import as it's no longer used in render
 
@@ -13,6 +13,8 @@ const Tracks: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [trackTab, setTrackTab] = useState<'GENERAL' | 'CREDITS' | 'LYRICS'>('GENERAL');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [playingTrackId, setPlayingTrackId] = useState<number | null>(null);
+  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
 
   // Validation Error State
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -25,7 +27,15 @@ const Tracks: React.FC = () => {
     status: 'READY'
   });
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    return () => {
+      if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.src = ""; // Giúp giải phóng bộ nhớ
+      }
+    };
+  }, [audioPlayer]);
 
   const loadData = async () => {
     setLoading(true);
@@ -40,7 +50,21 @@ const Tracks: React.FC = () => {
       setLoading(false);
     }
   };
+  const handleDeleteTrack = async (track: Track) => {
+    if (!confirm(`Permanently delete "${track.name}"? This handles both database entry and audio file.`)) return;
+    setLoading(true);
 
+    try {
+      if (track.audioUrl) {
+        await api.storage.delete(track.audioUrl);
+      }
+      await api.tracks.delete(track.id);
+      await loadData();
+    } catch (err: any) {
+      alert("Delete failed: " + err.message);
+      setLoading(false);
+    }
+  };
   const openEditor = (track?: Track) => {
     setErrors({}); // Clear errors on open
     setCurrentTrack(track ? { ...track } : {
@@ -179,21 +203,36 @@ const Tracks: React.FC = () => {
       contributors: prev.contributors?.filter((_, i) => i !== index)
     }));
   };
-  const [playingTrackId, setPlayingTrackId] = useState<number | null>(null);
-  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
 
-  const toggleAudio = (track: Track) => {
+  const toggleAudio = async (track: Track) => {
     if (playingTrackId === track.id && audioPlayer) {
       audioPlayer.pause();
       setPlayingTrackId(null);
       setAudioPlayer(null);
-    } else {
-      if (audioPlayer) audioPlayer.pause();
-      const newAudio = new Audio(track.audioUrl);
-      newAudio.play();
-      newAudio.onended = () => setPlayingTrackId(null);
-      setAudioPlayer(newAudio);
-      setPlayingTrackId(track.id!);
+      return;
+    }
+    if (audioPlayer) {
+      audioPlayer.pause();
+      setAudioPlayer(null);
+    }
+    if (!track.audioUrl) {
+      alert("Audio file not found for this track.");
+      return;
+    }
+    const newAudio = new Audio(track.audioUrl);
+    newAudio.onended = () => setPlayingTrackId(null);
+    newAudio.onerror = (e) => {
+      console.error("Audio Error:", e);
+      setPlayingTrackId(null);
+      alert("Cannot play audio. File might be corrupted or missing.");
+    };
+    setAudioPlayer(newAudio);
+    setPlayingTrackId(track.id);
+    try {
+      await newAudio.play();
+    } catch (err) {
+      console.error("Playback failed:", err);
+      setPlayingTrackId(null); // Revert lại icon Play nếu lỗi
     }
   };
 
@@ -236,9 +275,24 @@ const Tracks: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => toggleAudio(track)}
+                          disabled={!track.audioUrl}
                           className={`p-2 rounded-lg transition ${playingTrackId === track.id ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'}`}
                         >
-                          {playingTrackId === track.id ? <div className="animate-pulse">||</div> : <Play size={12} fill="currentColor" />}
+                          {playingTrackId === track.id ? (
+                            <div className="flex gap-1 h-3 items-center justify-center w-3">
+                              <div className="w-1 h-3 bg-white animate-pulse"></div>
+                              <div className="w-1 h-3 bg-white animate-pulse delay-75"></div>
+                            </div>
+                          ) : (
+                            <Play size={12} fill="currentColor" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTrack(track)}
+                          className="p-2 text-gray-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                          title="Delete Track & File"
+                        >
+                          <Trash2 size={16} />
                         </button>
                         <div className="font-bold uppercase tracking-tight">{track.name}</div>
                       </div>

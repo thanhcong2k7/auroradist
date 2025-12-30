@@ -101,6 +101,20 @@ export const api = {
         handleError(err);
         return "";
       }
+    },
+    delete: async (fileUrl: string) => {
+      try {
+        if (!fileUrl) return;
+        const urlObj = new URL(fileUrl);
+        const key = urlObj.pathname.substring(1);
+        const { error } = await supabase.functions.invoke('file-delete', {
+          body: { key }
+        });
+        if (error) throw error;
+        console.log("Deleted file from R2:", key);
+      } catch (err) {
+        console.error("Failed to delete file:", err);
+      }
     }
   },
 
@@ -457,6 +471,17 @@ export const api = {
         ...data,
         tiktokClipStartTime: data.tiktok_clip_start_time
       } as unknown as Track;
+    },
+    delete: async (id: number) => {
+      const userId = await getUserId();
+      const { error } = await supabase
+        .from('tracks')
+        .delete()
+        .eq('id', id)
+        .eq('uid', userId);
+
+      if (error) throw error;
+      return { success: true };
     }
   },
 
