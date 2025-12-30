@@ -119,7 +119,12 @@ const ReleaseForm: React.FC = () => {
         // Logic cũ của bạn, nhưng bọc thêm validation
         handleSaveTrack(addToRelease);
     };
-
+    const addContributor = () => {
+        setCurrentTrack(prev => ({
+            ...prev,
+            contributors: [...(prev.contributors || []), { name: '', role: 'Composer' }]
+        }));
+    };
     const loadInitialData = async () => {
         setLoading(true);
         try {
