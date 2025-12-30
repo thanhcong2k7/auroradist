@@ -3,7 +3,8 @@ import { api } from '../services/api';
 import { Track, TrackArtist, TrackContributor, Artist } from '../types';
 import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2 } from 'lucide-react';
 import FileUploader from '../components/FileUploader';
-import { PERFORMER_ROLES } from '../constants'; // Removed MOCK_ARTISTS import as it's no longer used in render
+import { PERFORMER_ROLES } from '../constants';
+import { useMusicPlayer } from '../components/MusicPlayerContext';
 
 const Tracks: React.FC = () => {
   const [artistList, setArtistList] = useState<Artist[]>([]);
@@ -13,9 +14,7 @@ const Tracks: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [trackTab, setTrackTab] = useState<'GENERAL' | 'CREDITS' | 'LYRICS'>('GENERAL');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [playingTrackId, setPlayingTrackId] = useState<number | null>(null);
-  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
-
+  const { playTrack, currentTrack: globalTrack, isPlaying, togglePlay } = useMusicPlayer();
   // Validation Error State
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -29,13 +28,8 @@ const Tracks: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    return () => {
-      if (audioPlayer) {
-        audioPlayer.pause();
-        audioPlayer.src = ""; // Giúp giải phóng bộ nhớ
-      }
-    };
-  }, [audioPlayer]);
+    return () => { };
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -204,36 +198,9 @@ const Tracks: React.FC = () => {
     }));
   };
 
-  const toggleAudio = async (track: Track) => {
-    if (playingTrackId === track.id && audioPlayer) {
-      audioPlayer.pause();
-      setPlayingTrackId(null);
-      setAudioPlayer(null);
-      return;
-    }
-    if (audioPlayer) {
-      audioPlayer.pause();
-      setAudioPlayer(null);
-    }
-    if (!track.audioUrl) {
-      alert("Audio file not found for this track.");
-      return;
-    }
-    const newAudio = new Audio(track.audioUrl);
-    newAudio.onended = () => setPlayingTrackId(null);
-    newAudio.onerror = (e) => {
-      console.error("Audio Error:", e);
-      setPlayingTrackId(null);
-      alert("Cannot play audio. File might be corrupted or missing.");
-    };
-    setAudioPlayer(newAudio);
-    setPlayingTrackId(track.id);
-    try {
-      await newAudio.play();
-    } catch (err) {
-      console.error("Playback failed:", err);
-      setPlayingTrackId(null); // Revert lại icon Play nếu lỗi
-    }
+  const handlePlayClick = (track: Track) => {
+    // Logic: Nếu đang play đúng bài này thì toggle, nếu khác thì play bài mới và set playlist là danh sách hiện tại (đã filter)
+    playTrack(track, filtered);
   };
 
   return (
@@ -269,42 +236,46 @@ const Tracks: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filtered.map(track => (
-                  <tr key={track.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => toggleAudio(track)}
-                          disabled={!track.audioUrl}
-                          className={`p-2 rounded-lg transition ${playingTrackId === track.id ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'}`}
-                        >
-                          {playingTrackId === track.id ? (
-                            <div className="flex gap-1 h-3 items-center justify-center w-3">
-                              <div className="w-1 h-3 bg-white animate-pulse"></div>
-                              <div className="w-1 h-3 bg-white animate-pulse delay-75"></div>
-                            </div>
-                          ) : (
-                            <Play size={12} fill="currentColor" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTrack(track)}
-                          className="p-2 text-gray-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
-                          title="Delete Track & File"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                        <div className="font-bold uppercase tracking-tight">{track.name}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-400 font-medium">{track.artists?.[0]?.name}</td>
-                    <td className="px-6 py-4 text-gray-500 font-mono text-xs">{track.isrc || 'PENDING'}</td>
-                    <td className="px-6 py-4 text-right text-gray-500 font-mono">{track.duration}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-0 group-hover:opacity-100"><Plus size={16} /></button>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map(track => {
+                  const isCurrent = globalTrack?.id === track.id;
+                  const isActive = isCurrent && isPlaying;
+                  return (
+                    <tr key={track.id} className={`transition-colors group ${isCurrent ? 'bg-blue-600/10' : 'hover:bg-white/[0.02]'}`}>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handlePlayClick(track)}
+                            disabled={!track.audioUrl}
+                            className={`p-2 rounded-lg transition ${isActive ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'}`}
+                          >
+                            {isActive ? (
+                              <div className="flex gap-1 h-3 items-center justify-center w-3">
+                                <div className="w-1 h-3 bg-white animate-pulse"></div>
+                                <div className="w-1 h-3 bg-white animate-pulse delay-75"></div>
+                              </div>
+                            ) : (
+                              <Play size={12} fill="currentColor" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTrack(track)}
+                            className="p-2 text-gray-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                            title="Delete Track & File"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <div className="font-bold uppercase tracking-tight">{track.name}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-400 font-medium">{track.artists?.[0]?.name}</td>
+                      <td className="px-6 py-4 text-gray-500 font-mono text-xs">{track.isrc || 'PENDING'}</td>
+                      <td className="px-6 py-4 text-right text-gray-500 font-mono">{track.duration}</td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-0 group-hover:opacity-100"><Plus size={16} /></button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

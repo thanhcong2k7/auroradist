@@ -434,12 +434,11 @@ export const api = {
       })) as Track[];
     },
 
-    save: async (track: any) => { // Using any to allow new field
+    save: async (track: any) => {
       const userId = await getUserId();
 
-      // UPDATED: Manual payload construction to handle snake_case conversion
       const payload = {
-        id: track.id, // If present
+        id: track.id,
         release_id: track.releaseId,
         isrc: track.isrc,
         name: track.name,
@@ -453,8 +452,10 @@ export const api = {
         lyrics_text: track.lyricsText,
         is_explicit: track.isExplicit,
         has_explicit_version: track.hasExplicitVersion,
-        // NEW: Map TikTok clip time
         tiktok_clip_start_time: track.tiktokClipStartTime,
+        artists: track.artists,
+        contributors: track.contributors,
+
         uid: userId
       };
 
@@ -466,10 +467,12 @@ export const api = {
 
       if (error) throw error;
 
-      // We return the raw data, but re-mapped might be safer for immediate UI updates
       return {
         ...data,
-        tiktokClipStartTime: data.tiktok_clip_start_time
+        tiktokClipStartTime: data.tiktok_clip_start_time,
+        // Map lại để frontend dùng ngay lập tức
+        artists: data.artists,
+        contributors: data.contributors
       } as unknown as Track;
     },
     delete: async (id: number) => {

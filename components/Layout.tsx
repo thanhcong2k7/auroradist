@@ -17,13 +17,15 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '@/types';
 import { api } from '@/services/api';
+import { MusicPlayerProvider } from './MusicPlayerContext';
+import GlobalPlayer from './MusicPlayer/GlobalPlayer';
 
 interface LayoutProps {
   children: React.ReactNode;
   onLogout?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
+const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -157,12 +159,21 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8 animate-fade-in">
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8 animate-fade-in pb-32">
           {children}
         </main>
       </div>
+      <GlobalPlayer />
     </div>
   );
+};
+
+const Layout: React.FC<LayoutProps> = (props) => {
+    return (
+        <MusicPlayerProvider>
+            <LayoutContent {...props} />
+        </MusicPlayerProvider>
+    );
 };
 
 export default Layout;
