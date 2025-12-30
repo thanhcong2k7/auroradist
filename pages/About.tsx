@@ -22,9 +22,6 @@ const About: React.FC = () => {
         }, 2000);
         return () => clearTimeout(timer);
     }, []);
-
-    // Lấy thông tin phiên bản từ biến môi trường (Vite/Vercel)
-    // Lưu ý: Cần cấu hình vite.config.ts để expose biến này (xem hướng dẫn bên dưới)
     const appVersion = import.meta.env.VITE_APP_VERSION || '2.5.0';
     const buildHash = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA
         ? import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA.substring(0, 7)
@@ -59,12 +56,12 @@ const About: React.FC = () => {
                     {/* Left Column: Logo & Branding */}
                     <div className="md:col-span-4 flex flex-col items-center text-center border-b md:border-b-0 md:border-r border-white/5 pb-8 md:pb-0 md:pr-8">
                         <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-600 to-black border border-white/10 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
-                            <Activity size={48} className="text-white" />
+                            <img src="https://auroramusicvietnam.net/amvn.png" alt="Aurora Brand Logo" />
                         </div>
                         <h2 className="text-2xl font-black uppercase tracking-tight text-white">Aurora<span className="text-blue-500">.</span></h2>
                         <span className="text-xs font-mono text-gray-500 uppercase tracking-widest mt-2">Distribution Client</span>
-                        <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-blue-400 mt-4 border border-blue-500/20">
-                            OFFICIAL BUILD
+                        <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-orange-400 mt-4 border border-orange-500/20">
+                            BETA BUILD
                         </span>
                     </div>
 

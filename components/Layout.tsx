@@ -59,7 +59,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
     { path: '/wallet', icon: Wallet, label: 'Revenue' },
     { path: '/support', icon: MessageSquare, label: 'Support' },
     { path: '/settings', icon: Settings, label: 'Settings' },
-    { path: '/about', icon: BadgeInfo, label: 'About AMVN' },
+    { path: '/about', icon: BadgeInfo, label: 'About' },
   ];
 
   return (
