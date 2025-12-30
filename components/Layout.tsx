@@ -32,7 +32,13 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     loadData();
-    return () => clearInterval(timer);
+    const handleProfileUpdate = () => {
+      loadData();
+    };
+    window.addEventListener('profile-updated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('profile-updated', handleProfileUpdate);
+    };
   }, []);
 
   const loadData = async () => {
