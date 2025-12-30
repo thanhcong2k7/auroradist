@@ -12,7 +12,7 @@ interface MusicPlayerContextType {
   duration: number;
   isPlaylistOpen: boolean;
   isPlayerCollapsed: boolean; // Trạng thái "hạ xuống"
-  
+
   playTrack: (track: Track, list?: Track[]) => void;
   togglePlay: () => void;
   toggleLoop: () => void;
@@ -44,7 +44,7 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Khởi tạo Audio Element 1 lần duy nhất
   useEffect(() => {
     audioRef.current = new Audio();
-    
+
     const audio = audioRef.current;
 
     const updateProgress = () => {
@@ -76,31 +76,45 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const playTrack = async (track: Track, list?: Track[]) => {
     if (list) setPlaylist(list);
-    
-    // Nếu play lại bài đang play -> chỉ toggle
+
     if (currentTrack?.id === track.id && audioRef.current) {
-        togglePlay();
-        return;
+      togglePlay();
+      return;
     }
 
     setCurrentTrack(track);
     setIsPlaying(true);
-    
+
     if (audioRef.current && track.audioUrl) {
       audioRef.current.src = track.audioUrl;
-      try {
-        await audioRef.current.play();
-      } catch (err) {
-        console.error("Playback error", err);
-        setIsPlaying(false);
+
+      // [FIX AbortError] Xử lý promise của play()
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          // Bỏ qua lỗi AbortError (do bị pause ngắt ngang)
+          if (error.name !== 'AbortError') {
+            console.error("Playback error:", error);
+            setIsPlaying(false);
+          }
+        });
       }
     }
   };
 
+  // Trong hàm togglePlay
   const togglePlay = () => {
     if (audioRef.current) {
-      if (isPlaying) audioRef.current.pause();
-      else audioRef.current.play();
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            if (error.name !== 'AbortError') console.error("Resume error:", error);
+          });
+        }
+      }
       setIsPlaying(!isPlaying);
     }
   };
@@ -108,18 +122,18 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const getNextTrackIndex = () => {
     if (!currentTrack || playlist.length === 0) return -1;
     const currentIndex = playlist.findIndex(t => t.id === currentTrack.id);
-    
+
     if (isShuffle) {
-       // Logic shuffle đơn giản
-       let nextIndex = Math.floor(Math.random() * playlist.length);
-       while (nextIndex === currentIndex && playlist.length > 1) {
-          nextIndex = Math.floor(Math.random() * playlist.length);
-       }
-       return nextIndex;
+      // Logic shuffle đơn giản
+      let nextIndex = Math.floor(Math.random() * playlist.length);
+      while (nextIndex === currentIndex && playlist.length > 1) {
+        nextIndex = Math.floor(Math.random() * playlist.length);
+      }
+      return nextIndex;
     }
-    
+
     if (currentIndex === playlist.length - 1) {
-        return loopMode === 'ALL' ? 0 : -1;
+      return loopMode === 'ALL' ? 0 : -1;
     }
     return currentIndex + 1;
   };
@@ -127,9 +141,9 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const playNext = () => {
     const nextIndex = getNextTrackIndex();
     if (nextIndex !== -1) {
-        playTrack(playlist[nextIndex]);
+      playTrack(playlist[nextIndex]);
     } else {
-        setIsPlaying(false); // Hết list
+      setIsPlaying(false); // Hết list
     }
   };
 
@@ -138,8 +152,8 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const currentIndex = playlist.findIndex(t => t.id === currentTrack.id);
     // Nếu nghe được > 3s thì replay bài đó
     if (currentTime > 3 && audioRef.current) {
-        audioRef.current.currentTime = 0;
-        return;
+      audioRef.current.currentTime = 0;
+      return;
     }
     const prevIndex = currentIndex === 0 ? playlist.length - 1 : currentIndex - 1;
     playTrack(playlist[prevIndex]);
@@ -147,8 +161,8 @@ export const MusicPlayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const seek = (time: number) => {
     if (audioRef.current) {
-        audioRef.current.currentTime = time;
-        setCurrentTime(time);
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
     }
   };
 
