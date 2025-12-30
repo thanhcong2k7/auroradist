@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   Tags,
-  MessageSquare
+  MessageSquare,
+  BadgeInfo
 } from 'lucide-react';
 import { UserProfile } from '@/types';
 import { api } from '@/services/api';
@@ -58,6 +59,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
     { path: '/wallet', icon: Wallet, label: 'Revenue' },
     { path: '/support', icon: MessageSquare, label: 'Support' },
     { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/about', icon: BadgeInfo, label: 'About AMVN' },
   ];
 
   return (

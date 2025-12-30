@@ -12,6 +12,7 @@ import Wallet from './pages/Wallet';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Login from './pages/Login';
+import About from './pages/About';
 import { supabase } from './services/api'; // Dùng instance từ api.ts
 
 const App: React.FC = () => {
@@ -106,6 +107,7 @@ const App: React.FC = () => {
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/support" element={<Support />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
