@@ -179,7 +179,6 @@ const Artists: React.FC = () => {
                 </div>
             )}
 
-            {/* New/Edit Artist Modal - (Existing code remains mostly the same) */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-surface border border-white/10 rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -207,22 +206,18 @@ const Artists: React.FC = () => {
                                             />
                                         </div>
                                     </div>
-                                    <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">Profile Photo</span>
+                                    <span className="text-xs font-sans text-gray-500 uppercase tracking-widest">Profile Photo</span>
                                 </div>
 
                                 {/* Right Side: Fields */}
                                 <div className="flex-1 space-y-8">
-                                    {/* ... Existing Input Fields (Identity, Profiles, Contact) ... */}
-                                    {/* (No changes needed here based on request, existing fields are fine) */}
-                                    
-                                    {/* Identity */}
                                     <div className="space-y-4">
                                         <h4 className="text-xs font-bold uppercase text-blue-400 flex items-center gap-2 border-b border-white/5 pb-2">
                                             <User size={14} /> Identity
                                         </h4>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Official Band/Artist Name <span className="text-red-500">*</span></label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Official Band/Artist Name <span className="text-red-500">*</span></label>
                                                 <input
                                                     type="text"
                                                     value={formData.name}
@@ -232,7 +227,7 @@ const Artists: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Legal Name (Optional)</label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Legal Name (Optional)</label>
                                                 <input
                                                     type="text"
                                                     value={formData.legalName}
@@ -251,32 +246,32 @@ const Artists: React.FC = () => {
                                         </h4>
                                         <div className="space-y-3">
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Spotify ID / URI</label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Spotify ID / URI</label>
                                                 <input
                                                     type="text"
                                                     value={formData.spotifyId}
                                                     onChange={(e) => setFormData({ ...formData, spotifyId: e.target.value })}
-                                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-green-500/50 transition font-mono"
+                                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-green-500/50 transition font-sans"
                                                     placeholder="spotify:artist:..."
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Apple Music ID</label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Apple Music ID</label>
                                                 <input
                                                     type="text"
                                                     value={formData.appleMusicId}
                                                     onChange={(e) => setFormData({ ...formData, appleMusicId: e.target.value })}
-                                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-red-500/50 transition font-mono"
+                                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-red-500/50 transition font-sans"
                                                     placeholder="123456789"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Soundcloud URL</label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Soundcloud URL</label>
                                                 <input
                                                     type="text"
                                                     value={formData.soundcloudId}
                                                     onChange={(e) => setFormData({ ...formData, soundcloudId: e.target.value })}
-                                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-orange-500/50 transition font-mono"
+                                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-orange-500/50 transition font-sans"
                                                     placeholder="soundcloud.com/..."
                                                 />
                                             </div>
@@ -290,7 +285,7 @@ const Artists: React.FC = () => {
                                         </h4>
                                         <div className="space-y-3">
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Email Address</label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Email Address</label>
                                                 <input
                                                     type="email"
                                                     value={formData.email}
@@ -300,7 +295,7 @@ const Artists: React.FC = () => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Physical Address</label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Physical Address</label>
                                                 <input
                                                     type="text"
                                                     value={formData.address}

@@ -198,65 +198,67 @@ const Tracks: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
-        <div>
-          <h1 className="text-3xl font-black uppercase tracking-tight">Master Recordings</h1>
-          <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Global Audio Catalog</p>
+    <>
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
+          <div>
+            <h1 className="text-3xl font-black uppercase tracking-tight">Master Recordings</h1>
+            <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Global Audio Catalog</p>
+          </div>
+          <button onClick={() => openEditor()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-lg flex items-center gap-2 text-xs rounded-xl">
+            <Plus size={16} /> Ingest Master
+          </button>
         </div>
-        <button onClick={() => openEditor()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-lg flex items-center gap-2 text-xs rounded-xl">
-          <Plus size={16} /> Ingest Master
-        </button>
-      </div>
 
-      <div className="relative max-w-xl group">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
-        <input type="text" placeholder="FILTER BY TITLE OR ISRC..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-surface border border-white/5 rounded-xl py-3.5 pl-12 pr-6 text-xs font-mono focus:border-blue-500 transition-all outline-none uppercase placeholder:text-gray-800" />
-      </div>
+        <div className="relative max-w-xl group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+          <input type="text" placeholder="FILTER BY TITLE OR ISRC..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-surface border border-white/5 rounded-xl py-3.5 pl-12 pr-6 text-xs font-mono focus:border-blue-500 transition-all outline-none uppercase placeholder:text-gray-800" />
+        </div>
 
-      {loading && tracks.length === 0 ? (
-        <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
-      ) : (
-        <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-black/50 text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
-              <tr>
-                <th className="px-6 py-4">Recording</th>
-                <th className="px-6 py-4">Primary Artist</th>
-                <th className="px-6 py-4">ISRC</th>
-                <th className="px-6 py-4 text-right">Dur.</th>
-                <th className="px-6 py-4 text-right w-24">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filtered.map(track => (
-                <tr key={track.id} className="hover:bg-white/[0.02] transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => toggleAudio(track)}
-                        className={`p-2 rounded-lg transition ${playingTrackId === track.id ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'}`}
-                      >
-                        {playingTrackId === track.id ? <div className="animate-pulse">||</div> : <Play size={12} fill="currentColor" />}
-                      </button>
-                      <div className="font-bold uppercase tracking-tight">{track.name}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-400 font-medium">{track.artists?.[0]?.name}</td>
-                  <td className="px-6 py-4 text-gray-500 font-mono text-xs">{track.isrc || 'PENDING'}</td>
-                  <td className="px-6 py-4 text-right text-gray-500 font-mono">{track.duration}</td>
-                  <td className="px-6 py-4 text-right">
-                    <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-0 group-hover:opacity-100"><Plus size={16} /></button>
-                  </td>
+        {loading && tracks.length === 0 ? (
+          <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
+        ) : (
+          <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-black/50 text-xs font-mono text-gray-400 uppercase tracking-[0.2em]">
+                <tr>
+                  <th className="px-6 py-4">Recording</th>
+                  <th className="px-6 py-4">Primary Artist</th>
+                  <th className="px-6 py-4">ISRC</th>
+                  <th className="px-6 py-4 text-right">Dur.</th>
+                  <th className="px-6 py-4 text-right w-24">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filtered.map(track => (
+                  <tr key={track.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => toggleAudio(track)}
+                          className={`p-2 rounded-lg transition ${playingTrackId === track.id ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'}`}
+                        >
+                          {playingTrackId === track.id ? <div className="animate-pulse">||</div> : <Play size={12} fill="currentColor" />}
+                        </button>
+                        <div className="font-bold uppercase tracking-tight">{track.name}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-400 font-medium">{track.artists?.[0]?.name}</td>
+                    <td className="px-6 py-4 text-gray-500 font-mono text-xs">{track.isrc || 'PENDING'}</td>
+                    <td className="px-6 py-4 text-right text-gray-500 font-mono">{track.duration}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-0 group-hover:opacity-100"><Plus size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {showModal && (
-        <div className="fixed inset-x-0 bottom-0 top-16 z-[100] flex justify-center items-start bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-3xl h-[75vh] flex flex-col shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
               <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Asset Synchronizer</h3>
@@ -481,7 +483,7 @@ const Tracks: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

@@ -131,7 +131,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
           <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-gray-500 uppercase tracking-widest">
             <span className="text-blue-500">SYS.STATUS: ONLINE</span>
             <span>//</span>
-            <span>{currentTime.toLocaleDateString()}</span>
+            <span>{currentTime.toLocaleDateString('en-GB')}</span>
             <span>//</span>
             <span>{currentTime.toLocaleTimeString()}</span>
           </div>

@@ -81,7 +81,7 @@ const Wallet: React.FC = () => {
                     <div className="absolute top-0 right-0 p-32 bg-blue-500/5 blur-[80px] rounded-full pointer-events-none"></div>
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-end md:items-center">
                         <div>
-                            <div className="flex items-center gap-2 text-blue-400 font-mono text-xs uppercase tracking-[0.3em] mb-3">
+                            <div className="flex items-center gap-2 text-blue-400 font-sans font-black tracking-wide text-xs uppercase mb-3">
                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> Net Liquidity
                             </div>
                             <div className="text-6xl font-black text-white tracking-tighter">${summary?.availableBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
@@ -100,14 +100,14 @@ const Wallet: React.FC = () => {
                      <div className="bg-surface border border-white/5 p-6 rounded-2xl flex items-center gap-5">
                         <div className="p-3 bg-yellow-500/5 text-yellow-500 rounded-xl"><Clock size={24} /></div>
                         <div>
-                            <div className="text-xs text-gray-400 font-mono uppercase tracking-widest mb-0.5">Pending Clearance</div>
+                            <div className="text-xs text-gray-400 font-sans uppercase tracking-widest mb-0.5">Pending Clearance</div>
                             <div className="text-2xl font-black tracking-tight">${summary?.pendingClearance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                         </div>
                      </div>
                      <div className="bg-surface border border-white/5 p-6 rounded-2xl flex items-center gap-5">
                         <div className="p-3 bg-green-500/5 text-green-500 rounded-xl"><CheckCircle2 size={24} /></div>
                         <div>
-                            <div className="text-xs text-gray-400 font-mono uppercase tracking-widest mb-0.5">Gross Lifetime</div>
+                            <div className="text-xs text-gray-400 font-sans uppercase tracking-widest mb-0.5">Gross Lifetime</div>
                             <div className="text-2xl font-black tracking-tight">${summary?.lifetimeEarnings?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                         </div>
                      </div>
@@ -117,11 +117,11 @@ const Wallet: React.FC = () => {
             <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm">
                 <div className="p-5 border-b border-white/5 flex justify-between items-center bg-black/40">
                     <h3 className="font-bold uppercase tracking-widest text-xs">Operational Ledger</h3>
-                    <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">Feed Status: Optimal</span>
+                    <span className="text-xs font-sans text-gray-400 uppercase tracking-widest">Feed Status: Optimal</span>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-black text-gray-400 font-mono text-xs uppercase tracking-widest">
+                        <thead className="bg-black text-gray-400 font-sans text-xs uppercase tracking-wide">
                             <tr>
                                 <th className="px-6 py-4">Node Entry</th>
                                 <th className="px-6 py-4">Timestamp</th>
@@ -132,14 +132,14 @@ const Wallet: React.FC = () => {
                         <tbody className="divide-y divide-white/5">
                             {transactions.map((txn) => (
                                 <tr key={txn.id} className="hover:bg-white/[0.01] transition-colors text-xs">
-                                    <td className="px-6 py-4 font-mono text-blue-400 font-bold">{txn.id}</td>
-                                    <td className="px-6 py-4 font-mono text-gray-500">{txn.date}</td>
+                                    <td className="px-6 py-4 font-sans text-blue-400 font-bold">{txn.id}</td>
+                                    <td className="px-6 py-4 font-sans text-gray-500">{txn.date}</td>
                                     <td className="px-6 py-4">
                                         <span className={`text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-tighter border ${txn.type === 'ROYALTY' ? 'bg-purple-500/5 text-purple-400 border-purple-500/10' : 'bg-orange-500/5 text-orange-400 border-orange-500/10'}`}>
                                             {txn.type}
                                         </span>
                                     </td>
-                                    <td className={`px-6 py-4 text-right font-mono font-bold ${txn.type === 'WITHDRAWAL' ? 'text-gray-500' : 'text-green-400'}`}>
+                                    <td className={`px-6 py-4 text-right font-sans font-bold ${txn.type === 'WITHDRAWAL' ? 'text-gray-500' : 'text-green-400'}`}>
                                         {txn.type === 'WITHDRAWAL' ? '-' : '+'}${txn.amount.toFixed(2)}
                                     </td>
                                 </tr>

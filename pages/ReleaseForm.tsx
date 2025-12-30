@@ -352,11 +352,11 @@ const ReleaseForm: React.FC = () => {
                                         {/* Primary Info */}
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div className="md:col-span-2">
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Album Title <span className="text-red-500">*</span></label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Album Title <span className="text-red-500">*</span></label>
                                                 <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold text-lg" placeholder="e.g. Neon Horizon" />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Version</label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Version</label>
                                                 <input type="text" value={version} onChange={(e) => setVersion(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold" placeholder="e.g. Remix" />
                                             </div>
                                         </div>
@@ -364,13 +364,13 @@ const ReleaseForm: React.FC = () => {
                                         {/* Format & Label */}
                                         <div className="grid grid-cols-2 gap-6">
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Format <span className="text-red-500">*</span></label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Format <span className="text-red-500">*</span></label>
                                                 <select value={format} onChange={(e) => setFormat(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition">
                                                     {RELEASE_FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Label Imprint</label>
+                                                <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Label Imprint</label>
                                                 <select value={labelId} onChange={(e) => setLabelId(Number(e.target.value))} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition">
                                                     <option value="">-- Independent --</option>
                                                     {labels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -383,18 +383,18 @@ const ReleaseForm: React.FC = () => {
                                             <h3 className="text-xs font-bold uppercase text-blue-400">Classification</h3>
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div>
-                                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label>
+                                                    <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label>
                                                     <select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
                                                         <option value="">Select Genre</option>
                                                         {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Sub-Genre</label>
+                                                    <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Sub-Genre</label>
                                                     <input type="text" value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs" placeholder="Optional" />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label>
+                                                    <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label>
                                                     <select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
                                                         {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
                                                     </select>
@@ -404,8 +404,8 @@ const ReleaseForm: React.FC = () => {
 
                                         {/* Dates */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Release Date <span className="text-red-500">*</span></label><input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
-                                            <div><label className="block text-xs font-mono text-gray-500 mb-1 uppercase">Orig. Release Date</label><input type="date" value={originalReleaseDate} onChange={(e) => setOriginalReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
+                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Release Date <span className="text-red-500">*</span></label><input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
+                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Orig. Release Date</label><input type="date" value={originalReleaseDate} onChange={(e) => setOriginalReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
                                         </div>
 
                                         {/* Rights */}
@@ -426,7 +426,7 @@ const ReleaseForm: React.FC = () => {
                                         </div>
 
                                         <div className="space-y-2 mt-4">
-                                            <label className="block text-xs font-mono text-gray-500 mb-1 uppercase">UPC / Barcode</label>
+                                            <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">UPC / Barcode</label>
                                             <input type="text" value={upc} onChange={(e) => setUpc(e.target.value)} maxLength={12} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition" placeholder="Auto-assigned if empty" />
                                         </div>
                                     </div>
@@ -443,7 +443,7 @@ const ReleaseForm: React.FC = () => {
                                         <button onClick={openTrackManager} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs flex items-center gap-2 transition"><Plus size={14} /> Add Tracks</button>
                                     </div>
                                     <table className="w-full text-left text-sm">
-                                        <thead className="bg-black/50 text-gray-400 font-mono text-xs uppercase">
+                                        <thead className="bg-black/50 text-gray-400 font-sans text-xs uppercase">
                                             <tr>
                                                 <th className="px-6 py-4 w-16">#</th>
                                                 <th className="px-6 py-4">Title</th>

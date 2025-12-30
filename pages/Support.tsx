@@ -87,6 +87,7 @@ const Support: React.FC = () => {
   };
 
   return (
+    <>
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/5 pb-4">
         <div>
@@ -105,10 +106,10 @@ const Support: React.FC = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-blue-500 transition-colors" size={14} />
             <input 
               type="text" 
-              placeholder="FILTER LEDGER..." 
+              placeholder="search tickets..." 
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
-              className="w-full bg-surface border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs font-mono focus:border-blue-500 transition-all outline-none uppercase placeholder:text-gray-800" 
+              className="w-full bg-surface border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs font-mono focus:border-blue-500 transition-all outline-none uppercase placeholder:text-gray-600" 
             />
           </div>
 
@@ -210,43 +211,35 @@ const Support: React.FC = () => {
           )}
         </div>
       </div>
+    </div>
 
-      {/* New Ticket Modal */}
       {showNewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
-              <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Initialize Support Session</h3>
+              <h3 className="font-black uppercase tracking-widest text-xs text-blue-500">Initialize Support Session</h3>
               <button onClick={() => setShowNewModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
             </div>
             <form onSubmit={handleCreateTicket} className="p-8 space-y-6">
               <div className="space-y-1">
-                <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Transmission Subject</label>
+                <label className="text-xs font-sans text-gray-400 tracking-widest ml-1">Subject</label>
                 <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="e.g. Asset Ingestion Failure" required />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Category</label>
-                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs uppercase font-black tracking-widest focus:border-blue-500 outline-none">
+                  <label className="text-xs font-sans text-gray-400 tracking-widest ml-1">Category</label>
+                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs uppercase font-bold tracking-widest focus:border-blue-500 outline-none">
                     <option value="TECHNICAL">Technical</option>
                     <option value="FINANCIAL">Financial</option>
                     <option value="DISTRIBUTION">Distribution</option>
                     <option value="OTHER">Other</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Priority</label>
-                  <select value={newPriority} onChange={e => setNewPriority(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs uppercase font-black tracking-widest focus:border-blue-500 outline-none">
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="HIGH">High</option>
-                  </select>
-                </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-mono text-gray-700 uppercase tracking-widest ml-1">Payload Content</label>
+                <label className="text-xs font-sans text-gray-400 tracking-widest ml-1">Message</label>
                 <textarea 
                   value={newContent} 
                   onChange={e => setNewContent(e.target.value)} 
@@ -263,7 +256,7 @@ const Support: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
