@@ -106,29 +106,126 @@ ALTER TYPE "public"."transaction_type" OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."get_dashboard_stats"() RETURNS json
-    LANGUAGE "plpgsql"
-    AS $$
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $_$
 DECLARE
-  total_streams TEXT;
-  total_revenue TEXT;
-  active_releases TEXT;
+  curr_uid UUID;
+  
+  -- Biến tính Doanh thu (Revenue)
+  total_revenue NUMERIC := 0;
+  this_month_rev NUMERIC := 0;
+  last_month_rev NUMERIC := 0;
+  rev_change NUMERIC := 0;
+  
+  -- Biến tính Streams
+  total_streams BIGINT := 0;
+  curr_streams INT := 0;
+  prev_streams INT := 0;
+  streams_change NUMERIC := 0;
+  
+  -- Biến tính Listeners (Ước lượng)
+  curr_listeners INT := 0;
+  prev_listeners INT := 0;
+  listeners_change NUMERIC := 0;
+  
+  -- Biến tính Releases
+  active_rel_count INT := 0;
+  
 BEGIN
-  -- Simple calculation examples
-  SELECT COALESCE(SUM(streams), 0)::TEXT INTO total_streams FROM public.analytics_monthly;
-  SELECT COALESCE(available_balance, 0)::TEXT INTO total_revenue FROM public.wallet_summary LIMIT 1;
-  SELECT COUNT(*)::TEXT INTO active_releases FROM public.releases WHERE status = 'ACCEPTED';
+  -- Lấy ID của user đang đăng nhập
+  curr_uid := auth.uid();
+  
+  -- ==========================================
+  -- 1. TÍNH DOANH THU (Từ bảng transactions)
+  -- ==========================================
+  -- Tổng doanh thu trọn đời (chỉ tính ROYALTY)
+  SELECT COALESCE(SUM(amount), 0) INTO total_revenue
+  FROM public.transactions
+  WHERE uid = curr_uid AND type = 'ROYALTY';
+  
+  -- Doanh thu tháng này
+  SELECT COALESCE(SUM(amount), 0) INTO this_month_rev
+  FROM public.transactions
+  WHERE uid = curr_uid AND type = 'ROYALTY'
+  AND date_trunc('month', date) = date_trunc('month', now());
+  
+  -- Doanh thu tháng trước
+  SELECT COALESCE(SUM(amount), 0) INTO last_month_rev
+  FROM public.transactions
+  WHERE uid = curr_uid AND type = 'ROYALTY'
+  AND date_trunc('month', date) = date_trunc('month', now() - interval '1 month');
+  
+  -- Tính % thay đổi
+  IF last_month_rev > 0 THEN
+    rev_change := ((this_month_rev - last_month_rev) / last_month_rev) * 100;
+  ELSE
+    rev_change := 0;
+  END IF;
 
+  -- ==========================================
+  -- 2. TÍNH STREAMS (Từ bảng analytics_monthly)
+  -- ==========================================
+  -- Tổng streams trọn đời
+  SELECT COALESCE(SUM(streams), 0) INTO total_streams
+  FROM public.analytics_monthly
+  WHERE uid = curr_uid;
+  
+  -- Lấy streams tháng gần nhất (Sắp xếp theo ID giảm dần)
+  SELECT COALESCE(streams, 0) INTO curr_streams
+  FROM public.analytics_monthly
+  WHERE uid = curr_uid
+  ORDER BY id DESC LIMIT 1;
+  
+  -- Lấy streams tháng liền kề trước đó
+  SELECT COALESCE(streams, 0) INTO prev_streams
+  FROM public.analytics_monthly
+  WHERE uid = curr_uid
+  ORDER BY id DESC LIMIT 1 OFFSET 1;
+  
+  -- Tính % thay đổi streams
+  IF prev_streams > 0 THEN
+    streams_change := ((curr_streams::NUMERIC - prev_streams::NUMERIC) / prev_streams::NUMERIC) * 100;
+  ELSE
+    streams_change := 0;
+  END IF;
+  
+  -- ==========================================
+  -- 3. TÍNH LISTENERS (Ước lượng 60% của Streams)
+  -- ==========================================
+  curr_listeners := FLOOR(curr_streams * 0.6);
+  prev_listeners := FLOOR(prev_streams * 0.6);
+  
+  IF prev_listeners > 0 THEN
+    listeners_change := ((curr_listeners::NUMERIC - prev_listeners::NUMERIC) / prev_listeners::NUMERIC) * 100;
+  ELSE
+    listeners_change := 0;
+  END IF;
+
+  -- ==========================================
+  -- 4. TÍNH ACTIVE RELEASES
+  -- ==========================================
+  SELECT COUNT(*) INTO active_rel_count
+  FROM public.releases
+  WHERE uid = curr_uid
+  AND status IN ('ACCEPTED', 'DELIVERED', 'CHECKING');
+
+  -- ==========================================
+  -- 5. TRẢ VỀ JSON CHO FRONTEND
+  -- ==========================================
   RETURN json_build_object(
-    'totalStreams', total_streams,
-    'revenue', total_revenue,
-    'activeReleases', active_releases,
-    'totalStreamsChange', '+12.5%', -- Mock data for UI
-    'revenueChange', '+8.2%',       -- Mock data for UI
-    'monthlyListeners', '85,420',   -- Mock data for UI
-    'monthlyListenersChange', '+24%' -- Mock data for UI
+    'totalStreams', to_char(total_streams, 'FM999,999,999,999'),
+    'totalStreamsChange', (CASE WHEN streams_change >= 0 THEN '+' ELSE '' END) || round(streams_change, 1)::text || '%',
+    
+    'revenue', '$' || to_char(total_revenue, 'FM999,999,999.00'),
+    'revenueChange', (CASE WHEN rev_change >= 0 THEN '+' ELSE '' END) || round(rev_change, 1)::text || '%',
+    
+    'activeReleases', active_rel_count::text,
+    
+    'monthlyListeners', to_char(curr_listeners, 'FM999,999,999'),
+    'monthlyListenersChange', (CASE WHEN listeners_change >= 0 THEN '+' ELSE '' END) || round(listeners_change, 1)::text || '%'
   );
 END;
-$$;
+$_$;
 
 
 ALTER FUNCTION "public"."get_dashboard_stats"() OWNER TO "postgres";
@@ -150,17 +247,15 @@ ALTER FUNCTION "public"."handle_new_release"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $$
-BEGIN
+    AS $$BEGIN
   INSERT INTO public.profiles (id, email, name)
   VALUES (new.id, new.email, split_part(new.email, '@', 1));
   
-  INSERT INTO public.wallet_summary (user_id)
+  INSERT INTO public.wallet_summary (uid)
   VALUES (new.id);
   
   RETURN new;
-END;
-$$;
+END;$$;
 
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
@@ -186,7 +281,8 @@ CREATE TABLE IF NOT EXISTS "public"."analytics_monthly" (
     "month" "text" NOT NULL,
     "name" "text",
     "streams" integer DEFAULT 0,
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "uid" "uuid"
 );
 
 
@@ -291,7 +387,8 @@ CREATE TABLE IF NOT EXISTS "public"."payout_methods" (
     "account_number" "text",
     "swift_code" "text",
     "paypal_email" "text",
-    "created_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "uid" "uuid"
 );
 
 
@@ -330,7 +427,12 @@ CREATE TABLE IF NOT EXISTS "public"."releases" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
     "uid" "uuid",
-    "selected_dsps" "jsonb" DEFAULT '[]'::"jsonb"
+    "selected_dsps" "jsonb" DEFAULT '[]'::"jsonb",
+    "genre" "text",
+    "sub_genre" "text",
+    "language" "text",
+    "format" "text" DEFAULT 'SINGLE'::"text",
+    "territories" "text"[] DEFAULT '{WORLDWIDE}'::"text"[]
 );
 
 
@@ -355,7 +457,8 @@ CREATE TABLE IF NOT EXISTS "public"."support_tickets" (
     "status" "text" DEFAULT 'OPEN'::"text",
     "priority" "text" DEFAULT 'MEDIUM'::"text",
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "uid" "uuid"
 );
 
 
@@ -369,7 +472,8 @@ CREATE TABLE IF NOT EXISTS "public"."ticket_messages" (
     "sender_name" "text",
     "role" "text" NOT NULL,
     "content" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "uid" "uuid"
 );
 
 
@@ -439,11 +543,18 @@ CREATE TABLE IF NOT EXISTS "public"."tracks" (
     "is_explicit" boolean DEFAULT false,
     "has_explicit_version" boolean DEFAULT false,
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "uid" "uuid"
+    "uid" "uuid",
+    "tiktok_clip_start_time" "text",
+    "artists" "jsonb" DEFAULT '[]'::"jsonb",
+    "contributors" "jsonb"
 );
 
 
 ALTER TABLE "public"."tracks" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."tracks"."tiktok_clip_start_time" IS 'Start time for TikTok viral clip (mm:ss)';
+
 
 
 ALTER TABLE "public"."tracks" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -462,7 +573,8 @@ CREATE TABLE IF NOT EXISTS "public"."transactions" (
     "date" timestamp with time zone DEFAULT "now"(),
     "amount" numeric(10,2) NOT NULL,
     "type" "text" NOT NULL,
-    "status" "text" DEFAULT 'PENDING'::"text"
+    "status" "text" DEFAULT 'PENDING'::"text",
+    "uid" "uuid"
 );
 
 
@@ -474,7 +586,8 @@ CREATE TABLE IF NOT EXISTS "public"."wallet_summary" (
     "available_balance" numeric(10,2) DEFAULT 0.00,
     "pending_clearance" numeric(10,2) DEFAULT 0.00,
     "lifetime_earnings" numeric(10,2) DEFAULT 0.00,
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "uid" "uuid" DEFAULT "auth"."uid"()
 );
 
 
@@ -627,15 +740,43 @@ CREATE POLICY "Enable read access for all authenticated users" ON "public"."dsp_
 
 
 
-CREATE POLICY "Enable read access for all users" ON "public"."tracks" FOR SELECT TO "authenticated" USING (true);
+CREATE POLICY "Enable read access for all users" ON "public"."tracks" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "uid"));
 
 
 
-CREATE POLICY "Enable read access for authenticated users" ON "public"."tracks" FOR SELECT TO "authenticated" USING (true);
+CREATE POLICY "Enable read access for authenticated users" ON "public"."tracks" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User can add" ON "public"."payout_methods" FOR INSERT WITH CHECK (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User can add" ON "public"."transactions" FOR INSERT WITH CHECK (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User can add msg" ON "public"."ticket_messages" FOR INSERT WITH CHECK (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User can delete" ON "public"."payout_methods" FOR DELETE USING (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User can do all" ON "public"."tracks" TO "authenticated" USING (("auth"."uid"() = "uid")) WITH CHECK (("auth"."uid"() = "uid"));
 
 
 
 CREATE POLICY "User can insert" ON "public"."artists" FOR INSERT WITH CHECK (true);
+
+
+
+CREATE POLICY "User can see" ON "public"."payout_methods" FOR SELECT USING (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User can see" ON "public"."transactions" FOR SELECT USING (("auth"."uid"() = "uid"));
 
 
 
@@ -644,6 +785,26 @@ CREATE POLICY "User can select" ON "public"."artists" FOR SELECT USING (("auth".
 
 
 CREATE POLICY "User can update" ON "public"."artists" FOR UPDATE USING (("auth"."uid"() = "uid")) WITH CHECK (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User can update" ON "public"."payout_methods" FOR UPDATE USING (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User can update tracks" ON "public"."tracks" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "uid")) WITH CHECK (true);
+
+
+
+CREATE POLICY "User insert tickets" ON "public"."support_tickets" FOR INSERT WITH CHECK (("auth"."uid"() = "uid"));
+
+
+
+CREATE POLICY "User see msg" ON "public"."ticket_messages" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "User see tickets" ON "public"."support_tickets" FOR SELECT USING (("auth"."uid"() = "uid"));
 
 
 
