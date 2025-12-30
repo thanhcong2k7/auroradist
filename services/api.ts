@@ -43,7 +43,24 @@ export const api = {
       const profile = await api.auth.getProfile();
       return { token: data.session.access_token, user: profile };
     },
+    loginWithGoogle: async () => {
+      // Lấy URL hiện tại để redirect về sau khi đăng nhập thành công
+      const redirectTo = `${window.location.origin}/`;
 
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) throw error;
+      return data;
+    },
     getProfile: async () => {
       const userId = await getUserId();
 

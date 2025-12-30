@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -13,12 +12,31 @@ import Wallet from './pages/Wallet';
 import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Login from './pages/Login';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing Supabase Environment Variables");
+}
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Check for session (mock)
   useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession(); // Cần access supabase client
+      if (session) {
+        setIsAuthenticated(true);
+        localStorage.setItem('aurora_session', 'active'); // Giữ logic cũ của bạn để tương thích
+      }
+    };
+    checkSession();
     const session = localStorage.getItem('aurora_session');
     if (session) {
       setIsAuthenticated(true);
