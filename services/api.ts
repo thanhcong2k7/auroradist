@@ -431,6 +431,8 @@ export const api = {
         isExplicit: t.is_explicit,
         hasExplicitVersion: t.has_explicit_version,
         tiktokClipStartTime: t.tiktok_clip_start_time,
+        artists: t.artists || [],
+        contributors: t.contributors || []
       })) as Track[];
     },
 

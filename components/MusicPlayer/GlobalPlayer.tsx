@@ -54,7 +54,9 @@ const GlobalPlayer: React.FC = () => {
                             </div>
                             <div className="min-w-0">
                                 <div className={`text-xs font-bold truncate ${currentTrack.id === track.id ? 'text-blue-400' : 'text-white'}`}>{track.name}</div>
-                                <div className="text-[10px] text-gray-500 truncate">{track?.artists[0]?.name}</div>
+                                <div className="text-[10px] text-gray-500 truncate">
+                                    {track.artists && track.artists.length > 0 ? track.artists[0].name : 'Unknown Artist'}
+                                </div>
                             </div>
                             {currentTrack.id === track.id && isPlaying && <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_blue]"></div>}
                         </div>
@@ -98,7 +100,9 @@ const GlobalPlayer: React.FC = () => {
                             {/* Info */}
                             <div className="flex-1 min-w-0 pr-4">
                                 <div className="text-xs font-black uppercase tracking-tight truncate text-white">{currentTrack.name}</div>
-                                <div className="text-[10px] font-mono text-gray-400 truncate">{currentTrack?.artists[0]?.name}</div>
+                                <div className="text-[10px] font-mono text-gray-400 truncate">
+                                    {currentTrack.artists && currentTrack.artists.length > 0 ? currentTrack.artists[0].name : 'Unknown Artist'}
+                                </div>
                             </div>
 
                             {/* Buttons */}
