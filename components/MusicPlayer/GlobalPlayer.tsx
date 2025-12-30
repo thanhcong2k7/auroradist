@@ -98,7 +98,7 @@ const GlobalPlayer: React.FC = () => {
                             {/* Info */}
                             <div className="flex-1 min-w-0 pr-4">
                                 <div className="text-xs font-black uppercase tracking-tight truncate text-white">{currentTrack.name}</div>
-                                <div className="text-[10px] font-mono text-gray-400 truncate">{currentTrack?.artists[0].name}</div>
+                                <div className="text-[10px] font-mono text-gray-400 truncate">{currentTrack?.artists[0]?.name}</div>
                             </div>
 
                             {/* Buttons */}
