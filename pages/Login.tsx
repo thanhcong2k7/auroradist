@@ -121,7 +121,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full py-4 bg-white text-black hover:bg-gray-200 font-bold uppercase tracking-wide rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
+              className="w-full py-4 bg-white text-black hover:bg-gray-200 uppercase tracking-wide rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
             >
               {/* SVG Google Icon */}
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -142,7 +142,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   fill="#EA4335"
                 />
               </svg>
-              Google Workspace
+              Login with Google
             </button>
           </form>
 
