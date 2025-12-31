@@ -1,214 +1,202 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../services/api';
-import {
-    Wallet as WalletIcon,
-    CreditCard,
-    History,
-    ArrowUpRight,
-    ArrowDownLeft,
-    Banknote,
-    AlertCircle
-} from 'lucide-react';
 
-export default function Wallet() {
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import { Transaction, PayoutMethod } from '../types';
+import { DollarSign, Download, Clock, Loader2, CheckCircle2, X, CreditCard, AlertCircle } from 'lucide-react';
+
+const Wallet: React.FC = () => {
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
     const [loading, setLoading] = useState(true);
-    const [wallet, setWallet] = useState<any>(null);
-    const [transactions, setTransactions] = useState<any[]>([]);
-    const [payoutMethod, setPayoutMethod] = useState<any>(null);
-    const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+    const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [selectedMethod, setSelectedMethod] = useState('');
+    const [requesting, setRequesting] = useState(false);
+    const [summary, setSummary] = useState<any>(null);
 
-    useEffect(() => {
-        fetchWalletData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
-    const fetchWalletData = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // 1. Lấy thông tin ví
-        const { data: walletData } = await supabase
-            .from('wallet_summary')
-            .select('*')
-            .eq('uid', user.id)
-            .single();
-
-        // 2. Lấy phương thức thanh toán
-        const { data: methodData } = await supabase
-            .from('payout_methods')
-            .select('*')
-            .eq('uid', user.id)
-            .single();
-
-        // 3. Lấy lịch sử giao dịch (Mới nhất lên đầu)
-        const { data: transData } = await supabase
-            .from('transactions')
-            .select('*')
-            .eq('uid', user.id)
-            .order('date', { ascending: false })
-            .limit(20);
-
-        setWallet(walletData || { available_balance: 0, lifetime_earnings: 0 });
-        setPayoutMethod(methodData);
-        setTransactions(transData || []);
-        setLoading(false);
-    };
-
-    const handleWithdraw = async () => {
-        if (!payoutMethod) {
-            alert("Please add a payout method first.");
-            return;
-        }
-
-        const amount = wallet?.available_balance || 0;
-        if (amount < 50) {
-            alert("Minimum withdrawal amount is $50.");
-            return;
-        }
-
-        if (!confirm(`Are you sure you want to withdraw $${amount}?`)) return;
-
-        setIsWithdrawing(true);
+    const loadData = async () => {
+        setLoading(true);
         try {
-            // Gọi RPC function chúng ta vừa tạo ở Bước 1
-            const { data, error } = await supabase.rpc('request_payout', { amount: amount });
-
-            if (error) throw error;
-
-            alert("Withdrawal request submitted successfully!");
-            fetchWalletData(); // Refresh lại số liệu
-        } catch (error: any) {
-            alert(error.message || "Error processing withdrawal");
+            const [t, p, s] = await Promise.all([
+                api.wallet.getTransactions(),
+                api.wallet.getPayoutMethods(),
+                api.wallet.getSummary()
+            ]);
+            setTransactions(t);
+            setPayoutMethods(p);
+            setSummary(s);
+            if (p.length > 0) setSelectedMethod(p[0].id);
         } finally {
-            setIsWithdrawing(false);
+            setLoading(false);
         }
     };
 
-    if (loading) return <div className="p-8 text-white">Loading Wallet...</div>;
+    const handleWithdrawalSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const amount = parseFloat(withdrawAmount);
+        if (!amount || amount <= 0 || amount > (summary?.availableBalance || 0)) return alert("Invalid amount.");
+        if (!selectedMethod) return alert("Select a payout node.");
+
+        setRequesting(true);
+        try {
+            await api.wallet.requestWithdrawal(amount, selectedMethod);
+            setShowWithdrawModal(false);
+            setWithdrawAmount('');
+            alert("SUCCESS: Request synchronized for administrator clearance.");
+            loadData();
+        } finally {
+            setRequesting(false);
+        }
+    };
+
+    const handleExportCSV = () => {
+        const headers = ["TX_ID", "TIMESTAMP", "TYPE", "STATUS", "VALUE_USD"];
+        const rows = transactions.map(t => [t.id, t.date, t.type, t.status, t.amount.toString()]);
+        const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `AURORA_LEDGER_${new Date().getTime()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
-        <div className="p-6 space-y-8 text-white min-h-screen pb-20">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">
-                    Revenue & Wallet
-                </h1>
+        <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
+            <div className="border-b border-white/5 pb-4 flex justify-between items-end">
+                <div>
+                  <h1 className="text-2xl font-black uppercase tracking-tight">Revenue Matrix</h1>
+                  <p className="text-gray-400 font-mono text-xs uppercase tracking-widest opacity-60">Financial Settlement Node</p>
+                </div>
+                <button onClick={handleExportCSV} className="text-xs font-black uppercase tracking-widest text-blue-500 hover:text-white transition flex items-center gap-2 border border-blue-500/10 px-4 py-2 rounded-xl">
+                    <Download size={14} /> Intelligence Export
+                </button>
             </div>
 
-            {/* 1. SECTION: BALANCE CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Card 1: Available Balance */}
-                <div className="bg-gradient-to-br from-green-900/50 to-emerald-900/20 p-6 rounded-2xl border border-green-500/20 backdrop-blur-md relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10"><WalletIcon size={64} /></div>
-                    <h3 className="text-gray-400 text-sm font-medium mb-1">Available to Withdraw</h3>
-                    <div className="text-4xl font-bold text-white mb-4">
-                        ${wallet?.available_balance?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </div>
-                    <button
-                        onClick={handleWithdraw}
-                        disabled={isWithdrawing || (wallet?.available_balance || 0) < 50}
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${(wallet?.available_balance || 0) >= 50
-                                ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/20'
-                                : 'bg-white/10 text-gray-400 cursor-not-allowed'
-                            }`}
-                    >
-                        {isWithdrawing ? 'Processing...' : 'Request Payout'}
-                    </button>
-                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                        <AlertCircle size={12} /> Minimum withdrawal: $50.00
-                    </p>
-                </div>
-
-                {/* Card 2: Lifetime Earnings */}
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md">
-                    <h3 className="text-gray-400 text-sm font-medium mb-1">Lifetime Earnings</h3>
-                    <div className="text-3xl font-bold text-white">
-                        ${wallet?.lifetime_earnings?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </div>
-                    <div className="mt-4 text-sm text-green-400 flex items-center gap-1">
-                        <ArrowUpRight size={16} /> Total generated revenue
+                <div className="md:col-span-2 bg-[#080808] border border-blue-500/10 p-8 rounded-2xl relative overflow-hidden group shadow-lg">
+                    <div className="absolute top-0 right-0 p-32 bg-blue-500/5 blur-[80px] rounded-full pointer-events-none"></div>
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-end md:items-center">
+                        <div>
+                            <div className="flex items-center gap-2 text-blue-400 font-sans font-black tracking-wide text-xs uppercase mb-3">
+                               <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> Net Liquidity
+                            </div>
+                            <div className="text-6xl font-black text-white tracking-tighter">${summary?.availableBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        </div>
+                        <button 
+                            onClick={() => setShowWithdrawModal(true)}
+                            disabled={!summary?.availableBalance}
+                            className="mt-6 md:mt-0 px-8 py-4 bg-blue-600 text-white font-black uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all rounded-xl shadow-xl flex items-center gap-3 disabled:opacity-30 active:scale-[0.98]"
+                        >
+                            <DollarSign size={18} /> Request Disbursement
+                        </button>
                     </div>
                 </div>
 
-                {/* Card 3: Payout Method Status */}
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md flex flex-col justify-between">
-                    <div>
-                        <h3 className="text-gray-400 text-sm font-medium mb-1">Payout Method</h3>
-                        {payoutMethod ? (
-                            <div className="mt-2">
-                                <div className="font-semibold text-lg flex items-center gap-2">
-                                    <Banknote size={20} className="text-blue-400" />
-                                    {payoutMethod.type === 'BANK' ? 'Bank Transfer' : 'PayPal'}
-                                </div>
-                                <p className="text-sm text-gray-400 truncate w-full">
-                                    {payoutMethod.type === 'BANK' ? `**** ${payoutMethod.account_number?.slice(-4)}` : payoutMethod.paypal_email}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="mt-2 text-yellow-500 text-sm flex items-center gap-2">
-                                <AlertCircle size={16} /> No method added
-                            </div>
-                        )}
-                    </div>
-                    <button className="mt-4 w-full py-2 border border-white/20 rounded-lg hover:bg-white/5 text-sm transition-colors">
-                        {payoutMethod ? 'Manage Method' : 'Add Payout Method'}
-                    </button>
+                <div className="space-y-4">
+                     <div className="bg-surface border border-white/5 p-6 rounded-2xl flex items-center gap-5">
+                        <div className="p-3 bg-yellow-500/5 text-yellow-500 rounded-xl"><Clock size={24} /></div>
+                        <div>
+                            <div className="text-xs text-gray-400 font-sans uppercase tracking-widest mb-0.5">Pending Clearance</div>
+                            <div className="text-2xl font-black tracking-tight">${summary?.pendingClearance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        </div>
+                     </div>
+                     <div className="bg-surface border border-white/5 p-6 rounded-2xl flex items-center gap-5">
+                        <div className="p-3 bg-green-500/5 text-green-500 rounded-xl"><CheckCircle2 size={24} /></div>
+                        <div>
+                            <div className="text-xs text-gray-400 font-sans uppercase tracking-widest mb-0.5">Gross Lifetime</div>
+                            <div className="text-2xl font-black tracking-tight">${summary?.lifetimeEarnings?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                        </div>
+                     </div>
                 </div>
             </div>
 
-            {/* 2. SECTION: TRANSACTION HISTORY */}
-            <div className="bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md overflow-hidden">
-                <div className="p-6 border-b border-white/10 flex items-center gap-2">
-                    <History className="text-purple-400" />
-                    <h2 className="text-xl font-semibold">Transaction History</h2>
+            <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm">
+                <div className="p-5 border-b border-white/5 flex justify-between items-center bg-black/40">
+                    <h3 className="font-bold uppercase tracking-widest text-xs">Operational Ledger</h3>
+                    <span className="text-xs font-sans text-gray-400 uppercase tracking-widest">Feed Status: Optimal</span>
                 </div>
-
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-gray-400">
-                        <thead className="bg-black/20 uppercase font-medium">
+                    <table className="w-full text-left">
+                        <thead className="bg-black text-gray-400 font-sans text-xs uppercase tracking-wide">
                             <tr>
-                                <th className="px-6 py-4">Date</th>
-                                <th className="px-6 py-4">Type</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Amount</th>
+                                <th className="px-6 py-4">Node Entry</th>
+                                <th className="px-6 py-4">Timestamp</th>
+                                <th className="px-6 py-4">Modality</th>
+                                <th className="px-6 py-4 text-right">Yield (USD)</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {transactions.length > 0 ? transactions.map((tx) => (
-                                <tr key={tx.id} className="hover:bg-white/5 transition-colors">
+                            {transactions.map((txn) => (
+                                <tr key={txn.id} className="hover:bg-white/[0.01] transition-colors text-xs">
+                                    <td className="px-6 py-4 font-sans text-blue-400 font-bold">{txn.id}</td>
+                                    <td className="px-6 py-4 font-sans text-gray-500">{txn.date}</td>
                                     <td className="px-6 py-4">
-                                        {new Date(tx.date).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4 flex items-center gap-2">
-                                        {tx.type === 'ROYALTY' ? (
-                                            <span className="p-1 rounded bg-green-500/10 text-green-400"><ArrowDownLeft size={14} /></span>
-                                        ) : (
-                                            <span className="p-1 rounded bg-red-500/10 text-red-400"><ArrowUpRight size={14} /></span>
-                                        )}
-                                        {tx.type}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${tx.status === 'COMPLETED' ? 'bg-green-500/10 text-green-400' :
-                                                tx.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400' :
-                                                    'bg-red-500/10 text-red-400'
-                                            }`}>
-                                            {tx.status}
+                                        <span className={`text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-tighter border ${txn.type === 'ROYALTY' ? 'bg-purple-500/5 text-purple-400 border-purple-500/10' : 'bg-orange-500/5 text-orange-400 border-orange-500/10'}`}>
+                                            {txn.type}
                                         </span>
                                     </td>
-                                    <td className={`px-6 py-4 text-right font-medium ${tx.amount > 0 ? 'text-green-400' : 'text-white'
-                                        }`}>
-                                        {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                                    <td className={`px-6 py-4 text-right font-sans font-bold ${txn.type === 'WITHDRAWAL' ? 'text-gray-500' : 'text-green-400'}`}>
+                                        {txn.type === 'WITHDRAWAL' ? '-' : '+'}${txn.amount.toFixed(2)}
                                     </td>
                                 </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                                        No transactions found.
-                                    </td>
-                                </tr>
-                            )}
+                            ))}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            {showWithdrawModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
+                    <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
+                            <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Fund Disbursement</h3>
+                            <button onClick={() => setShowWithdrawModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
+                        </div>
+                        <form onSubmit={handleWithdrawalSubmit} className="p-8 space-y-6">
+                            <div className="space-y-1">
+                                <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Quantum Allocation (USD)</label>
+                                <div className="relative">
+                                    <input type="number" step="0.01" max={summary?.availableBalance} value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-3xl font-black focus:border-blue-500 outline-none transition placeholder:text-gray-900" placeholder="0.00" required />
+                                </div>
+                                <p className="text-xs text-gray-700 font-mono mt-2 uppercase tracking-widest text-right">Cap: ${summary?.availableBalance.toFixed(2)}</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Endpoint Configuration</label>
+                                <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                    {payoutMethods.map(pm => (
+                                        <div key={pm.id} onClick={() => setSelectedMethod(pm.id)} className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${selectedMethod === pm.id ? 'bg-blue-600/5 border-blue-500/30' : 'bg-black/40 border-white/5'}`}>
+                                            <div className="flex items-center gap-4">
+                                                <CreditCard size={16} className="text-gray-400" />
+                                                <div>
+                                                    <p className="text-xs font-black uppercase">{pm.name}</p>
+                                                    <p className="text-xs font-mono text-gray-400">{pm.details}</p>
+                                                </div>
+                                            </div>
+                                            {selectedMethod === pm.id && <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_blue]"></div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-500/5 p-4 rounded-xl border border-blue-500/10 flex gap-4 text-xs text-gray-500 font-mono uppercase leading-relaxed tracking-widest">
+                                <AlertCircle size={18} className="text-blue-500 shrink-0" />
+                                Audit required for node verification. Processing latency: 48h-72h.
+                            </div>
+
+                            <button type="submit" disabled={requesting || !withdrawAmount || !selectedMethod} className="w-full py-4 bg-blue-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-xl shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-30">
+                                {requesting ? <Loader2 size={16} className="animate-spin" /> : 'Synchronize Withdrawal'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
-}
+};
+
+export default Wallet;
