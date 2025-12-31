@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>Aurora Music Vietnam | The Next Frequency | Record Label</title>
+    <meta name="title" content="Aurora Music Vietnam | The Next Frequency | Record Label">
+    <meta name="description"
+        content="Discover Aurora Music Vietnam - a pioneering record label in Phonk, Melodic House, and Progressive music. Connecting Vietnamese Underground talent with the world. Submit your demo today.">
+    <meta name="keywords"
+        content="Aurora Music Vietnam, AMVN, Record Label Vietnam, Phonk, Melodic House, Progressive House, Music Distribution, Electronic music, Send demo">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English, Vietnamese">
+    <meta name="author" content="Aurora Music Vietnam">
+    <meta name="theme-color" content="#050505">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://auroramusicvietnam.net/">
+    <meta property="og:title" content="Aurora Music Vietnam | The Next Frequency">
+    <meta property="og:description"
+        content="Redefining the architecture of sound. Bridging raw underground talent with global amplification. Listen to the new horizon.">
+    <meta property="og:image" content="https://auroramusicvietnam.net/social-banner.jpg">
+    <meta property="og:locale" content="vi_VN">
+    <meta property="og:site_name" content="Aurora Music Vietnam">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://auroramusicvietnam.net/">
+    <meta property="twitter:title" content="Aurora Music Vietnam | The Next Frequency">
+    <meta property="twitter:description"
+        content="Vietnam's underground record label specializing in Phonk & Melodic House.">
+    <meta property="twitter:image" content="https://auroramusicvietnam.net/social-banner.jpg">
+    <meta name="twitter:creator" content="@auroramusicvietnam">
+
+    <link rel="shortcut icon" href="amvn.png" type="image/x-icon">
+    <link rel="apple-touch-icon" href="amvn.png">
+    <link rel="canonical" href="https://auroramusicvietnam.net/">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Courier+Prime&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* BASE & RESET */
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            /* Fallback cho trình duyệt cũ */
+            height: 100vh;
+            /* Fix cho iOS/Android hiện đại */
+            height: 100dvh;
+            width: 100vw;
+        }
+
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        /* BACKGROUND FX */
+        .bg-pulse {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(5, 5, 5, 0) 60%);
+            animation: pulse 12s infinite alternate;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.4;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .view-section {
+                padding-bottom: 0;
+                /* Reset trên máy tính */
+            }
+        }
+
+        /* VIEW TRANSITIONS */
+        .view-section {
+            display: none;
+            height: 100%;
+            width: 100%;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            /* QUAN TRỌNG: Đẩy nội dung lên để không bị menu dưới che */
+            padding-bottom: 80px;
+        }
+
+        .view-section.active {
+            display: flex;
+            opacity: 1;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* TYPOGRAPHY FX */
+        .text-outline {
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+            color: transparent;
+            transition: 0.3s;
+        }
+
+        .text-outline:hover {
+            -webkit-text-stroke: 0px;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+        }
+
+        input,
+        textarea {
+            font-size: 16px !important;
+        }
+
+        /* SCROLLABLE CONTENT AREA (Internal only) */
+        .content-scroll {
+            overflow-y: auto;
+            max-height: 75vh;
+            padding-right: 5px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .content-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Máy tính: Giới hạn lại để không bị quá dài */
+        @media (min-width: 768px) {
+            .content-scroll {
+                max-height: 70vh;
+                scrollbar-width: thin;
+            }
+        }
+
+        /* TICKER */
+        @keyframes ticker {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        .ticker-content {
+            display: inline-block;
+            white-space: nowrap;
+            animation: ticker 30s linear infinite;
+        }
+    </style>
+</head>
+
+<body class="relative flex flex-col justify-between">
+
+    <div class="bg-pulse"></div>
+
+    <nav class="flex justify-between items-center px-4 py-4 md:px-8 md:py-6 z-50 select-none">
+        <div class="text-xl font-black tracking-tighter uppercase cursor-pointer z-50" onclick="switchView('home')">
+            Aurora Music.
+        </div>
+        <a href="https://app.auroramusicvietnam.net"
+            class="md:hidden flex items-center gap-2 font-mono text-[10px] text-blue-400 border border-blue-400/30 px-3 py-1.5 hover:bg-blue-400 hover:text-black transition uppercase tracking-wider backdrop-blur-sm">
+            Login <span class="animate-pulse">➤</span>
+        </a>
+        <div class="hidden md:flex gap-8 font-mono text-xs text-gray-500 z-50">
+            <button onclick="switchView('home')" class="nav-btn hover:text-white transition uppercase">Home</button>
+            <button onclick="switchView('releases')"
+                class="nav-btn hover:text-white transition uppercase">Releases</button>
+            <button onclick="switchView('usage')" class="nav-btn hover:text-white transition uppercase">Usage</button>
+            <button onclick="switchView('contact')"
+                class="nav-btn hover:text-white transition uppercase">Contact</button>
+            <button onclick="switchView('social')" class="nav-btn hover:text-white transition uppercase">Social</button>
+            <button onclick="location.href='https://app.auroramusicvietnam.net';"
+                class="nav-btn hover:text-blue-400 transition uppercase">Login ➤</button>
+        </div>
+    </nav>
+
+    <main class="flex-1 relative w-full max-w-7xl mx-auto px-8 flex items-center z-10">
+
+        <div id="home" class="view-section active">
+            <h1 class="text-5xl md:text-8xl font-black uppercase leading-none mb-6">
+                The Next<br>
+                <span class="text-outline cursor-default">Frequency</span>
+            </h1>
+            <div class="border-l border-blue-500 pl-6 max-w-lg">
+                <p class="font-mono text-gray-400 text-sm leading-relaxed">
+                    Redefining the architecture of sound. Bridging raw underground talent with global amplification.
+                    <br><span class="text-blue-500">Sounds of the new horizon.</span>
+                </p>
+            </div>
+            <div class="mt-8">
+                <button onclick="switchView('releases')"
+                    class="px-8 py-3 border border-white/20 hover:bg-white hover:text-black hover:border-white transition font-mono text-xs uppercase tracking-widest">
+                    Enter Archives
+                </button>
+                <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSfGzj_krxk10vLxTdX3nAOS2JC6ojn98WVbqHtOuqSLKXkYaw/viewform">
+                    <button
+                        class="px-8 py-3 border border-white/20 hover:bg-blue-400 hover:text-black hover:border-blue-400 transition font-mono text-xs uppercase tracking-widest">
+                        Submit Demo
+                    </button>
+                </a>
+            </div>
+        </div>
+
+        <div id="releases" class="view-section">
+            <div class="w-full h-full flex flex-col justify-center">
+                <div class="flex justify-between items-end mb-8 border-b border-white/10 pb-4">
+                    <h2 class="text-4xl font-bold uppercase">Discography</h2>
+                    <span class="font-mono text-xs text-blue-400">Loading from Database...</span>
+                </div>
+
+                <div id="loading-ui" class="text-center py-10 font-mono text-sm animate-pulse">Initializing
+                    connection...</div>
+
+                <div class="content-scroll w-full">
+                    <div id="releases-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 pb-32 hidden">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="usage" class="view-section">
+            <div class="w-full max-w-4xl mx-auto">
+                <h2 class="text-4xl font-bold uppercase mb-8 text-center md:text-left">Protocols</h2>
+                <div class="content-scroll grid gap-4">
+
+                    <div
+                        class="group border border-white/5 hover:border-blue-500/50 bg-white/5 p-6 transition-all duration-300">
+                        <div class="font-mono text-xs text-blue-400 mb-2">// 01 PERSONAL</div>
+                        <p class="text-gray-300 text-sm">Stream freely. Share links. Personal enjoyment is
+                            unrestricted[cite: 60].</p>
+                    </div>
+
+                    <div
+                        class="group border border-white/5 hover:border-blue-500/50 bg-white/5 p-6 transition-all duration-300">
+                        <div class="font-mono text-xs text-green-400 mb-2">// 02 CONTENT CREATORS</div>
+                        <p class="text-gray-300 text-sm">Safe for Twitch/YouTube. No Content ID. Monetization allowed.
+                            Credit required[cite: 61].</p>
+                    </div>
+
+                    <div
+                        class="group border border-white/5 hover:border-blue-500/50 bg-white/5 p-6 transition-all duration-300">
+                        <div class="font-mono text-xs text-red-400 mb-2">// 03 COMMERCIAL</div>
+                        <p class="text-gray-300 text-sm">Ads, films, games require licensing. Contact for quote[cite:
+                            62].</p>
+                    </div>
+
+                    <div
+                        class="group border border-white/5 hover:border-blue-500/50 bg-white/5 p-6 transition-all duration-300">
+                        <div class="font-mono text-xs text-yellow-400 mb-2">// 04 REMIXING</div>
+                        <p class="text-gray-300 text-sm">Unauthorized sampling prohibited. Official remix requests via
+                            Submission Portal[cite: 64].</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="contact" class="view-section">
+            <div class="w-full max-w-2xl mx-auto">
+                <h2 class="text-4xl font-bold uppercase mb-2">Transmission</h2>
+                <p class="font-mono text-xs text-gray-500 mb-8">Send queries directly to our signal processors.</p>
+
+                <form id="contact-form" class="flex flex-col gap-6">
+                    <div class="group relative">
+                        <input type="text" name="name" required
+                            class="w-full bg-transparent border-b border-white/20 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors font-mono text-sm placeholder-gray-700"
+                            placeholder="IDENTIFIER // NAME">
+                    </div>
+                    <div class="group relative">
+                        <input type="email" name="email" required
+                            class="w-full bg-transparent border-b border-white/20 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors font-mono text-sm placeholder-gray-700"
+                            placeholder="RETURN ADDRESS // EMAIL">
+                    </div>
+                    <div class="group relative">
+                        <textarea name="message" rows="4" required
+                            class="w-full bg-transparent border-b border-white/20 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors font-mono text-sm placeholder-gray-700 resize-none"
+                            placeholder="DATA PACKET // MESSAGE"></textarea>
+                    </div>
+
+                    <button type="submit" id="submit-btn"
+                        class="self-start px-8 py-3 bg-white text-black font-bold uppercase hover:bg-blue-500 hover:text-white transition mt-4">
+                        Init Transmission
+                    </button>
+                    <div id="form-status" class="font-mono text-xs text-blue-400 hidden"></div>
+                </form>
+            </div>
+        </div>
+
+        <div id="social" class="view-section">
+            <div class="grid md:grid-cols-2 gap-12 w-full h-full items-center">
+                <div class="flex flex-col gap-4">
+                    <h2 class="text-4xl font-bold uppercase mb-6">Network</h2>
+                    <a href="https://open.spotify.com/artist/4e01qC5oPT5rFyvWzxB2BH" target="_blank"
+                        class="flex items-center gap-4 text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 group">
+                        <span class="font-mono text-xs text-blue-500 opacity-0 group-hover:opacity-100">></span> Spotify
+                    </a>
+                    <a href="https://www.youtube.com/@auroramusicvietnam" target="_blank"
+                        class="flex items-center gap-4 text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 group">
+                        <span class="font-mono text-xs text-red-500 opacity-0 group-hover:opacity-100">></span> YouTube
+                    </a>
+                    <a href="https://instagram.com/auroramusic.vietnam" target="_blank"
+                        class="flex items-center gap-4 text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 group">
+                        <span class="font-mono text-xs text-pink-500 opacity-0 group-hover:opacity-100">></span>
+                        Instagram
+                    </a>
+                    <a href="https://facebook.com/auroramusicvietnam" target="_blank"
+                        class="flex items-center gap-4 text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 group">
+                        <span class="font-mono text-xs text-blue-400 opacity-0 group-hover:opacity-100">></span>
+                        Facebook
+                    </a>
+                    <a href="https://tiktok.com/@auroramusicvietnam" target="_blank"
+                        class="flex items-center gap-4 text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 group">
+                        <span class="font-mono text-xs text-violet-400 opacity-0 group-hover:opacity-100">></span>
+                        TikTok
+                    </a>
+                    <a href="https://x.com/@auroramusicvietnam" target="_blank"
+                        class="flex items-center gap-4 text-gray-400 hover:text-white hover:pl-2 transition-all duration-300 group">
+                        <span class="font-mono text-xs text-white-400 opacity-0 group-hover:opacity-100">></span> X
+                        (Twitter)
+                    </a>
+                </div>
+
+                <div
+                    class="border border-white/10 p-8 md:p-12 flex flex-col justify-center items-center text-center bg-white/5 backdrop-blur-sm">
+                    <h3 class="text-2xl font-bold uppercase mb-4">Demo Submission Portal</h3>
+                    <p class="font-mono text-xs text-gray-400 mb-8 max-w-xs">
+                        Unique sound signatures wanted. Send us your demos for evaluation.
+                    </p>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfGzj_krxk10vLxTdX3nAOS2JC6ojn98WVbqHtOuqSLKXkYaw/viewform"
+                        target="_blank"
+                        class="px-8 py-3 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]">
+                        Access Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="hidden md:block w-full py-4 border-t border-white/10 bg-black/80 backdrop-blur z-40 overflow-hidden">
+        <div class="ticker-content font-mono text-xs text-gray-600">
+            AURORA MUSIC VIETNAM • EST 2025 • THE NEXT FREQUENCY • ACCEPTING DEMOS • PHONK • MELODIC HOUSE • PROGRESSIVE
+            • SYSTEM ONLINE •
+        </div>
+    </footer>
+
+    <script>
+        // VIEW SWITCHING LOGIC
+        function switchView(viewId) {
+            // 1. Logic URL (Giữ nguyên)
+            if (viewId !== 'home') {
+                history.pushState(null, null, `#${viewId}`);
+            } else {
+                history.pushState(null, null, ' ');
+            }
+
+            // 2. Ẩn hiện View (Giữ nguyên)
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+                setTimeout(() => {
+                    if (!el.classList.contains('active')) el.style.display = 'none';
+                }, 500);
+            });
+
+            const target = document.getElementById(viewId);
+            if (target) {
+                target.style.display = 'flex';
+                setTimeout(() => {
+                    target.classList.add('active');
+                }, 10);
+            }
+
+            // 3. LOGIC MỚI: Highlight nút đang chọn ở Mobile Menu
+            // Reset màu tất cả nút
+            document.querySelectorAll('.mobile-nav button').forEach(btn => {
+                btn.classList.remove('text-white');
+                btn.classList.add('text-gray-500');
+            });
+
+            // Tìm nút tương ứng để highlight (Cách đơn giản dựa trên onclick)
+            const activeBtn = document.querySelector(`.mobile-nav button[onclick="switchView('${viewId}')"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-500');
+                activeBtn.classList.add('text-white');
+            }
+
+            if (viewId === 'releases') loadReleases();
+        }
+
+        // 3. Xử lý khi người dùng vào bằng link có sẵn dấu # (ví dụ: domain.net/#contact)
+        window.addEventListener('load', () => {
+            const hash = window.location.hash.substring(1); // Lấy chữ sau dấu #
+            if (hash && document.getElementById(hash)) {
+                switchView(hash);
+            }
+        });
+
+        // DATA FETCHING 
+        let releasesLoaded = false;
+        function loadReleases() {
+            if (releasesLoaded) return;
+
+            const grid = document.getElementById('releases-grid');
+            const loader = document.getElementById('loading-ui');
+            const statusText = document.querySelector('h2 + span');
+
+            // Xóa nội dung cũ NGAY LẬP TỨC để tránh hiện tượng nháy placeholder
+            grid.innerHTML = '';
+
+            fetch('https://cors-anywhere-zv3o.onrender.com/https://raw.githubusercontent.com/thanhcong2k7/amvn_releases/main/data.json', {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Origin': 'https://amvn.fuchsia.viiic.net'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    loader.style.display = 'none';
+
+                    // Hiện Grid lên
+                    grid.classList.remove('hidden');
+                    // Đảm bảo Grid có display: grid (đề phòng class hidden làm hỏng)
+                    grid.style.display = 'grid';
+
+                    statusText.innerText = `${data.length} ENTRIES FOUND`;
+                    statusText.classList.add('text-green-400');
+                    statusText.classList.remove('text-blue-400');
+
+                    data.forEach(release => {
+                        // Kiểm tra dữ liệu: Nếu thiếu tên hoặc ảnh thì bỏ qua (Fix lỗi bìa Summer nếu nó là data rác)
+                        if (!release.name || !release.art) return;
+
+                        const card = document.createElement('a');
+                        card.href = release.stream;
+                        card.target = "_blank";
+                        // Thêm 'block' để đảm bảo thẻ a chiếm trọn không gian, tránh lỗi chồng chéo
+                        card.className = "block group relative aspect-square border border-white/10 hover:border-white/40 transition overflow-hidden bg-black rounded-sm";
+
+                        card.innerHTML = `
+                        <img src="${release.art}" loading="lazy" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition duration-500 grayscale group-hover:grayscale-0">
+                        
+                        <div class="absolute bottom-0 left-0 w-full p-2 md:p-4 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
+                            <h3 class="font-bold text-white text-sm md:text-lg leading-tight uppercase translate-y-2 group-hover:translate-y-0 transition line-clamp-1">${release.name}</h3>
+                            <p class="font-mono text-[10px] md:text-xs text-blue-400 mt-1 opacity-0 group-hover:opacity-100 transition duration-300">${release.date}</p>
+                        </div>
+                        
+                        <div class="absolute top-1 right-1 md:top-2 md:right-2 font-mono text-[8px] md:text-[10px] text-white/30 border border-white/20 px-1 backdrop-blur-sm z-20">ID</div>
+                    `;
+                        grid.appendChild(card);
+                    });
+                    releasesLoaded = true;
+                })
+                .catch(err => {
+                    loader.innerText = "CONNECTION FAILED. RETRYING...";
+                    console.error(err);
+                });
+        }
+        // CONTACT FORM LOGIC 
+        const form = document.getElementById('contact-form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            const status = document.getElementById('form-status');
+
+            btn.disabled = true;
+            btn.innerText = "TRANSMITTING...";
+
+            const formData = new FormData(form);
+
+            fetch('https://script.google.com/macros/s/AKfycbzO4P8Xa8lqmK4fkIkbsG7s_niM8lAyc7MJxP6LFbqM95fuPTgpEiAbns2KYSGRIFxz/exec', {
+                method: 'POST',
+                body: formData
+            })
+                .then(() => {
+                    btn.innerText = "SENT";
+                    btn.classList.replace('bg-white', 'bg-green-500');
+                    btn.classList.replace('text-black', 'text-white');
+                    status.innerText = "PACKET RECEIVED. STAND BY FOR RESPONSE.";
+                    status.classList.remove('hidden');
+                    form.reset();
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerText = "INIT TRANSMISSION";
+                        btn.classList.replace('bg-green-500', 'bg-white');
+                        btn.classList.replace('text-white', 'text-black');
+                        status.classList.add('hidden');
+                    }, 4000);
+                })
+                .catch(err => {
+                    btn.innerText = "ERROR";
+                    console.error(err);
+                });
+        });
+    </script>
+    <script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "MusicGroup",
+    "name": "Aurora Music Vietnam",
+    "url": "https://auroramusicvietnam.net",
+    "logo": "https://auroramusicvietnam.net/amvn.png",
+    "sameAs": [
+        "https://www.facebook.com/auroramusicvietnam",
+        "https://www.youtube.com/@auroramusicvietnam",
+        "https://instagram.com/auroramusic.vietnam",
+        "https://tiktok.com/@auroramusicvietnam"
+    ],
+    "genre": ["Phonk", "Melodic House", "Progressive"],
+    "description": "The Next Frequency. Redefining the architecture of sound in Vietnam."
+    }
+    </script>
+    <nav
+        class="md:hidden fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-md border-t border-white/20 z-50 flex justify-around items-center py-4 pb-6 safe-area-bottom">
+        <button onclick="switchView('home')"
+            class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition group">
+            <span class="text-xl">◈</span>
+            <span class="text-[10px] font-mono uppercase tracking-widest">Home</span>
+        </button>
+        <button onclick="switchView('releases')"
+            class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition group">
+            <span class="text-xl">◎</span>
+            <span class="text-[10px] font-mono uppercase tracking-widest">Trax</span>
+        </button>
+        <button onclick="switchView('social')"
+            class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition group pt-1">
+            <span class="text-xl leading-none">∞</span>
+            <span class="text-[9px] font-mono uppercase tracking-widest">Net</span>
+        </button>
+        <button onclick="switchView('usage')"
+            class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition group">
+            <span class="text-xl">⏣</span>
+            <span class="text-[10px] font-mono uppercase tracking-widest">Rules</span>
+        </button>
+        <button onclick="switchView('contact')"
+            class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition group">
+            <span class="text-xl">✉</span>
+            <span class="text-[10px] font-mono uppercase tracking-widest">Sent</span>
+        </button>
+    </nav>
+
+
+
+    <canvas id="digital-fireworks" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0" style="opacity: 0.4;"></canvas>
+    <div id="ny-overlay"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-[2px] transition-opacity duration-500 px-4">
+        <div
+            class="relative bg-[#050505] border border-blue-500/30 p-8 rounded-none md:rounded-lg shadow-[0_0_50px_rgba(37,99,235,0.15)] text-center max-w-md w-full animate-fade-in-up">
+
+            <button onclick="closeOverlay()"
+                class="absolute top-2 right-2 text-gray-500 hover:text-white hover:bg-white/10 p-2 font-mono text-xs uppercase transition">
+                [CLOSE]
+            </button>
+
+            <div
+                class="font-mono text-[10px] text-blue-500 mb-4 tracking-[0.3em] uppercase border-b border-blue-500/20 pb-2 inline-block">
+                System Notification
+            </div>
+
+            <h1 class="text-6xl font-black text-white uppercase tracking-tighter mb-2"
+                style="-webkit-text-stroke: 1px rgba(59, 130, 246, 0.5); text-shadow: 0 0 20px rgba(37,99,235,0.4);">
+                2026
+            </h1>
+
+            <p class="font-mono text-xs text-gray-400 leading-relaxed mb-6">
+                New cycle initialized successfully.<br>
+                Welcome to the next frequency.
+            </p>
+
+            <button onclick="closeOverlay()"
+                class="bg-blue-600 text-white font-bold text-xs uppercase px-6 py-3 hover:bg-blue-500 transition tracking-widest w-full md:w-auto">
+                Acknowledge
+            </button>
+        </div>
+    </div>
+    <script>
+        /**
+         * AURORA DIGITAL FIREWORKS SYSTEM v2.0
+         * Updates: Thinner particles, Closeable Overlay, Optimized Performance
+         */
+
+        // --- LOGIC TẮT OVERLAY ---
+        function closeOverlay() {
+            const overlay = document.getElementById('ny-overlay');
+            if (overlay) {
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none'; // Ngắt tương tác ngay lập tức
+                setTimeout(() => overlay.remove(), 500); // Xóa khỏi DOM sau hiệu ứng mờ
+            }
+        }
+
+        // Tự động tắt sau 8 giây nếu người dùng không bấm
+        setTimeout(closeOverlay, 8000);
+
+
+        // --- LOGIC PHÁO HOA ---
+        const canvas = document.getElementById('digital-fireworks');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        // Aurora Palette
+        const colors = ['#3b82f6', '#60a5fa', '#8b5cf6', '#ffffff', '#06b6d4'];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(x, y, color, type = 'particle') {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.type = type;
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * (type === 'spark' ? 4 : 2) + 0.5; // Giảm tốc độ một chút cho mượt
+
+                this.vx = Math.cos(angle) * velocity;
+                this.vy = Math.sin(angle) * velocity;
+
+                this.life = 100;
+                this.alpha = 1;
+                this.gravity = 0.03;
+                this.friction = 0.98; // Tăng ma sát để hạt bay "bay" hơn
+
+                // [FIX] Làm mỏng hạt: Kích thước từ 0.5px đến 1.5px
+                this.size = Math.random() * 1 + 0.5;
+            }
+
+            update() {
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.01; // Fade chậm hơn chút
+                this.life--;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+
+                // Vẽ hạt vuông pixel siêu nhỏ
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+
+                // Spark effect (chỉ cho hạt đặc biệt)
+                if (this.type === 'spark') {
+                    ctx.shadowBlur = 5; // Giảm độ nhòe để đỡ nặng máy
+                    ctx.shadowColor = this.color;
+                    ctx.fillRect(this.x, this.y, this.size, this.size);
+                    ctx.shadowBlur = 0;
+                }
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function createExplosion(x, y) {
+            // Giảm số lượng hạt mỗi lần nổ để đỡ rối mắt (40 -> 30)
+            const particleCount = 40;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle(x, y, color, 'particle'));
+            }
+            for (let i = 0; i < 5; i++) {
+                particles.push(new Particle(x, y, '#ffffff', 'spark'));
+            }
+        }
+
+        function autoLaunch() {
+            // Giảm tần suất tự bắn (5% -> 3%) để không làm phiền trải nghiệm đọc
+            if (Math.random() < 0.04) {
+                createExplosion(
+                    Math.random() * width,
+                    Math.random() * height * 0.7 // Chỉ bắn ở 60% màn hình phía trên
+                );
+            }
+        }
+
+        function animate() {
+            // Trail effect mờ hơn (0.2 -> 0.15) để vệt sáng dài hơn chút
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.15)';
+            ctx.fillRect(0, 0, width, height);
+
+            particles.forEach((p, index) => {
+                if (p.alpha <= 0) {
+                    particles.splice(index, 1);
+                } else {
+                    p.update();
+                    p.draw();
+                }
+            });
+
+            autoLaunch();
+            requestAnimationFrame(animate);
+        }
+
+        // Interactions
+        window.addEventListener('mousedown', (e) => {
+            // Chỉ bắn pháo hoa nếu không click vào popup
+            if (!e.target.closest('#ny-overlay')) {
+                createExplosion(e.clientX, e.clientY);
+            }
+        });
+
+        window.addEventListener('touchstart', (e) => {
+            if (!e.target.closest('#ny-overlay')) {
+                for (let i = 0; i < e.touches.length; i++) {
+                    createExplosion(e.touches[i].clientX, e.touches[i].clientY);
+                }
+            }
+        }, { passive: true });
+
+        animate();
+    </script>
+</body>
+
+</html>
