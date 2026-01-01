@@ -11,7 +11,7 @@ import {
 
 // Simple Icons chứa rất nhiều brand nhạc mà FontAwesome không có
 import {
-    SiDeezer, SiShazam, SiTidal, SiPandora,
+    SiShazam, SiTidal, SiPandora,
     SiIheartradio, SiMixcloud, SiTencentqq
 } from 'react-icons/si';
 
@@ -31,7 +31,6 @@ const DSPLogo = ({ code, url, name }: { code: string, url?: string, name: string
     if (c.includes('SNAP')) return <FaSnapchatGhost size={24} className="text-[#FFFC00]" />;
 
     // --- Niche / Specific Music DSPs (Dùng Simple Icons) ---
-    if (c.includes('DEEZER')) return <SiDeezer size={24} className="text-white" />;
     if (c.includes('SHAZAM')) return <SiShazam size={24} className="text-[#0088FF]" />;
     if (c.includes('TIDAL')) return <SiTidal size={24} className="text-white" />;
     if (c.includes('PANDORA')) return <SiPandora size={24} className="text-[#224099]" />;
