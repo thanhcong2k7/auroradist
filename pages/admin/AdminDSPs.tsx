@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '@/services/api';
 import { DspChannel } from '@/types';
 import { Plus, Edit2, Loader2, Save, X, Power } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 // 1. Import các Icon thương hiệu từ react-icons/fa (FontAwesome 6) hoặc /fa (FontAwesome 5)
 // Si: Simple Icons (nhiều logo brand hơn), Fa: FontAwesome
@@ -21,6 +22,13 @@ const DSPLogo = ({ code, url, name }: { code: string, url?: string, name: string
     if (c.includes('AMAZON')) return <span className="text-[#FF9900]"><FaAmazon size={24} /></span>;
     if (c.includes('TIKTOK')) return <span className="text-[#00F2EA]"><FaTiktok size={24} /></span>;
     if (c.includes('FACEBOOK') || c.includes('META')) return <span className="text-[#1877F2]"><FaFacebook size={24} /></span>;
+    if (c.includes('PANDORA')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-pandora" /></span>;
+    if (c.includes('IHEART')) return <span className="text-white"><FontAwesomeIcon icon="fa-solid fa-heart" /></span>;
+    if (c.includes('MIXCLOUD')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-mixcloud" /></span>;
+    if (c.includes('SNAP')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-snapchat" /></span>;
+    if (c.includes('SOUNDCLOUD')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-soundcloud" /></span>;
+    if (c.includes('TENCENT')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-tencent-weibo" /></span>;
+    if (c.includes('TIDAL')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-tidal" /></span>;
 
     //if (c.includes('DEEZER')) return <FaDeezer size={24} className="text-white" />;
     //if (c.includes('SHAZAM')) return <FaShazam size={24} className="text-[#0088FF]" />;
