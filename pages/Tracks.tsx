@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Track, TrackArtist, TrackContributor, Artist } from '../types';
-import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2, ListPlus, Check } from 'lucide-react';
+import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2, ListPlus, Check, Clock } from 'lucide-react';
 import FileUploader from '../components/FileUploader';
 import { PERFORMER_ROLES } from '../constants';
 import { useMusicPlayer } from '../components/MusicPlayerContext';
@@ -15,6 +15,7 @@ const Tracks: React.FC = () => {
   const [trackTab, setTrackTab] = useState<'GENERAL' | 'CREDITS' | 'LYRICS'>('GENERAL');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { playTrack, currentTrack: globalTrack, addToQueue, isPlaying, togglePlay, playlist } = useMusicPlayer();
+  const [availableArtists, setAvailableArtists] = useState<Artist[]>([]);
   // Validation Error State
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -34,15 +35,23 @@ const Tracks: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [tracksData, artistsData] = await Promise.all([
+      const [fetchedTracks, fetchedArtists] = await Promise.all([
         api.tracks.getAll(),
         api.artists.getAll()
       ]);
-      setTracks(tracksData);
-      setArtistList(artistsData);
+      setAvailableArtists(fetchedArtists);
+      const mappedTracks = fetchedTracks.map(t => ({
+        ...t,
+        tiktokClipStartTime: (t as any).tiktok_start_time || '00:00'
+      }));
+      setTracks(mappedTracks);
     } finally {
       setLoading(false);
     }
+  };
+  const isValidTimeFormat = (time: string) => {
+    const regex = /^([0-5]?[0-9]):([0-5][0-9])$/;
+    return regex.test(time);
   };
   const handleDeleteTrack = async (track: Track) => {
     if (!confirm(`Permanently delete "${track.name}"? This handles both database entry and audio file.`)) return;
@@ -127,7 +136,11 @@ const Tracks: React.FC = () => {
       isValid = false;
       setTrackTab('CREDITS');
     }
-
+    const tkTime = currentTrack.tiktokClipStartTime;
+    if (tkTime && tkTime.trim() !== '' && !isValidTimeFormat(tkTime)) {
+      newErrors.general = "Invalid TikTok Time format (MM:SS)"; // Hoặc hiển thị lỗi cụ thể
+      isValid = false;
+    }
     setErrors(newErrors);
     return isValid;
   };
@@ -139,7 +152,13 @@ const Tracks: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await api.tracks.save(currentTrack as Track);
+      const payload = {
+        ...currentTrack,
+        // Default về 00:00 nếu rỗng
+        tiktok_start_time: currentTrack.tiktokClipStartTime?.trim() || '00:00'
+      };
+
+      await api.tracks.save(payload as Track);
       await loadData();
       setShowModal(false);
     } finally {
@@ -251,10 +270,10 @@ const Tracks: React.FC = () => {
                             onClick={() => handleAddToQueue(track)}
                             disabled={!track.audioUrl}
                             className={`p-2 rounded-lg transition ${isActive
-                                ? 'bg-blue-600 text-white'
-                                : isInQueue
-                                  ? 'bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white' // Style khi đã có trong queue
-                                  : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'
+                              ? 'bg-blue-600 text-white'
+                              : isInQueue
+                                ? 'bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white' // Style khi đã có trong queue
+                                : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'
                               }`}
                             title={isActive ? "Now Playing" : isInQueue ? "In Queue" : "Add to Playlist"}
                           >
@@ -351,6 +370,38 @@ const Tracks: React.FC = () => {
                         placeholder="US-LMG-24-00001"
                       />
                     </div>
+                    <div className="space-y-1">
+                      <label className="text-xs uppercase font-bold text-gray-500">Duration</label>
+                      {/* [UPDATE] Duration Read-only */}
+                      <input
+                        type="text"
+                        value={currentTrack.duration || ''}
+                        readOnly
+                        className="w-full bg-black/50 border border-white/5 rounded-lg px-3 py-2 text-sm font-mono text-gray-500 cursor-not-allowed outline-none"
+                        placeholder="Auto-detected"
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl flex items-center justify-between mt-4">
+                    <div>
+                      <p className="text-sm font-bold text-white flex items-center gap-2"><Clock size={16} /> TikTok Clip Start</p>
+                      <p className="text-xs text-gray-400 mt-1">Format: MM:SS (Default: 00:00)</p>
+                    </div>
+                    <input
+                      type="text"
+                      value={currentTrack.tiktokClipStartTime || ''}
+                      onChange={(e) => setCurrentTrack({ ...currentTrack, tiktokClipStartTime: e.target.value })}
+                      onBlur={(e) => {
+                        // Auto-format: "30" -> "00:30"
+                        let val = e.target.value.trim();
+                        if (/^\d{2}$/.test(val)) {
+                          setCurrentTrack({ ...currentTrack, tiktokClipStartTime: `00:${val}` });
+                        }
+                      }}
+                      placeholder="00:00"
+                      maxLength={5}
+                      className="w-24 bg-black border border-white/20 rounded-lg px-3 py-2 text-center font-mono font-bold text-white focus:border-blue-500 outline-none"
+                    />
                   </div>
                 </div>
               )}
@@ -362,60 +413,57 @@ const Tracks: React.FC = () => {
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest">Performing Artists <span className="text-red-500">*</span></h4>
                       <button
-                        onClick={() => setCurrentTrack({
-                          ...currentTrack,
-                          artists: [...(currentTrack.artists || []), { name: '', role: 'Featured' }]
-                        })}
-                        className="text-xs text-gray-400 hover:text-blue-400 transition uppercase font-bold"
+                        onClick={() => {
+                          const isFirst = (currentTrack.artists || []).length === 0;
+                          setCurrentTrack({
+                            ...currentTrack,
+                            artists: [
+                              ...(currentTrack.artists || []),
+                              // Người đầu tiên là Primary, sau là Featured
+                              { name: '', role: isFirst ? 'Primary' : 'Featured' }
+                            ]
+                          });
+                        }}
+                        className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase"
                       >
-                        + Add Artist
+                        + Add
                       </button>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {currentTrack.artists?.map((a, i) => (
-                        <div key={i} className="flex gap-3 bg-black/40 p-2 rounded-xl border border-white/5 items-center">
+                        <div key={i} className="flex gap-2">
                           <select
                             value={a.role}
-                            onChange={e => {
-                              const copy = [...currentTrack.artists!];
-                              copy[i].role = e.target.value as any;
-                              setCurrentTrack({ ...currentTrack, artists: copy });
-                            }}
-                            className="w-32 bg-black border border-white/10 text-xs p-2 rounded-lg outline-none focus:border-blue-500"
+                            onChange={e => updateArtist(i, 'role', e.target.value)}
+                            className="w-24 bg-black border border-white/10 rounded px-2 py-2 text-xs outline-none"
                           >
                             <option value="Primary">Primary</option>
                             <option value="Featured">Featured</option>
                             <option value="Remixer">Remixer</option>
                           </select>
-                          <input
-                            type="text"
-                            value={a.name}
-                            onChange={e => {
-                              const copy = [...currentTrack.artists!];
-                              copy[i].name = e.target.value;
-                              setCurrentTrack({ ...currentTrack, artists: copy });
-                            }}
-                            className="flex-1 bg-black border border-white/10 p-2 rounded-lg text-sm outline-none focus:border-blue-500"
-                            placeholder="Artist Name"
-                            list="artist-suggestions" // Link to datalist
-                          />
-                          {currentTrack.artists!.length > 1 && (
-                            <button
-                              onClick={() => {
-                                const copy = currentTrack.artists!.filter((_, idx) => idx !== i);
-                                setCurrentTrack({ ...currentTrack, artists: copy });
-                              }}
-                              className="p-2 text-gray-400 hover:text-red-500 transition"
-                            >
-                              <X size={14} />
-                            </button>
-                          )}
+
+                          {/* [UPDATE] Input với Datalist Suggestion */}
+                          <div className="flex-1 relative">
+                            <input
+                              list={`track-artist-suggestions-${i}`}
+                              value={a.name}
+                              onChange={e => updateArtist(i, 'name', e.target.value)}
+                              className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none"
+                              placeholder="Artist Name"
+                            />
+                            <datalist id={`track-artist-suggestions-${i}`}>
+                              {availableArtists.map(artist => (
+                                <option key={artist.id} value={artist.name} />
+                              ))}
+                            </datalist>
+                          </div>
+
+                          <button onClick={() => {
+                            const copy = currentTrack.artists!.filter((_, idx) => idx !== i);
+                            setCurrentTrack({ ...currentTrack, artists: copy });
+                          }} className="p-2 text-gray-500 hover:text-red-500"><X size={14} /></button>
                         </div>
                       ))}
-                      {/* Datalist populated with real artists */}
-                      <datalist id="artist-suggestions">
-                        {artistList.map(a => <option key={a.id} value={a.name} />)}
-                      </datalist>
                     </div>
                   </div>
 

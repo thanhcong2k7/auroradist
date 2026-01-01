@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Activity, Disc, TrendingUp, DollarSign, ArrowRight, Loader2, Eye } from 'lucide-react';
+import { Activity, Disc, TrendingUp, DollarSign, ArrowRight, Loader2, Eye, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Release } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
@@ -61,6 +61,18 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-start gap-4">
+        <div className="p-2 bg-yellow-500/20 rounded-lg text-yellow-500 shrink-0">
+          <AlertTriangle size={20} />
+        </div>
+        <div>
+          <h3 className="text-sm font-black uppercase text-yellow-500 tracking-wider">System Beta Access</h3>
+          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+            Welcome to Aurora Beta 1.0. Some features are currently under active development.
+            Distribution timelines may vary. Please report any anomalies via the <Link to="/support" className="text-blue-400 hover:underline">Support Node</Link>.
+          </p>
+        </div>
+      </div>
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-white/5 pb-6">
         <div>
           <h1 className="text-2xl font-black uppercase tracking-tight">System Overview</h1>
@@ -142,9 +154,9 @@ const Dashboard: React.FC = () => {
                     <div className="text-xs text-gray-400 font-mono truncate uppercase mt-0.5">{release.artist}</div>
                   </div>
                   <div className={`text-[8px] font-black font-mono px-2 py-0.5 rounded-full border ${release.status === 'ACCEPTED' ? 'border-green-500/30 text-green-500' :
-                      release.status === 'CHECKING' ? 'border-yellow-500/30 text-yellow-500' :
-                        release.status === 'REJECTED' ? 'border-red-500/30 text-red-500' :
-                          'border-gray-500/30 text-gray-500'
+                    release.status === 'CHECKING' ? 'border-yellow-500/30 text-yellow-500' :
+                      release.status === 'REJECTED' ? 'border-red-500/30 text-red-500' :
+                        'border-gray-500/30 text-gray-500'
                     }`}>
                     {release.status}
                   </div>

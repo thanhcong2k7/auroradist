@@ -881,6 +881,41 @@ export const api = {
           releaseDate: r.release_date
         }))
       };
+    },
+    getAllDSPs: async () => {
+      const { data, error } = await supabase
+        .from('dsp_channels')
+        .select('*')
+        .order('id', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+
+    saveDSP: async (dsp: Partial<DspChannel>) => {
+      const payload = {
+        name: dsp.name,
+        code: dsp.code,
+        logo_url: dsp.logoUrl,
+        is_enabled: dsp.isEnabled
+      };
+
+      let query;
+      if (dsp.id) {
+        query = supabase.from('dsp_channels').update(payload).eq('id', dsp.id);
+      } else {
+        query = supabase.from('dsp_channels').insert(payload);
+      }
+
+      const { error } = await query;
+      if (error) throw error;
+    },
+
+    toggleDSPStatus: async (id: number, isEnabled: boolean) => {
+      const { error } = await supabase
+        .from('dsp_channels')
+        .update({ is_enabled: isEnabled })
+        .eq('id', id);
+      if (error) throw error;
     }
   }
 };

@@ -5,18 +5,24 @@ import FileUploader from '../components/FileUploader';
 import {
     Save, Send, X, Clock,
     AlertTriangle, Disc, Globe, Plus, Trash2, CheckCircle2,
-    ArrowLeft, ArrowRight, Search, Check, Mic2, Users, FileAudio, UploadCloud, Loader2, Eye, AlertCircle, Play
+    ArrowLeft, ArrowRight, Search, Check, Mic2, Users, FileAudio, UploadCloud, Loader2, Eye, AlertCircle, Play, Map
 } from 'lucide-react';
-import { Label as LabelType, Release, Track, TrackArtist, TrackContributor, DspChannel } from '../types';
+import { Label as LabelType, Release, Track, TrackArtist, TrackContributor, DspChannel, Artist } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import { PERFORMER_ROLES } from '../constants';
 
+
 // --- CONSTANTS FOR SOUNDON COMPLIANCE ---
 const RELEASE_FORMATS = ['SINGLE', 'EP', 'ALBUM'];
-const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Japanese', 'Korean', 'Chinese', 'Portuguese', 'Instrumental'];
+const LANGUAGES = [
+    'English', 'Vietnamese', 'Spanish', 'French', 'German', 'Japanese', 'Korean',
+    'Chinese (Mandarin)', 'Chinese (Cantonese)', 'Portuguese', 'Italian', 'Russian',
+    'Arabic', 'Hindi', 'Thai', 'Indonesian', 'Tagalog', 'Malay', 'Dutch', 'Swedish',
+    'Norwegian', 'Danish', 'Finnish', 'Polish', 'Turkish', 'Ukrainian', 'Instrumental'
+];
 const GENRES = [
     'Pop', 'Hip-Hop/Rap', 'Electronic', 'Rock', 'R&B/Soul', 'Latin', 'Alternative',
-    'Classical', 'Country', 'Jazz', 'Metal', 'Reggae', 'Folk', 'Dance', 'World'
+    'Classical', 'Country', 'Jazz', 'Metal', 'Reggae', 'Folk', 'Dance', 'World', 'Lo-Fi', 'Ambient'
 ];
 
 const ReleaseForm: React.FC = () => {
@@ -66,13 +72,14 @@ const ReleaseForm: React.FC = () => {
     const [language, setLanguage] = useState('English');
     const [format, setFormat] = useState('SINGLE');
     const [territories, setTerritories] = useState<string[]>(['WORLDWIDE']);
+    const [isWorldwide, setIsWorldwide] = useState(true);
 
     const [releaseTracks, setReleaseTracks] = useState<Track[]>([]);
     const [availableTracks, setAvailableTracks] = useState<Track[]>([]);
     const [selectedStores, setSelectedStores] = useState<string[]>([]);
     const [trackErrors, setTrackErrors] = useState<Record<string, string>>({});
     const [isTrackSubmitting, setIsTrackSubmitting] = useState(false);
-
+    const [availableArtists, setAvailableArtists] = useState<Artist[]>([]);
     // --- INITIALIZATION ---
     useEffect(() => {
         loadInitialData();
@@ -109,15 +116,30 @@ const ReleaseForm: React.FC = () => {
             if (isValid) setTrackTab('CREDITS'); // Ưu tiên chuyển tab
         }
 
+        const tkTime = currentTrack.tiktokClipStartTime;
+        if (tkTime && tkTime.trim() !== '' && !isValidTimeFormat(tkTime)) {
+            // Nếu user có nhập (khác rỗng) nhưng sai format -> Báo lỗi
+            // Bạn có thể thêm state hiển thị lỗi riêng, hoặc alert tạm
+            alert("Invalid TikTok Start Time. Please use MM:SS format (e.g., 00:30).");
+            return false;
+        }
+
         setTrackErrors(newErrors);
         return isValid;
     };
 
     const handleSaveTrackAdvanced = async (addToRelease: boolean) => {
         if (modalView === 'EDIT' && !validateTrackForm()) return;
-
-        // Logic cũ của bạn, nhưng bọc thêm validation
-        handleSaveTrack(addToRelease);
+        const finalTrack = {
+            ...currentTrack,
+            tiktokClipStartTime: currentTrack.tiktokClipStartTime || '00:00'
+        };
+        if (releaseTracks.some(t => t.id === finalTrack.id)) {
+            setReleaseTracks(releaseTracks.map(t => t.id === finalTrack.id ? (finalTrack as Track) : t));
+        } else if (addToRelease) {
+            setReleaseTracks([...releaseTracks, finalTrack as Track]);
+        }
+        setModalView('BROWSE');
     };
     const addContributor = () => {
         setCurrentTrack(prev => ({
@@ -125,19 +147,26 @@ const ReleaseForm: React.FC = () => {
             contributors: [...(prev.contributors || []), { name: '', role: 'Composer' }]
         }));
     };
+    const removeContributor = (i: number) => {
+        const c = [...(currentTrack.contributors || [])];
+        c.splice(i, 1);
+        setCurrentTrack({ ...currentTrack, contributors: c });
+    };
     const loadInitialData = async () => {
         setLoading(true);
         try {
             // [THAY ĐỔI] Gọi api.tracks.getAll() thay vì dùng MOCK
-            const [fetchedLabels, fetchedDsps, fetchedTracks] = await Promise.all([
+            const [fetchedLabels, fetchedDsps, fetchedTracks, fetchedArtists] = await Promise.all([
                 api.labels.getAll(),
                 api.dsps.getAll(),
-                api.tracks.getAll()
+                api.tracks.getAll(),
+                api.artists.getAll()
             ]);
 
             setLabels(fetchedLabels);
             setAvailableDsps(fetchedDsps);
-            setAvailableTracks(fetchedTracks); // Set dữ liệu thật vào state Catalog
+            setAvailableTracks(fetchedTracks);
+            setAvailableArtists(fetchedArtists); // Set dữ liệu thật vào state Catalog
 
             if (!isEdit) {
                 setSelectedStores(fetchedDsps.map(d => d.code));
@@ -176,13 +205,20 @@ const ReleaseForm: React.FC = () => {
                 setSubGenre(r.sub_genre || '');
                 setLanguage(r.language || 'English');
                 setFormat(r.format || 'SINGLE');
-                setTerritories(r.territories || ['WORLDWIDE']);
+                const terrs = r.territories || ['WORLDWIDE'];
+                setTerritories(terrs);
+                setIsWorldwide(terrs.includes('WORLDWIDE'));
                 if (release.selectedDsps && release.selectedDsps.length > 0) {
                     setSelectedStores(release.selectedDsps);
                 }
 
                 // [THAY ĐỔI] Lọc track của release này từ danh sách thật đã fetch
-                const currentReleaseTracks = fetchedTracks.filter(t => t.releaseId === release.id);
+                const currentReleaseTracks = fetchedTracks.filter(t => t.releaseId === release.id).map(t => ({
+                    ...t,
+                    // [UPDATE] Load cột TEXT lên State
+                    // (t as any) để tránh lỗi TS nếu type Track chưa có trường này
+                    tiktokClipStartTime: (t as any).tiktok_start_time || '00:00'
+                }));
                 setReleaseTracks(currentReleaseTracks);
             }
         } catch (err) {
@@ -259,8 +295,12 @@ const ReleaseForm: React.FC = () => {
                 // Tạo mảng Promise để update song song
                 const trackUpdates = releaseTracks.map(track => {
                     // Cập nhật releaseId cho track
+                    const tiktokTime = track.tiktokClipStartTime
+                        ? track.tiktokClipStartTime.trim()
+                        : '00:00';
                     return api.tracks.save({
                         ...track,
+                        tiktok_start_time: tiktokTime,
                         releaseId: savedRelease.id, // Link với Release vừa lưu
                         status: newStatus === 'CHECKING' ? 'PROCESSING' : 'READY' // Update status track theo release
                     });
@@ -281,7 +321,10 @@ const ReleaseForm: React.FC = () => {
             setLoading(false);
         }
     };
-
+    const isValidTimeFormat = (time: string) => {
+        const regex = /^([0-5]?[0-9]):([0-5][0-9])$/;
+        return regex.test(time);
+    };
     const toggleStore = (code: string) => {
         if (selectedStores.includes(code)) {
             setSelectedStores(selectedStores.filter(s => s !== code));
@@ -289,12 +332,45 @@ const ReleaseForm: React.FC = () => {
             setSelectedStores([...selectedStores, code]);
         }
     };
+
     const toggleAllStores = () => {
-        if (selectedStores.length === availableDsps.length) {
-            setSelectedStores([]); // Deselect all
+        const allActiveCodes = availableDsps.filter(d => d.isEnabled).map(d => d.code);
+        const isAllSelected = allActiveCodes.every(code => selectedStores.includes(code));
+        if (isAllSelected) {
+            setSelectedStores([]);
         } else {
-            setSelectedStores(availableDsps.map(d => d.code)); // Select all
+            setSelectedStores(allActiveCodes);
         }
+    };
+    const validateImageDimensions = (url: string): Promise<boolean> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                // Check tối thiểu 1400x1400
+                if (img.width < 1400 || img.height < 1400) {
+                    resolve(false);
+                } else {
+                    resolve(true);
+                }
+            };
+            img.onerror = () => resolve(false); // Lỗi load ảnh
+            img.src = url;
+        });
+    };
+    const handleCoverArtUpload = async (url: string) => {
+        const isValid = await validateImageDimensions(url);
+        if (!isValid) {
+            alert("Image resolution too low! Minimum required is 1400x1400px.");
+            // Xóa file vừa upload lên server (nếu cần thiết để dọn rác)
+            await api.storage.delete(url);
+            return;
+        }
+
+        // Nếu ảnh cũ khác ảnh mới, xóa ảnh cũ
+        if (coverArt && coverArt !== url) {
+            await api.storage.delete(coverArt);
+        }
+        setCoverArt(url);
     };
 
     // --- TRACK LOGIC ---
@@ -411,13 +487,7 @@ const ReleaseForm: React.FC = () => {
                                             type="image"
                                             accept="image/*"
                                             currentUrl={coverArt}
-                                            onUploadComplete={async (url) => {
-                                                // Nếu đã có ảnh cũ và nó khác ảnh mới (trường hợp replace), xóa ảnh cũ
-                                                if (coverArt && coverArt !== url) {
-                                                    await api.storage.delete(coverArt);
-                                                }
-                                                setCoverArt(url);
-                                            }}
+                                            onUploadComplete={handleCoverArtUpload}
                                         />
                                         {coverArt && (
                                             <button
@@ -431,7 +501,7 @@ const ReleaseForm: React.FC = () => {
                                                 Remove Artwork
                                             </button>
                                         )}
-                                        <p className="mt-2 text-xs text-gray-500 font-mono text-center">Required: 3000x3000px JPG/PNG</p>
+                                        <p className="mt-2 text-xs text-gray-500 font-mono text-center">Required: 1400x1400px JPG/PNG</p>
                                     </div>
                                 </div>
 
@@ -564,55 +634,82 @@ const ReleaseForm: React.FC = () => {
                         {/* STEP 3: PLATFORMS */}
                         {currentStep === 3 && (
                             <div className="lg:col-span-12 space-y-6">
-                                {/* Territory Section (NEW) */}
+                                {/* Territory Section */}
                                 <div className="bg-surface border border-white/5 rounded-xl p-6">
-                                    <h3 className="font-bold uppercase tracking-wider text-sm mb-4 flex items-center gap-2"><Globe size={16} /> Territories</h3>
-                                    <div className="p-4 bg-black/40 border border-white/5 rounded-lg flex items-center justify-between">
-                                        <div>
-                                            <p className="font-bold text-sm text-white">Worldwide Distribution</p>
-                                            <p className="text-xs text-gray-500">Distribute to all 200+ available countries and regions.</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-mono text-green-500 uppercase">Active</span>
-                                            <div className="w-10 h-5 bg-green-500/20 rounded-full border border-green-500/50 relative">
-                                                <div className="absolute right-0.5 top-0.5 w-3.5 h-3.5 bg-green-500 rounded-full shadow-[0_0_10px_green]"></div>
+                                    <h3 className="font-bold uppercase tracking-wider text-sm mb-4 flex items-center gap-2"><Map size={16} /> Territories</h3>
+
+                                    <div className="flex flex-col md:flex-row gap-4">
+                                        <div
+                                            onClick={() => setIsWorldwide(true)}
+                                            className={`flex-1 p-4 rounded-xl border cursor-pointer transition ${isWorldwide ? 'bg-blue-600/10 border-blue-500 text-white' : 'bg-black/40 border-white/10 text-gray-500 hover:border-white/30'}`}
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="font-bold text-sm uppercase">Worldwide</span>
+                                                {isWorldwide && <CheckCircle2 size={18} className="text-blue-500" />}
                                             </div>
+                                            <p className="text-xs opacity-70">Distribute to all 200+ available countries and regions.</p>
+                                        </div>
+
+                                        <div
+                                            onClick={() => setIsWorldwide(false)}
+                                            className={`flex-1 p-4 rounded-xl border cursor-not-allowed opacity-50 bg-black/20 border-white/5`}
+                                            title="Feature coming soon"
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="font-bold text-sm uppercase">Specific Territories</span>
+                                            </div>
+                                            <p className="text-xs opacity-50">Manually select regions (Restricted in Beta).</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* DSPs */}
                                 <div className="bg-surface border border-white/5 rounded-xl p-8">
-                                    <h3 className="font-bold uppercase tracking-wider text-sm mb-6 flex items-center gap-2"><Globe size={16} /> Digital Service Providers <span className="text-red-500">*</span></h3>
-                                    <div className="mb-4">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="font-bold uppercase tracking-wider text-sm flex items-center gap-2"><Globe size={16} /> Digital Service Providers <span className="text-red-500">*</span></h3>
                                         <button
                                             onClick={toggleAllStores}
-                                            className="text-xs font-bold uppercase tracking-widest text-blue-500 hover:text-white transition"
+                                            className="text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-white transition px-3 py-1.5 bg-blue-500/10 rounded-lg"
                                         >
-                                            {selectedStores.length === availableDsps.length ? '( Deselect All )' : '( Select All )'}
+                                            {selectedStores.length > 0 ? 'Deselect All' : 'Select All Active'}
                                         </button>
                                     </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {availableDsps.map((dsp) => {
-                                            const isSelected = selectedStores.includes(dsp.code);
-                                            return (
-                                                <div
-                                                    key={dsp.id}
-                                                    onClick={() => toggleStore(dsp.code)}
-                                                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 flex items-center justify-between group ${isSelected
-                                                        ? 'bg-blue-600/10 border-blue-500/50 text-white'
-                                                        : 'bg-black border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
-                                                        }`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        {dsp.logoUrl && <img src={dsp.logoUrl} alt={dsp.name} className="w-5 h-5 rounded-sm" />}
-                                                        <span className="font-bold text-sm">{dsp.name}</span>
+
+                                    {availableDsps.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <Loader2 className="animate-spin mx-auto mb-2" />
+                                            <span className="text-xs font-mono uppercase">Loading Stores Matrix...</span>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {availableDsps.filter(d => d.isEnabled).map((dsp) => {
+                                                const isSelected = selectedStores.includes(dsp.code);
+                                                return (
+                                                    <div
+                                                        key={dsp.id}
+                                                        onClick={() => toggleStore(dsp.code)}
+                                                        className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 flex items-center justify-between group relative overflow-hidden ${isSelected
+                                                            ? 'bg-blue-600/10 border-blue-500/50 text-white'
+                                                            : 'bg-black border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-3 relative z-10">
+                                                            {dsp.logoUrl ? (
+                                                                <img src={dsp.logoUrl} alt={dsp.name} className="w-6 h-6 rounded-md object-cover bg-white/10" />
+                                                            ) : (
+                                                                <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-[8px] font-bold">{dsp.name.charAt(0)}</div>
+                                                            )}
+                                                            <span className="font-bold text-xs uppercase tracking-tight">{dsp.name}</span>
+                                                        </div>
+                                                        {isSelected && <CheckCircle2 size={16} className="text-blue-400 relative z-10" />}
+
+                                                        {/* Active Glow Effect */}
+                                                        {isSelected && <div className="absolute inset-0 bg-blue-500/5 blur-md"></div>}
                                                     </div>
-                                                    {isSelected && <CheckCircle2 size={16} className="text-blue-400" />}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -763,7 +860,7 @@ const ReleaseForm: React.FC = () => {
                                                     <input
                                                         type="text"
                                                         value={currentTrack.duration || ''}
-                                                        onChange={(e) => setCurrentTrack({ ...currentTrack, duration: e.target.value })}
+                                                        readonly
                                                         className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none"
                                                         placeholder="03:45"
                                                     />
@@ -774,13 +871,15 @@ const ReleaseForm: React.FC = () => {
                                             <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl flex items-center justify-between">
                                                 <div>
                                                     <p className="text-sm font-bold text-white flex items-center gap-2"><Clock size={16} /> TikTok Clip Start</p>
-                                                    <p className="text-xs text-gray-400 mt-1">Preview window (60s).</p>
+                                                    <p className="text-xs text-gray-400 mt-1">Defaults to 00:00 if empty.</p>
                                                 </div>
                                                 <input
                                                     type="text"
+                                                    // [UPDATE 6] Logic hiển thị: Nếu user chưa nhập, để trống để hiện placeholder, 
+                                                    // nhưng khi save sẽ convert về 00:00
                                                     value={currentTrack.tiktokClipStartTime || ''}
                                                     onChange={(e) => setCurrentTrack({ ...currentTrack, tiktokClipStartTime: e.target.value })}
-                                                    placeholder="00:30"
+                                                    placeholder="00:00"
                                                     className="w-24 bg-black border border-white/20 rounded-lg px-3 py-2 text-center font-mono font-bold text-white focus:border-blue-500 outline-none"
                                                 />
                                             </div>
@@ -794,7 +893,22 @@ const ReleaseForm: React.FC = () => {
                                             <div className={trackErrors.artists ? "p-3 border border-red-500/30 bg-red-500/5 rounded-xl" : ""}>
                                                 <div className="flex justify-between items-center mb-2">
                                                     <label className="text-xs uppercase font-bold text-blue-500">Performing Artists <span className="text-red-500">*</span></label>
-                                                    <button onClick={() => setCurrentTrack({ ...currentTrack, artists: [...(currentTrack.artists || []), { name: '', role: 'Featured' }] })} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const isFirst = (currentTrack.artists || []).length === 0;
+                                                            setCurrentTrack({
+                                                                ...currentTrack,
+                                                                artists: [
+                                                                    ...(currentTrack.artists || []),
+                                                                    // Nếu là người đầu tiên -> Primary, người sau -> Featured
+                                                                    { name: '', role: isFirst ? 'Primary' : 'Featured' }
+                                                                ]
+                                                            });
+                                                        }}
+                                                        className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase"
+                                                    >
+                                                        + Add
+                                                    </button>
                                                 </div>
                                                 <div className="space-y-2">
                                                     {currentTrack.artists?.map((a, i) => (
@@ -804,7 +918,23 @@ const ReleaseForm: React.FC = () => {
                                                                 <option value="Featured">Featured</option>
                                                                 <option value="Remixer">Remixer</option>
                                                             </select>
-                                                            <input value={a.name} onChange={e => updateArtist(i, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none" placeholder="Artist Name" />
+
+                                                            {/* [UPDATE 8] Dùng Datalist để gợi ý Artist */}
+                                                            <div className="flex-1 relative">
+                                                                <input
+                                                                    list={`artist-suggestions-${i}`} // Link với id datalist
+                                                                    value={a.name}
+                                                                    onChange={e => updateArtist(i, 'name', e.target.value)}
+                                                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none"
+                                                                    placeholder="Artist Name"
+                                                                />
+                                                                <datalist id={`artist-suggestions-${i}`}>
+                                                                    {availableArtists.map(artist => (
+                                                                        <option key={artist.id} value={artist.name} />
+                                                                    ))}
+                                                                </datalist>
+                                                            </div>
+
                                                             <button onClick={() => {
                                                                 const copy = currentTrack.artists!.filter((_, idx) => idx !== i);
                                                                 setCurrentTrack({ ...currentTrack, artists: copy });

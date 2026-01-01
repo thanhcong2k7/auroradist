@@ -109,6 +109,7 @@ export interface Track {
   lyricsText?: string;
   isExplicit: boolean;
   hasExplicitVersion: boolean;
+  tiktokClipStartTime?: string;
 }
 
 export interface Transaction {

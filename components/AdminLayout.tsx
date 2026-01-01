@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, ShieldCheck, Users,
-    DollarSign, FileAudio, LogOut, Menu, X
+    DollarSign, FileAudio, LogOut, Menu, X,
+    Globe
 } from 'lucide-react';
 import { supabase } from '@/services/api';
 
@@ -24,6 +25,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     const navItems = [
         { path: '/admin', icon: LayoutDashboard, label: 'Overview' },
         { path: '/admin/releases', icon: ShieldCheck, label: 'Moderation' },
+        { path: '/admin/dsps', icon: Globe, label: 'Store Manager' },
         { path: '/admin/analytics', icon: FileAudio, label: 'Analytics Import' },
         { path: '/admin/revenue', icon: DollarSign, label: 'Finance' },
         { path: '/admin/users', icon: Users, label: 'User Manager' },
@@ -54,8 +56,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                                 key={item.path}
                                 to={item.path}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all ${isActive
-                                        ? 'bg-red-600/10 text-red-500 border border-red-600/20'
-                                        : 'text-gray-500 hover:text-white hover:bg-white/5'
+                                    ? 'bg-red-600/10 text-red-500 border border-red-600/20'
+                                    : 'text-gray-500 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 <item.icon size={18} />
