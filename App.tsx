@@ -17,7 +17,7 @@ import { api, supabase } from './services/api'; // Dùng instance từ api.ts
 
 
 // Import các trang Admin (Tạm thời tạo Placeholder component nếu chưa có file)
-const AdminDashboard = () => <div className="text-white">Admin Dashboard Overview</div>;
+import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminReleases from './pages/admin/AdminReleases';
 import AdminReleaseDetail from './pages/admin/AdminReleaseDetail';
 import AdminLayout from './components/AdminLayout';
