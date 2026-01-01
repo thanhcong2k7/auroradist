@@ -13,7 +13,7 @@ import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Login from './pages/Login';
 import About from './pages/About';
-import { supabase } from './services/api'; // Dùng instance từ api.ts
+import { api, supabase } from './services/api'; // Dùng instance từ api.ts
 
 
 // Import các trang Admin (Tạm thời tạo Placeholder component nếu chưa có file)
