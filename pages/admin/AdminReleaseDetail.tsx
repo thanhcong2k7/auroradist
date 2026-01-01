@@ -96,7 +96,7 @@ const AdminReleaseDetail: React.FC = () => {
         try {
             await api.admin.updateReleaseMetadata(release.id, {
                 status: 'REJECTED',
-                // rejection_reason: reason // Cần thêm cột này vào DB nếu muốn lưu
+                rejection_reason: reason // Cần thêm cột này vào DB nếu muốn lưu
             });
             alert("Release Rejected.");
             navigate('/admin/releases');
