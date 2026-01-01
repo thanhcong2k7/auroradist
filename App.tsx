@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Discography from './pages/Discography';
@@ -33,12 +33,19 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     const checkAdmin = async () => {
       try {
+        console.log("Checking admin status...");
+
         const profile = await api.auth.getProfile();
+        console.log("Profile fetched:", profile); // Xem role trả về là gì
+
         if (profile && profile.role === 'ADMIN') {
           setIsAdmin(true);
+        } else {
+          console.warn("User role is not ADMIN:", profile?.role);
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Not admin");
+        console.error("Admin Check Error Details:", e.message, e);
       } finally {
         setLoading(false);
       }
@@ -129,8 +136,9 @@ const App: React.FC = () => {
   // Nếu đã auth -> Render App
   return (
     <Router>
-      <Layout onLogout={() => supabase.auth.signOut()}>
-        <Routes>
+      <Routes>
+        {/* === GROUP 1: USER ROUTES (Có Layout User) === */}
+        <Route element={<Layout onLogout={() => supabase.auth.signOut()}><Outlet /></Layout>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/discography" element={<Discography />} />
           <Route path="/discography/new" element={<ReleaseForm />} />
@@ -143,17 +151,27 @@ const App: React.FC = () => {
           <Route path="/support" element={<Support />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/about" element={<About />} />
+        </Route>
 
-          <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
-          <Route path="/admin/releases" element={<AdminRoute><AdminLayout><AdminReleases /></AdminLayout></AdminRoute>} />
-          <Route path="/admin/releases/:id" element={<AdminRoute><AdminLayout><AdminReleaseDetail /></AdminLayout></AdminRoute>} />
-          <Route path="/admin/analytics" element={<AdminRoute><AdminLayout><AdminAnalytics /></AdminLayout></AdminRoute>} />
-          <Route path="/admin/revenue" element={<AdminRoute><AdminLayout><AdminRevenue /></AdminLayout></AdminRoute>} />
-          <Route path="/admin/users" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
+        {/* === GROUP 2: ADMIN ROUTES (Layout Admin riêng nằm trong AdminRoute) === */}
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminLayout>
+              <Outlet /> {/* Sử dụng Outlet để render các trang con */}
+            </AdminLayout>
+          </AdminRoute>
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="releases" element={<AdminReleases />} />
+          <Route path="releases/:id" element={<AdminReleaseDetail />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="revenue" element={<AdminRevenue />} />
+          <Route path="users" element={<AdminUsers />} />
+        </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Router>
   );
 };
