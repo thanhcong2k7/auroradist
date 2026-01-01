@@ -716,6 +716,30 @@ export const api = {
       }));
     },
 
+    getPendingWithdrawals: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*, profiles(email, name, legal_name)')
+        .eq('type', 'WITHDRAWAL')
+        .eq('status', 'PENDING')
+        .order('date', { ascending: true }); // Cũ nhất lên đầu
+
+      if (error) throw error;
+      return data;
+    },
+
+    // 9. Xử lý rút tiền (Duyệt/Từ chối)
+    processWithdrawal: async (txnId: string, status: 'COMPLETED' | 'REJECTED', note?: string) => {
+      const { error } = await supabase.rpc('admin_process_withdrawal', {
+        p_txn_id: txnId,
+        p_status: status,
+        p_note: note || null
+      });
+
+      if (error) throw error;
+      return { success: true };
+    },
+
     // 2. Lấy chi tiết Release kèm Tracks (Admin View)
     getReleaseDetail: async (id: number) => {
       const { data, error } = await supabase
