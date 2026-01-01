@@ -15,6 +15,41 @@ import Login from './pages/Login';
 import About from './pages/About';
 import { supabase } from './services/api'; // Dùng instance từ api.ts
 
+
+// Import các trang Admin (Tạm thời tạo Placeholder component nếu chưa có file)
+const AdminDashboard = () => <div className="text-white">Admin Dashboard Overview</div>;
+import AdminReleases from './pages/admin/AdminReleases'; // Sẽ tạo ở bước sau
+import AdminReleaseDetail from './pages/admin/AdminReleaseDetail'; // Sẽ tạo ở bước sau
+// Placeholder cho các trang chưa làm
+const AdminAnalytics = () => <div className="text-white">Analytics Import Tool</div>;
+const AdminRevenue = () => <div className="text-white">Revenue Control</div>;
+const AdminUsers = () => <div className="text-white">User Management</div>;
+
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const profile = await api.auth.getProfile();
+        if (profile && profile.role === 'ADMIN') {
+          setIsAdmin(true);
+        }
+      } catch (e) {
+        console.error("Not admin");
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAdmin();
+  }, []);
+
+  if (loading) return <div className="h-screen bg-black text-white flex items-center justify-center">Verifying Clearance...</div>;
+
+  return isAdmin ? <>{children}</> : <Navigate to="/" replace />;
+};
+
 const App: React.FC = () => {
   // isAuth = null nghĩa là đang "Loading/Checking", chưa quyết định
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -87,8 +122,7 @@ const App: React.FC = () => {
 
   // Nếu chưa auth -> Render Login
   if (!isAuthenticated) {
-    // Truyền đr callback rỗng hoặc xử lý nhẹ, vì onAuthStateChange đã lo việc set state
-    return <Login onLogin={() => { }} />;
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
   }
 
   // Nếu đã auth -> Render App
@@ -108,6 +142,14 @@ const App: React.FC = () => {
           <Route path="/support" element={<Support />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/about" element={<About />} />
+
+          <Route path="/admin" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />
+          <Route path="/admin/releases" element={<AdminRoute><AdminLayout><AdminReleases /></AdminLayout></AdminRoute>} />
+          <Route path="/admin/releases/:id" element={<AdminRoute><AdminLayout><AdminReleaseDetail /></AdminLayout></AdminRoute>} />
+          <Route path="/admin/analytics" element={<AdminRoute><AdminLayout><AdminAnalytics /></AdminLayout></AdminRoute>} />
+          <Route path="/admin/revenue" element={<AdminRoute><AdminLayout><AdminRevenue /></AdminLayout></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><AdminLayout><AdminUsers /></AdminLayout></AdminRoute>} />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

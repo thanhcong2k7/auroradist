@@ -460,14 +460,14 @@ export const api = {
         contributors: t.contributors || []
       })) as Track[];
     },
-    
+
     getByReleaseId: async (releaseId: number) => {
       const { data, error } = await supabase
         .from('tracks')
         .select('*')
         .eq('release_id', releaseId)
         .order('id', { ascending: true }); // Optional: order by ID or track number
-      
+
       if (error) throw error;
 
       // reuse the mapping logic to ensure camelCase matches your frontend types
@@ -689,6 +689,87 @@ export const api = {
         .single();
 
       return updatedTicket;
+    }
+  },
+
+  admin: {
+    // 1. Lấy toàn bộ Releases (cho trang Moderation)
+    getAllReleases: async (statusFilter?: string) => {
+      let query = supabase
+        .from('releases')
+        .select('*, profiles(email, name)') // Join bảng profiles để biết ai upload
+        .order('created_at', { ascending: false });
+
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+
+    // 2. Lấy chi tiết Release kèm Tracks (Admin View)
+    getReleaseDetail: async (id: number) => {
+      const { data, error } = await supabase
+        .from('releases')
+        .select('*, tracks(*), profiles(email, name, legal_name)')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    // 3. Hành động Moderation: Cập nhật UPC/Status
+    updateReleaseMetadata: async (id: number, updates: {
+      upc?: string,
+      status?: string,
+      rejection_reason?: string
+    }) => {
+      const { data, error } = await supabase
+        .from('releases')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    // 4. Hành động Tracks: Cập nhật ISRC
+    updateTrackISRC: async (trackId: number, isrc: string) => {
+      const { error } = await supabase
+        .from('tracks')
+        .update({ isrc: isrc })
+        .eq('id', trackId);
+
+      if (error) throw error;
+      return { success: true };
+    },
+
+    // 5. User Management: Lấy danh sách user
+    getUsers: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+
+    // 6. User Management: Xóa user (Admin only)
+    deleteUser: async (userId: string) => {
+      // Lưu ý: Client-side chỉ xóa được profile. 
+      // Để xóa hoàn toàn trong Auth, cần dùng Edge Function (sẽ làm ở bước sau).
+      // Tạm thời ta xóa profile để "soft ban".
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      if (error) throw error;
     }
   }
 };

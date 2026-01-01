@@ -136,3 +136,20 @@ export interface SupportTicket {
   updatedAt: string;
   messages: TicketMessage[];
 }
+
+export interface UserProfile {
+  id: number;
+  name: string;
+  legal_name?: string;
+  email: string;
+  role: 'USER' | 'ADMIN' | 'MODERATOR'; // Quan trọng
+  avatar?: string;
+}
+
+// Thêm Type cho Admin Stats (nếu cần sau này)
+export interface AdminStats {
+  pendingReleases: number;
+  totalUsers: number;
+  totalRevenue: number;
+  flaggedTracks: number;
+}
