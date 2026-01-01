@@ -217,7 +217,7 @@ const AdminSupport: React.FC = () => {
                                                 <span className={`text-[10px] font-bold uppercase ${msg.role === 'ADMIN' ? 'text-blue-500' : 'text-gray-400'}`}>
                                                     {msg.role === 'ADMIN' ? 'Aurora Support' : selectedTicket.profiles?.name}
                                                 </span>
-                                                <span className="text-[8px] text-gray-600 font-mono">{formatTime(msg.created_at)}</span>
+                                                <span className="text-[10px] text-gray-600 font-mono">{formatTime(msg.created_at)}</span>
                                             </div>
                                             <div className={`p-3 rounded-2xl text-xs leading-relaxed ${msg.role === 'ADMIN'
                                                 ? 'bg-blue-600 text-white rounded-tr-none'
