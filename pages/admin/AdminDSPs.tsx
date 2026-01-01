@@ -14,13 +14,14 @@ const DSPLogo = ({ code, url, name }: { code: string, url?: string, name: string
     const c = code.toUpperCase();
 
     // Mapping Code -> Icon & Color
-    if (c.includes('SPOTIFY')) return <FaSpotify size={24} className="text-[#1DB954]" />;
-    if (c.includes('APPLE')) return <FaApple size={24} className="text-white" />; // Apple Music thường màu trắng/đen hoặc đỏ hồng
-    if (c.includes('YOUTUBE')) return <FaYoutube size={24} className="text-[#FF0000]" />;
-    if (c.includes('SOUNDCLOUD')) return <FaSoundcloud size={24} className="text-[#FF5500]" />;
-    if (c.includes('AMAZON')) return <FaAmazon size={24} className="text-[#FF9900]" />;
-    if (c.includes('TIKTOK')) return <FaTiktok size={24} className="text-[#00F2EA]" />; // TikTok thường phối màu Cyan/Pink, để tạm Cyan
-    if (c.includes('FACEBOOK') || c.includes('META')) return <FaFacebook size={24} className="text-[#1877F2]" />;
+    if (c.includes('SPOTIFY')) return <span className="text-[#1DB954]"><FaSpotify size={24} /></span>;
+    if (c.includes('APPLE')) return <span className="text-white"><FaApple size={24} /></span>;
+    if (c.includes('YOUTUBE')) return <span className="text-[#FF0000]"><FaYoutube size={24} /></span>;
+    if (c.includes('SOUNDCLOUD')) return <span className="text-[#FF5500]"><FaSoundcloud size={24} /></span>;
+    if (c.includes('AMAZON')) return <span className="text-[#FF9900]"><FaAmazon size={24} /></span>;
+    if (c.includes('TIKTOK')) return <span className="text-[#00F2EA]"><FaTiktok size={24} /></span>;
+    if (c.includes('FACEBOOK') || c.includes('META')) return <span className="text-[#1877F2]"><FaFacebook size={24} /></span>;
+
     //if (c.includes('DEEZER')) return <FaDeezer size={24} className="text-white" />;
     //if (c.includes('SHAZAM')) return <FaShazam size={24} className="text-[#0088FF]" />;
 
