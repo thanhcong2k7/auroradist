@@ -106,7 +106,7 @@ const AdminReleases: React.FC = () => {
                             <tr key={release.id} className="hover:bg-white/5 transition group">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                        <img src={release.coverArt || 'https://via.placeholder.com/50'} className="w-10 h-10 rounded shadow-sm object-cover" />
+                                        <img src={release.coverArt || 'https://placehold.co/40'} className="w-10 h-10 rounded shadow-sm object-cover" />
                                         <div>
                                             <div className="font-bold text-white uppercase tracking-tight">{release.title}</div>
                                             <div className="text-[10px] text-gray-500 font-mono">{release.artist} • {release.upc || 'NO UPC'}</div>

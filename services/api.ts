@@ -706,7 +706,13 @@ export const api = {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data.map((r: any) => ({
+        ...r,
+        coverArt: r.cover_art,        // Fix ảnh bìa
+        releaseDate: r.release_date,  // Fix ngày tháng
+        labelId: r.label_id,
+        // Giữ lại các trường khác
+      }));
     },
 
     // 2. Lấy chi tiết Release kèm Tracks (Admin View)
@@ -718,7 +724,21 @@ export const api = {
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        ...data,
+        coverArt: data.cover_art,       // [FIX QUAN TRỌNG]
+        releaseDate: data.release_date,
+        labelId: data.label_id,
+        // Map mảng tracks bên trong
+        tracks: data.tracks.map((t: any) => ({
+          ...t,
+          audioUrl: t.audio_url,      // [FIX QUAN TRỌNG] Load Audio
+          releaseId: t.release_id,
+          isrc: t.isrc,
+          // Các trường artist/contributors thường lưu dạng JSONB nên không bị ảnh hưởng, 
+          // nhưng nếu cần thiết hãy check kỹ structure JSON
+        }))
+      };
     },
 
     // 3. Hành động Moderation: Cập nhật UPC/Status
@@ -727,6 +747,10 @@ export const api = {
       status?: string,
       rejection_reason?: string
     }) => {
+      // Khi update ngược lại DB, ta dùng snake_case (nếu cần) hoặc object mapping
+      // Tuy nhiên Supabase JS client đủ thông minh để map nếu key khớp column.
+      // Nhưng để chắc ăn, ta map thủ công payload update nếu tên khác nhau.
+      // Ở đây upc và status trùng tên nên ok.
       const { data, error } = await supabase
         .from('releases')
         .update(updates)
