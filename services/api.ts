@@ -144,26 +144,40 @@ export const api = {
   },
 
   dashboard: {
+    // 1. Lấy chỉ số tổng quan (Gọi RPC mới)
     getStats: async () => {
-      const { data, error } = await supabase.rpc('get_dashboard_stats');
+      const { data, error } = await supabase.rpc('get_user_overview_stats');
+
       if (error) {
-        console.warn("Stats RPC error or not found", error);
-        return { totalStreams: "0", revenue: "$0.00", activeReleases: "0" };
+        console.error("Stats Error:", error);
+        return { totalStreams: 0, revenue: 0, activeReleases: 0, monthlyListeners: 0 };
       }
-      return data;
+
+      // Format dữ liệu cho đẹp
+      return {
+        totalStreams: data.totalStreams.toLocaleString(),
+        // Giả lập % thay đổi (Vì logic tính % phức tạp, tạm thời hardcode hoặc tính sau)
+        totalStreamsChange: "+0%",
+        revenue: `$${data.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+        revenueChange: "+0%",
+        activeReleases: data.activeReleases.toString(),
+        monthlyListeners: data.monthlyListeners.toLocaleString(),
+        monthlyListenersChange: "+0%"
+      };
     },
 
+    // 2. Lấy dữ liệu biểu đồ (Gọi RPC mới)
     getChartData: async () => {
-      const userId = await getUserId();
-      const { data, error } = await supabase
-        .from('analytics_monthly')
-        .select('*')
-        .eq('uid', userId)
-        .order('month', { ascending: true });
-      if (error) throw error;
-      return data;
+      const { data, error } = await supabase.rpc('get_user_stream_chart', { p_months: 12 });
+
+      if (error) {
+        console.error("Chart Error:", error);
+        return [];
+      }
+      return data; // Trả về mảng [{ name: 'Jan', streams: 100 }, ...]
     },
 
+    // 3. Lấy Release gần đây (Giữ nguyên logic cũ vì bảng releases không đổi)
     getRecentReleases: async () => {
       const userId = await getUserId();
       const { data, error } = await supabase
@@ -174,16 +188,35 @@ export const api = {
         .limit(5);
 
       if (error) throw error;
+
+      // Map snake_case -> camelCase
       return data.map((r: any) => ({
-        ...r,
         id: r.id,
         title: r.title,
-        artist: r.artist, // Lưu ý: Cần chắc chắn DB có cột artist, nếu không sẽ cần join bảng
+        artist: r.artist,
         status: r.status,
         coverArt: r.cover_art,
         releaseDate: r.release_date,
         version: r.version
       })) as Release[];
+    },
+    getPlatformStats: async () => {
+      const { data, error } = await supabase.rpc('get_analytics_by_platform', { p_days: 30 });
+      if (error) {
+        console.error(error);
+        return [];
+      }
+      return data; // [{ name: 'Spotify', value: 1000 }, ...]
+    },
+
+    // [MỚI] Lấy dữ liệu biểu đồ cột (Daily Trend)
+    getDailyTrend: async () => {
+      const { data, error } = await supabase.rpc('get_analytics_daily_trend', { p_days: 7 });
+      if (error) {
+        console.error(error);
+        return [];
+      }
+      return data; // [{ day: 'Mon', streams: 50 }, ...]
     }
   },
 

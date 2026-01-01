@@ -45,28 +45,50 @@ const AdminRevenue: React.FC = () => {
     };
 
     const processRevenue = async (rows: any[]) => {
-        if (!confirm(`Process ${rows.length} royalty records?`)) return;
-        setProcessing(true); setLogs([]);
-        let successCount = 0;
-        for (const row of rows) {
-            const upc = row['UPC'] || row['Barcode'];
-            const amount = parseFloat(row['Net Revenue'] || row['Amount'] || row['USD']);
-            if (upc && amount > 0) {
-                try {
-                    const { error } = await supabase.rpc('admin_distribute_revenue', {
-                        p_upc: upc.toString().trim(), p_amount: amount, p_month: new Date().toISOString()
-                    });
-                    if (error) throw error;
-                    setLogs(prev => [`[SUCCESS] UPC: ${upc} | +$${amount}`, ...prev]);
-                    successCount++;
-                } catch (err: any) {
-                    setLogs(prev => [`[ERROR] UPC: ${upc} | ${err.message}`, ...prev]);
-                }
+        // 1. Tính tổng tiền để Review trước (Dry Run client side)
+        const totalAmount = rows.reduce((sum, row) => sum + parseFloat(row['Net Revenue'] || row['Amount'] || 0), 0);
+
+        if (!confirm(`Bulk Process Summary:\n- Records: ${rows.length}\n- Total Payout: $${totalAmount.toFixed(2)}\n\nProceed to distribute?`)) return;
+
+        setProcessing(true);
+        setLogs(["Preparing bulk payload..."]);
+
+        // 2. Chuẩn bị dữ liệu sạch
+        const payload = rows.map(row => ({
+            upc: (row['UPC'] || row['Barcode'])?.toString().trim(),
+            amount: parseFloat(row['Net Revenue'] || row['Amount'] || row['USD'])
+        })).filter(item => item.upc && item.amount > 0);
+
+        try {
+            // 3. Gọi hàm Bulk RPC (Chỉ 1 request duy nhất)
+            const { data, error } = await supabase.rpc('admin_distribute_revenue_bulk', {
+                p_items: payload,
+                p_month: new Date().toISOString()
+            });
+
+            if (error) throw error;
+
+            setLogs(prev => [
+                `✅ BATCH COMPLETE`,
+                `Success: ${data.success_count} records`,
+                `Failed: ${data.error_count} records`,
+                ...prev
+            ]);
+
+            if (data.errors && data.errors.length > 0) {
+                setLogs(prev => [...data.errors, ...prev]);
             }
+
+            alert(`Distribution Complete!\nSuccess: ${data.success_count}\nFailed: ${data.error_count}`);
+
+        } catch (err: any) {
+            setLogs(prev => [`[CRITICAL ERROR] ${err.message}`, ...prev]);
+            alert("Batch processing failed. Check logs.");
+        } finally {
+            setProcessing(false);
         }
-        setProcessing(false);
-        alert(`Done. Distributed to ${successCount} releases.`);
     };
+
 
     // --- LOGIC WITHDRAWAL ---
     const handleProcessTxn = async (txnId: string, status: 'COMPLETED' | 'REJECTED') => {
