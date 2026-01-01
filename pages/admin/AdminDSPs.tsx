@@ -1,7 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/services/api';
 import { DspChannel } from '@/types';
-import { Globe, Plus, Edit2, Loader2, Save, X, CheckCircle2, Power } from 'lucide-react';
+import { Plus, Edit2, Loader2, Save, X, Power } from 'lucide-react';
+
+// 1. Import các Icon thương hiệu từ react-icons/fa (FontAwesome 6) hoặc /fa (FontAwesome 5)
+// Si: Simple Icons (nhiều logo brand hơn), Fa: FontAwesome
+import { FaSpotify, FaApple, FaYoutube, FaSoundcloud, FaAmazon, FaTiktok, FaFacebook } from 'react-icons/fa';
+import { SiDeezer, SiShazam } from 'react-icons/si'; // Simple Icons có nhiều brand nhạc hơn
+
+// 2. Helper Component để render Logo
+const DSPLogo = ({ code, url, name }: { code: string, url?: string, name: string }) => {
+    // Chuẩn hóa code về chữ hoa
+    const c = code.toUpperCase();
+
+    // Mapping Code -> Icon & Color
+    if (c.includes('SPOTIFY')) return <FaSpotify size={24} className="text-[#1DB954]" />;
+    if (c.includes('APPLE')) return <FaApple size={24} className="text-white" />; // Apple Music thường màu trắng/đen hoặc đỏ hồng
+    if (c.includes('YOUTUBE')) return <FaYoutube size={24} className="text-[#FF0000]" />;
+    if (c.includes('SOUNDCLOUD')) return <FaSoundcloud size={24} className="text-[#FF5500]" />;
+    if (c.includes('AMAZON')) return <FaAmazon size={24} className="text-[#FF9900]" />;
+    if (c.includes('TIKTOK')) return <FaTiktok size={24} className="text-[#00F2EA]" />; // TikTok thường phối màu Cyan/Pink, để tạm Cyan
+    if (c.includes('FACEBOOK') || c.includes('META')) return <FaFacebook size={24} className="text-[#1877F2]" />;
+    if (c.includes('DEEZER')) return <SiDeezer size={24} className="text-white" />;
+    if (c.includes('SHAZAM')) return <SiShazam size={24} className="text-[#0088FF]" />;
+
+    // Fallback 1: Nếu có URL ảnh (cho các trang ZingMP3, NCT...)
+    if (url) return <img src={url} alt={name} className="w-6 h-6 rounded-md object-cover bg-white/10" />;
+
+    // Fallback 2: Chữ cái đầu
+    return <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-[10px] font-bold">{name.charAt(0)}</div>;
+};
 
 const AdminDSPs: React.FC = () => {
     const [dsps, setDsps] = useState<DspChannel[]>([]);
@@ -15,7 +43,6 @@ const AdminDSPs: React.FC = () => {
         setLoading(true);
         try {
             const data = await api.admin.getAllDSPs();
-            // Map snake_case to camelCase thủ công hoặc cast
             setDsps(data.map((d: any) => ({
                 id: d.id, name: d.name, code: d.code, logoUrl: d.logo_url, isEnabled: d.is_enabled
             })));
@@ -55,7 +82,10 @@ const AdminDSPs: React.FC = () => {
                     {dsps.map(dsp => (
                         <div key={dsp.id} className={`p-4 rounded-xl border transition flex items-center justify-between group ${dsp.isEnabled ? 'bg-[#111] border-white/10' : 'bg-red-900/5 border-red-500/20 opacity-75'}`}>
                             <div className="flex items-center gap-4">
-                                <img src={dsp.logoUrl || 'https://via.placeholder.com/40'} className="w-10 h-10 rounded-lg bg-white/10 object-cover" />
+                                {/* SỬ DỤNG COMPONENT DSPLogo MỚI TẠI ĐÂY */}
+                                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
+                                    <DSPLogo code={dsp.code} url={dsp.logoUrl} name={dsp.name} />
+                                </div>
                                 <div>
                                     <h3 className="font-bold text-sm text-white">{dsp.name}</h3>
                                     <p className="text-xs font-mono text-gray-500">{dsp.code}</p>
@@ -80,11 +110,22 @@ const AdminDSPs: React.FC = () => {
                             <button onClick={() => setShowModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
                         </div>
                         <div className="space-y-3">
-                            <input value={editingDsp.name || ''} onChange={e => setEditingDsp({ ...editingDsp, name: e.target.value })} placeholder="Service Name (e.g. Spotify)" className="w-full bg-black border border-white/10 rounded p-3 text-xs text-white outline-none focus:border-blue-500" />
-                            <input value={editingDsp.code || ''} onChange={e => setEditingDsp({ ...editingDsp, code: e.target.value })} placeholder="System Code (e.g. SPOTIFY)" className="w-full bg-black border border-white/10 rounded p-3 text-xs text-white outline-none focus:border-blue-500 font-mono uppercase" />
-                            <input value={editingDsp.logoUrl || ''} onChange={e => setEditingDsp({ ...editingDsp, logoUrl: e.target.value })} placeholder="Logo URL" className="w-full bg-black border border-white/10 rounded p-3 text-xs text-white outline-none focus:border-blue-500" />
+                            <div className="space-y-1">
+                                <label className="text-[10px] text-gray-500 uppercase font-bold">Display Name</label>
+                                <input value={editingDsp.name || ''} onChange={e => setEditingDsp({ ...editingDsp, name: e.target.value })} placeholder="e.g. Spotify" className="w-full bg-black border border-white/10 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] text-gray-500 uppercase font-bold">System Code</label>
+                                <input value={editingDsp.code || ''} onChange={e => setEditingDsp({ ...editingDsp, code: e.target.value.toUpperCase() })} placeholder="e.g. SPOTIFY" className="w-full bg-black border border-white/10 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 font-mono uppercase" />
+                                <p className="text-[10px] text-gray-600">Used for icon mapping (e.g. SPOTIFY, APPLE, YOUTUBE)</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] text-gray-500 uppercase font-bold">Logo URL (Optional)</label>
+                                <input value={editingDsp.logoUrl || ''} onChange={e => setEditingDsp({ ...editingDsp, logoUrl: e.target.value })} placeholder="https://..." className="w-full bg-black border border-white/10 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" />
+                                <p className="text-[10px] text-gray-600">Only required for niche stores not in icon set.</p>
+                            </div>
                         </div>
-                        <button onClick={handleSave} className="w-full py-3 bg-blue-600 text-white font-bold text-xs uppercase rounded hover:bg-blue-500">Save Configuration</button>
+                        <button onClick={handleSave} className="w-full py-3 bg-blue-600 text-white font-bold text-xs uppercase rounded-lg hover:bg-blue-500 shadow-lg">Save Configuration</button>
                     </div>
                 </div>
             )}
