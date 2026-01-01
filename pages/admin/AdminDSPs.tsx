@@ -2,45 +2,53 @@ import React, { useEffect, useState } from 'react';
 import { api } from '@/services/api';
 import { DspChannel } from '@/types';
 import { Plus, Edit2, Loader2, Save, X, Power } from 'lucide-react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-// 1. Import các Icon thương hiệu từ react-icons/fa (FontAwesome 6) hoặc /fa (FontAwesome 5)
-// Si: Simple Icons (nhiều logo brand hơn), Fa: FontAwesome
-import { FaSpotify, FaApple, FaYoutube, FaSoundcloud, FaAmazon, FaTiktok, FaFacebook } from 'react-icons/fa';
-//import { FaDeezer, FaShazam } from 'react-icons/si'; // Simple Icons có nhiều brand nhạc hơn
+// 1. Import Icon từ FontAwesome (fa) và Simple Icons (si) qua react-icons
+import {
+    FaSpotify, FaApple, FaYoutube, FaSoundcloud,
+    FaAmazon, FaTiktok, FaFacebook, FaSnapchatGhost
+} from 'react-icons/fa';
+
+// Simple Icons chứa rất nhiều brand nhạc mà FontAwesome không có
+import {
+    SiDeezer, SiShazam, SiTidal, SiPandora,
+    SiIheartradio, SiMixcloud, SiTencentqq
+} from 'react-icons/si';
 
 // 2. Helper Component để render Logo
 const DSPLogo = ({ code, url, name }: { code: string, url?: string, name: string }) => {
-    // Chuẩn hóa code về chữ hoa
+    // Chuẩn hóa code về chữ hoa để so sánh
     const c = code.toUpperCase();
 
-    // Mapping Code -> Icon & Color
-    if (c.includes('SPOTIFY')) return <span className="text-[#1DB954]"><FaSpotify size={24} /></span>;
-    if (c.includes('APPLE')) return <span className="text-white"><FaApple size={24} /></span>;
-    if (c.includes('YOUTUBE')) return <span className="text-[#FF0000]"><FaYoutube size={24} /></span>;
-    if (c.includes('SOUNDCLOUD')) return <span className="text-[#FF5500]"><FaSoundcloud size={24} /></span>;
-    if (c.includes('AMAZON')) return <span className="text-[#FF9900]"><FaAmazon size={24} /></span>;
-    if (c.includes('TIKTOK')) return <span className="text-[#00F2EA]"><FaTiktok size={24} /></span>;
-    if (c.includes('FACEBOOK') || c.includes('META')) return <span className="text-[#1877F2]"><FaFacebook size={24} /></span>;
-    if (c.includes('PANDORA')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-pandora" /></span>;
-    if (c.includes('IHEART')) return <span className="text-white"><FontAwesomeIcon icon="fa-solid fa-heart" /></span>;
-    if (c.includes('MIXCLOUD')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-mixcloud" /></span>;
-    if (c.includes('SNAP')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-snapchat" /></span>;
-    if (c.includes('SOUNDCLOUD')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-soundcloud" /></span>;
-    if (c.includes('TENCENT')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-tencent-weibo" /></span>;
-    if (c.includes('TIDAL')) return <span className="text-white"><FontAwesomeIcon icon="fa-brands fa-tidal" /></span>;
+    // --- Major DSPs ---
+    if (c.includes('SPOTIFY')) return <FaSpotify size={24} className="text-[#1DB954]" />;
+    if (c.includes('APPLE')) return <FaApple size={24} className="text-gray-200" />;
+    if (c.includes('YOUTUBE')) return <FaYoutube size={24} className="text-[#FF0000]" />;
+    if (c.includes('SOUNDCLOUD')) return <FaSoundcloud size={24} className="text-[#FF5500]" />;
+    if (c.includes('AMAZON')) return <FaAmazon size={24} className="text-[#FF9900]" />;
+    if (c.includes('TIKTOK')) return <FaTiktok size={24} className="text-[#00F2EA]" />;
+    if (c.includes('FACEBOOK') || c.includes('META')) return <FaFacebook size={24} className="text-[#1877F2]" />;
+    if (c.includes('SNAP')) return <FaSnapchatGhost size={24} className="text-[#FFFC00]" />;
 
-    //if (c.includes('DEEZER')) return <FaDeezer size={24} className="text-white" />;
-    //if (c.includes('SHAZAM')) return <FaShazam size={24} className="text-[#0088FF]" />;
+    // --- Niche / Specific Music DSPs (Dùng Simple Icons) ---
+    if (c.includes('DEEZER')) return <SiDeezer size={24} className="text-white" />;
+    if (c.includes('SHAZAM')) return <SiShazam size={24} className="text-[#0088FF]" />;
+    if (c.includes('TIDAL')) return <SiTidal size={24} className="text-white" />;
+    if (c.includes('PANDORA')) return <SiPandora size={24} className="text-[#224099]" />;
+    if (c.includes('IHEART')) return <SiIheartradio size={24} className="text-[#C6002B]" />;
+    if (c.includes('MIXCLOUD')) return <SiMixcloud size={24} className="text-[#52AAD8]" />;
+    if (c.includes('TENCENT')) return <SiTencentqq size={24} className="text-white" />;
 
-    // Fallback 1: Nếu có URL ảnh (cho các trang ZingMP3, NCT...)
+    // --- Fallback ---
+    // 1. Nếu có URL ảnh (cho các trang nội địa VN như Zing, NCT, Keeng...)
     if (url) return <img src={url} alt={name} className="w-6 h-6 rounded-md object-cover bg-white/10" />;
 
-    // Fallback 2: Chữ cái đầu
-    return <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-[10px] font-bold">{name.charAt(0)}</div>;
+    // 2. Nếu không có gì hết, hiển thị chữ cái đầu
+    return <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-[10px] font-bold text-gray-400">{name.charAt(0)}</div>;
 };
 
 const AdminDSPs: React.FC = () => {
+    // ... (Giữ nguyên toàn bộ logic state và API bên dưới của bạn) ...
     const [dsps, setDsps] = useState<DspChannel[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -91,8 +99,8 @@ const AdminDSPs: React.FC = () => {
                     {dsps.map(dsp => (
                         <div key={dsp.id} className={`p-4 rounded-xl border transition flex items-center justify-between group ${dsp.isEnabled ? 'bg-[#111] border-white/10' : 'bg-red-900/5 border-red-500/20 opacity-75'}`}>
                             <div className="flex items-center gap-4">
-                                {/* SỬ DỤNG COMPONENT DSPLogo MỚI TẠI ĐÂY */}
-                                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
+                                {/* Component Logo Mới */}
+                                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden">
                                     <DSPLogo code={dsp.code} url={dsp.logoUrl} name={dsp.name} />
                                 </div>
                                 <div>
@@ -111,6 +119,7 @@ const AdminDSPs: React.FC = () => {
                 </div>
             )}
 
+            {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
                     <div className="bg-[#111] border border-white/10 rounded-xl w-full max-w-md p-6 space-y-4">
@@ -126,12 +135,12 @@ const AdminDSPs: React.FC = () => {
                             <div className="space-y-1">
                                 <label className="text-[10px] text-gray-500 uppercase font-bold">System Code</label>
                                 <input value={editingDsp.code || ''} onChange={e => setEditingDsp({ ...editingDsp, code: e.target.value.toUpperCase() })} placeholder="e.g. SPOTIFY" className="w-full bg-black border border-white/10 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500 font-mono uppercase" />
-                                <p className="text-[10px] text-gray-600">Used for icon mapping (e.g. SPOTIFY, APPLE, YOUTUBE)</p>
+                                <p className="text-[10px] text-gray-600">Used for auto-mapping icons (e.g. SPOTIFY, TIDAL)</p>
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] text-gray-500 uppercase font-bold">Logo URL (Optional)</label>
                                 <input value={editingDsp.logoUrl || ''} onChange={e => setEditingDsp({ ...editingDsp, logoUrl: e.target.value })} placeholder="https://..." className="w-full bg-black border border-white/10 rounded-lg p-3 text-xs text-white outline-none focus:border-blue-500" />
-                                <p className="text-[10px] text-gray-600">Only required for niche stores not in icon set.</p>
+                                <p className="text-[10px] text-gray-600">Only required for niche stores (e.g. ZingMP3).</p>
                             </div>
                         </div>
                         <button onClick={handleSave} className="w-full py-3 bg-blue-600 text-white font-bold text-xs uppercase rounded-lg hover:bg-blue-500 shadow-lg">Save Configuration</button>
