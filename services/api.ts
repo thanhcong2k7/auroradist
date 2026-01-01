@@ -916,6 +916,60 @@ export const api = {
         .update({ is_enabled: isEnabled })
         .eq('id', id);
       if (error) throw error;
+    },
+    getAllTickets: async () => {
+      // Join bảng profiles để biết ai gửi
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*, profiles(name, email, avatar), messages:ticket_messages(*)')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+
+    replyTicket: async (ticketId: string, content: string) => {
+      const userId = await getUserId();
+      
+      // 1. Insert tin nhắn vai trò ADMIN
+      const { error } = await supabase.from('ticket_messages').insert({
+        ticket_id: ticketId,
+        content: content,
+        sender_id: userId,
+        role: 'ADMIN',
+        uid: userId
+      });
+
+      if (error) throw error;
+
+      // 2. Update timestamp cho ticket để nó nổi lên đầu
+      await supabase
+        .from('support_tickets')
+        .update({ updated_at: new Date().toISOString(), status: 'IN_PROGRESS' }) // Tự động chuyển sang đang xử lý
+        .eq('id', ticketId);
+
+      // 3. Trả về dữ liệu mới nhất của ticket đó để update UI
+      return api.admin.getTicketDetail(ticketId);
+    },
+
+    updateTicketStatus: async (ticketId: string, status: string) => {
+      const { error } = await supabase
+        .from('support_tickets')
+        .update({ status: status, updated_at: new Date().toISOString() })
+        .eq('id', ticketId);
+      
+      if (error) throw error;
+    },
+
+    getTicketDetail: async (ticketId: string) => {
+        const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*, profiles(name, email, avatar), messages:ticket_messages(*)')
+        .eq('id', ticketId)
+        .single();
+        
+        if (error) throw error;
+        return data;
     }
   }
 };

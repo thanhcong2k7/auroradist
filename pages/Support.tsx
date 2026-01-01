@@ -166,7 +166,7 @@ const Support: React.FC = () => {
                     <div className={`max-w-[80%] flex flex-col ${msg.role === 'USER' ? 'items-end' : 'items-start'}`}>
                       <div className="flex items-center gap-2 mb-1.5 px-1">
                         <span className="text-xs font-mono text-gray-700 uppercase">{msg.senderName}</span>
-                        <span className="text-[10px] font-mono text-gray-300">{formatDate(msg.timestamp)}</span>
+                        <span className="text-[10px] font-mono text-gray-300">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <div className={`p-4 rounded-2xl text-xs leading-relaxed ${msg.role === 'USER' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'}`}>
                         {msg.content}

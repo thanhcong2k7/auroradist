@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, ShieldCheck, Users,
     DollarSign, FileAudio, LogOut, Menu, X,
-    Globe
+    Globe, MessageSquare
 } from 'lucide-react';
 import { supabase } from '@/services/api';
 
@@ -28,6 +28,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         { path: '/admin/dsps', icon: Globe, label: 'Store Manager' },
         { path: '/admin/analytics', icon: FileAudio, label: 'Analytics Import' },
         { path: '/admin/revenue', icon: DollarSign, label: 'Finance' },
+        { path: '/admin/support', icon: MessageSquare, label: 'Support Center' },
         { path: '/admin/users', icon: Users, label: 'User Manager' },
     ];
 
