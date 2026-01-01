@@ -777,7 +777,7 @@ export const api = {
     getReleaseDetail: async (id: number) => {
       const { data, error } = await supabase
         .from('releases')
-        .select('*, tracks(*), profiles(email, name, legal_name)')
+        .select('*, tracks(*), profiles(email, name, legal_name), labels(id, name)')
         .eq('id', id)
         .single();
 
