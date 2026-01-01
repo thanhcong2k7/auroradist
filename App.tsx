@@ -18,8 +18,9 @@ import { supabase } from './services/api'; // Dùng instance từ api.ts
 
 // Import các trang Admin (Tạm thời tạo Placeholder component nếu chưa có file)
 const AdminDashboard = () => <div className="text-white">Admin Dashboard Overview</div>;
-import AdminReleases from './pages/admin/AdminReleases'; // Sẽ tạo ở bước sau
-import AdminReleaseDetail from './pages/admin/AdminReleaseDetail'; // Sẽ tạo ở bước sau
+import AdminReleases from './pages/admin/AdminReleases';
+import AdminReleaseDetail from './pages/admin/AdminReleaseDetail';
+import AdminLayout from './components/AdminLayout';
 // Placeholder cho các trang chưa làm
 const AdminAnalytics = () => <div className="text-white">Analytics Import Tool</div>;
 const AdminRevenue = () => <div className="text-white">Revenue Control</div>;
