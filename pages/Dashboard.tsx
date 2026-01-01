@@ -130,9 +130,11 @@ const Dashboard: React.FC = () => {
               ))
             )}
           </div>
-          <button className="mt-6 w-full py-3 bg-white/5 hover:bg-white/10 border border-white/5 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 rounded-xl">
-            View All <ArrowRight size={12} />
-          </button>
+          <a href="/discography">
+            <button className="mt-6 w-full py-3 bg-white/5 hover:bg-white/10 border border-white/5 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 rounded-xl">
+              View All <ArrowRight size={12} />
+            </button>
+          </a>
         </div>
       </div>
 
