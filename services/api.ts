@@ -158,7 +158,7 @@ export const api = {
         totalStreams: data.totalStreams.toLocaleString(),
         // Giả lập % thay đổi (Vì logic tính % phức tạp, tạm thời hardcode hoặc tính sau)
         totalStreamsChange: "+0%",
-        revenue: `$${data.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+        revenue: `$${(data.revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
         revenueChange: "+0%",
         activeReleases: data.activeReleases.toString(),
         monthlyListeners: data.monthlyListeners.toLocaleString(),
