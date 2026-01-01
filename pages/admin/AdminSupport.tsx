@@ -6,6 +6,7 @@ import {
     CheckCircle2, Clock, Filter, User, XCircle, AlertCircle
 } from 'lucide-react';
 import { formatDate } from '@/services/utils';
+//import { formatDate } from '@/services/utils';
 
 const AdminSupport: React.FC = () => {
     const [tickets, setTickets] = useState<any[]>([]); // Dùng any để chứa thêm thông tin profile
@@ -90,6 +91,22 @@ const AdminSupport: React.FC = () => {
             case 'IN_PROGRESS': return 'text-blue-500 border-blue-500/20 bg-blue-500/5';
             case 'RESOLVED': return 'text-gray-500 border-gray-500/20 bg-gray-500/5';
             default: return 'text-gray-500';
+        }
+    };
+    const formatTime = (dateString: string) => {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '';
+
+            // Format hiển thị giờ:phút (VD: 14:30)
+            return new Intl.DateTimeFormat('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).format(date);
+        } catch (e) {
+            return '';
         }
     };
 
@@ -200,11 +217,11 @@ const AdminSupport: React.FC = () => {
                                                 <span className={`text-[10px] font-bold uppercase ${msg.role === 'ADMIN' ? 'text-blue-500' : 'text-gray-400'}`}>
                                                     {msg.role === 'ADMIN' ? 'Aurora Support' : selectedTicket.profiles?.name}
                                                 </span>
-                                                <span className="text-[8px] text-gray-600 font-mono">{formatDate(msg.created_at)}</span>
+                                                <span className="text-[8px] text-gray-600 font-mono">{formatTime(msg.created_at)}</span>
                                             </div>
                                             <div className={`p-3 rounded-2xl text-xs leading-relaxed ${msg.role === 'ADMIN'
-                                                    ? 'bg-blue-600 text-white rounded-tr-none'
-                                                    : 'bg-[#222] border border-white/10 text-gray-300 rounded-tl-none'
+                                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                                : 'bg-[#222] border border-white/10 text-gray-300 rounded-tl-none'
                                                 }`}>
                                                 {msg.content}
                                             </div>
