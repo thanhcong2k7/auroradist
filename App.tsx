@@ -24,6 +24,7 @@ import AdminLayout from './components/AdminLayout';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminRevenue from './pages/admin/AdminRevenue';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminUserDetail from './pages/admin/AdminUserDetail';
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
@@ -166,6 +167,7 @@ const App: React.FC = () => {
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="revenue" element={<AdminRevenue />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="users/:id" element={<AdminUserDetail />} />
         </Route>
 
         {/* Fallback */}

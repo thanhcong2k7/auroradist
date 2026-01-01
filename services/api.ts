@@ -794,6 +794,35 @@ export const api = {
         .delete()
         .eq('id', userId);
       if (error) throw error;
+    },
+    getUserProfileFull: async (userId: string) => {
+      // 1. Lấy Profile + Wallet
+      const { data: profile, error: pError } = await supabase
+        .from('profiles')
+        .select('*, wallet_summary(*)')
+        .eq('id', userId)
+        .single();
+
+      if (pError) throw pError;
+
+      // 2. Lấy danh sách Releases của User này
+      const { data: releases, error: rError } = await supabase
+        .from('releases')
+        .select('*')
+        .eq('uid', userId)
+        .order('created_at', { ascending: false });
+
+      if (rError) throw rError;
+
+      return {
+        ...profile,
+        wallet: profile.wallet_summary, // Map lại cho gọn
+        releases: releases.map((r: any) => ({
+          ...r,
+          coverArt: r.cover_art, // Map snake_case
+          releaseDate: r.release_date
+        }))
+      };
     }
   }
 };

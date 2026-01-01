@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api, supabase } from '@/services/api'; // Import supabase để gọi function
 import { UserProfile } from '@/types';
-import { Trash2, Mail, Shield, User, Loader2, Plus, X, Key, Send } from 'lucide-react';
+import { Trash2, Mail, Shield, User, Loader2, Plus, X, Key, Send, Eye, Link } from 'lucide-react';
 
 const AdminUsers: React.FC = () => {
     const [users, setUsers] = useState<UserProfile[]>([]);
@@ -79,25 +79,24 @@ const AdminUsers: React.FC = () => {
             {loading ? <Loader2 className="animate-spin text-red-500 mx-auto" /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {users.map(user => (
-                        <div key={user.id} className="bg-[#111] border border-white/5 p-6 rounded-xl flex items-start justify-between group hover:border-white/20 transition">
-                            {/* ... (Giữ nguyên code hiển thị user card như cũ) ... */}
-                            <div className="flex gap-4">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-lg ${user.role === 'ADMIN' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>
-                                    {user.name?.charAt(0).toUpperCase() || 'U'}
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-white">{user.name || 'No Name'}</h3>
-                                    <div className="text-xs text-gray-500 font-mono flex items-center gap-1 mt-1">
-                                        <Mail size={10} /> {user.email}
-                                    </div>
-                                    <div className={`text-[10px] font-black uppercase mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded border ${user.role === 'ADMIN' ? 'border-red-500 text-red-500' : 'border-blue-500/30 text-blue-500'}`}>
-                                        {user.role}
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition flex gap-2">
+                            {/* Nút Xem chi tiết */}
+                            <Link
+                                to={`/admin/users/${user.id}`}
+                                className="p-2 bg-black/80 hover:bg-blue-600 hover:text-white text-gray-400 rounded-lg border border-white/10 transition"
+                                title="View Full Profile"
+                            >
+                                <Eye size={14} />
+                            </Link>
+
+                            {/* Nút Xóa (chỉ hiện nếu không phải Admin) */}
                             {user.role !== 'ADMIN' && (
-                                <button onClick={() => handleDelete(user.id)} className="p-2 text-gray-600 hover:text-red-500 hover:bg-red-500/10 rounded transition opacity-0 group-hover:opacity-100">
-                                    <Trash2 size={16} />
+                                <button
+                                    onClick={() => handleDelete(user.id)}
+                                    className="p-2 bg-black/80 hover:bg-red-600 hover:text-white text-gray-400 rounded-lg border border-white/10 transition"
+                                    title="Remove Profile"
+                                >
+                                    <Trash2 size={14} />
                                 </button>
                             )}
                         </div>
