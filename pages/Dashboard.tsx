@@ -59,6 +59,7 @@ const Dashboard: React.FC = () => {
     loadDashboard();
   }, []);
 
+  const appVersion = import.meta.env.VITE_APP_VERSION || '2.5.0';
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-start gap-4">
@@ -68,7 +69,7 @@ const Dashboard: React.FC = () => {
         <div>
           <h3 className="text-sm font-black uppercase text-yellow-500 tracking-wider">System Beta Access</h3>
           <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-            Welcome to Aurora Beta 1.0. Some features are currently under active development.
+            Welcome to Aurora {appVersion}-beta. Some features are currently under active development.
             Distribution timelines may vary. Please report any anomalies via the <Link to="/support" className="text-blue-400 hover:underline">Support Node</Link>.
           </p>
         </div>
