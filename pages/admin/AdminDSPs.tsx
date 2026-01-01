@@ -6,7 +6,7 @@ import { Plus, Edit2, Loader2, Save, X, Power } from 'lucide-react';
 // 1. Import các Icon thương hiệu từ react-icons/fa (FontAwesome 6) hoặc /fa (FontAwesome 5)
 // Si: Simple Icons (nhiều logo brand hơn), Fa: FontAwesome
 import { FaSpotify, FaApple, FaYoutube, FaSoundcloud, FaAmazon, FaTiktok, FaFacebook } from 'react-icons/fa';
-import { SiDeezer, SiShazam } from 'react-icons/si'; // Simple Icons có nhiều brand nhạc hơn
+//import { FaDeezer, FaShazam } from 'react-icons/si'; // Simple Icons có nhiều brand nhạc hơn
 
 // 2. Helper Component để render Logo
 const DSPLogo = ({ code, url, name }: { code: string, url?: string, name: string }) => {
@@ -21,8 +21,8 @@ const DSPLogo = ({ code, url, name }: { code: string, url?: string, name: string
     if (c.includes('AMAZON')) return <FaAmazon size={24} className="text-[#FF9900]" />;
     if (c.includes('TIKTOK')) return <FaTiktok size={24} className="text-[#00F2EA]" />; // TikTok thường phối màu Cyan/Pink, để tạm Cyan
     if (c.includes('FACEBOOK') || c.includes('META')) return <FaFacebook size={24} className="text-[#1877F2]" />;
-    if (c.includes('DEEZER')) return <SiDeezer size={24} className="text-white" />;
-    if (c.includes('SHAZAM')) return <SiShazam size={24} className="text-[#0088FF]" />;
+    //if (c.includes('DEEZER')) return <FaDeezer size={24} className="text-white" />;
+    //if (c.includes('SHAZAM')) return <FaShazam size={24} className="text-[#0088FF]" />;
 
     // Fallback 1: Nếu có URL ảnh (cho các trang ZingMP3, NCT...)
     if (url) return <img src={url} alt={name} className="w-6 h-6 rounded-md object-cover bg-white/10" />;
