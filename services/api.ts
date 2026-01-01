@@ -235,7 +235,8 @@ export const api = {
         subGenre: r.sub_genre,
         language: r.language,
         format: r.format,
-        territories: r.territories
+        territories: r.territories,
+        rejectionReason: r.rejection_reason
       })) as Release[];
     },
 

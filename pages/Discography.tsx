@@ -44,12 +44,12 @@ const Discography: React.FC = () => {
     setPreviewRelease(release);
     setPreviewTracks([]); // Clear previous state
     try {
-        // 2. Fetch tracks from Supabase
-        const tracks = await api.tracks.getByReleaseId(release.id);
-        setPreviewTracks(tracks);
+      // 2. Fetch tracks from Supabase
+      const tracks = await api.tracks.getByReleaseId(release.id);
+      setPreviewTracks(tracks);
     } catch (error) {
-        console.error("Failed to load tracks for preview", error);
-        // Optional: Add a visual indicator or alert if fetch fails
+      console.error("Failed to load tracks for preview", error);
+      // Optional: Add a visual indicator or alert if fetch fails
     }
   };
 
@@ -163,9 +163,9 @@ const Discography: React.FC = () => {
 
                 <div className="absolute top-2 left-2">
                   <span className={`text-xs font-mono px-1.5 py-0.5 rounded border backdrop-blur-md ${release.status === 'ACCEPTED' ? 'border-green-500/30 text-green-400 bg-green-900/50' :
-                      release.status === 'CHECKING' ? 'border-yellow-500/30 text-yellow-400 bg-yellow-900/50' :
-                        release.status === 'ERROR' || release.status === 'REJECTED' ? 'border-red-500/30 text-red-400 bg-red-900/50' :
-                          'border-gray-500/30 text-gray-300 bg-gray-900/50'
+                    release.status === 'CHECKING' ? 'border-yellow-500/30 text-yellow-400 bg-yellow-900/50' :
+                      release.status === 'ERROR' || release.status === 'REJECTED' ? 'border-red-500/30 text-red-400 bg-red-900/50' :
+                        'border-gray-500/30 text-gray-300 bg-gray-900/50'
                     }`}>
                     {release.status}
                   </span>
@@ -174,6 +174,12 @@ const Discography: React.FC = () => {
 
               <div className="p-4">
                 <h3 className="font-bold text-lg leading-tight truncate mb-1">{release.title}</h3>
+                {release.status === 'REJECTED' && release.rejectionReason && (
+                  <div className="mb-3 mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-[10px] text-red-400 font-mono">
+                    <span className="font-bold uppercase mr-1">Reason:</span>
+                    {release.rejectionReason}
+                  </div>
+                )}
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-gray-400 text-xs font-mono">{release.artist}</p>

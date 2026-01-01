@@ -23,6 +23,7 @@ export interface Release {
   phonogramYear?: string;
   phonogramLine?: string;
   selectedDsps?: string[];
+  rejectionReason?: string;
 }
 
 export interface Artist {
