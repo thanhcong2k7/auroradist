@@ -77,6 +77,12 @@ const ReleasePreviewDialog: React.FC<ReleasePreviewProps> = ({ isOpen, onClose, 
                             <div>
                                 <h2 className="text-3xl font-black uppercase tracking-tight leading-none mb-2">{release.title}</h2>
                                 <p className="text-xl text-gray-400">{release.artist}</p>
+                                {release.status === 'REJECTED' && release.rejectionReason && (
+                                    <div className="mb-3 mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-[12px] text-red-400 font-mono">
+                                        <span className="font-bold uppercase mr-1">Reason:</span>
+                                        {release.rejectionReason}
+                                    </div>
+                                )}
                                 {release.version && <span className="inline-block mt-2 px-2 py-0.5 bg-white/10 rounded text-[10px] font-mono uppercase">{release.version}</span>}
                             </div>
 

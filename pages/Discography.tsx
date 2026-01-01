@@ -175,7 +175,7 @@ const Discography: React.FC = () => {
               <div className="p-4">
                 <h3 className="font-bold text-lg leading-tight truncate mb-1">{release.title}</h3>
                 {release.status === 'REJECTED' && release.rejectionReason && (
-                  <div className="mb-3 mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-[10px] text-red-400 font-mono">
+                  <div className="mb-3 mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-[12px] text-red-400 font-mono">
                     <span className="font-bold uppercase mr-1">Reason:</span>
                     {release.rejectionReason}
                   </div>
