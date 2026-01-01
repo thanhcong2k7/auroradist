@@ -7,7 +7,7 @@ import {
 } from 'react-icons/fa';
 
 import {
-    SiDeezer, SiShazam, SiTidal, SiPandora,
+    SiShazam, SiTidal, SiPandora,
     SiIheartradio, SiMixcloud, SiTencentqq
 } from 'react-icons/si';
 
@@ -37,7 +37,6 @@ const DSPLogo: React.FC<DSPLogoProps> = ({ code, url, name = '', size = 24, clas
     else if (c.includes('SNAP')) Icon = <FaSnapchatGhost size={size} className="text-[#FFFC00]" />;
 
     // --- Niche / Specific Music DSPs ---
-    else if (c.includes('DEEZER')) Icon = <SiDeezer size={size} className="text-white" />;
     else if (c.includes('SHAZAM')) Icon = <SiShazam size={size} className="text-[#0088FF]" />;
     else if (c.includes('TIDAL')) Icon = <SiTidal size={size} className="text-white" />;
     else if (c.includes('PANDORA')) Icon = <SiPandora size={size} className="text-[#224099]" />;
