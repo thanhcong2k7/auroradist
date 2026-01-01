@@ -21,10 +21,9 @@ const AdminDashboard = () => <div className="text-white">Admin Dashboard Overvie
 import AdminReleases from './pages/admin/AdminReleases';
 import AdminReleaseDetail from './pages/admin/AdminReleaseDetail';
 import AdminLayout from './components/AdminLayout';
-// Placeholder cho các trang chưa làm
-const AdminAnalytics = () => <div className="text-white">Analytics Import Tool</div>;
-const AdminRevenue = () => <div className="text-white">Revenue Control</div>;
-const AdminUsers = () => <div className="text-white">User Management</div>;
+import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminRevenue from './pages/admin/AdminRevenue';
+import AdminUsers from './pages/admin/AdminUsers';
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
