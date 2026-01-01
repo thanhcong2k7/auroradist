@@ -787,6 +787,8 @@ export const api = {
         coverArt: data.cover_art,       // [FIX QUAN TRỌNG]
         releaseDate: data.release_date,
         labelId: data.label_id,
+        selectedDsps: data.selected_dsps || [],
+        labelName: data.labels ? data.labels.name : 'Independent',
         // Map mảng tracks bên trong
         tracks: data.tracks.map((t: any) => ({
           ...t,

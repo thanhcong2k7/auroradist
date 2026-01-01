@@ -183,7 +183,10 @@ const AdminReleaseDetail: React.FC = () => {
                             <div><span className="block text-gray-500 font-mono text-[10px]">Genre</span>{release.genre}</div>
                             <div><span className="block text-gray-500 font-mono text-[10px]">Language</span>{release.language}</div>
                             <div><span className="block text-gray-500 font-mono text-[10px]">Release Date</span>{release.release_date}</div>
-                            <div><span className="block text-gray-500 font-mono text-[10px]">Label</span>{release.label_id || 'Indie'}</div>
+                            <div>
+                                <span className="block text-gray-500 font-mono text-[10px]">Label Imprint</span>
+                                <span className="font-bold text-white">{release.labelName}</span>
+                            </div>
                         </div>
                     </div>
 
