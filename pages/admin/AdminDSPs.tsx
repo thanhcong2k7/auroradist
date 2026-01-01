@@ -2,49 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '@/services/api';
 import { DspChannel } from '@/types';
 import { Plus, Edit2, Loader2, Save, X, Power } from 'lucide-react';
-
-// 1. Import Icon từ FontAwesome (fa) và Simple Icons (si) qua react-icons
-import {
-    FaSpotify, FaApple, FaYoutube, FaSoundcloud,
-    FaAmazon, FaTiktok, FaFacebook, FaSnapchatGhost
-} from 'react-icons/fa';
-
-// Simple Icons chứa rất nhiều brand nhạc mà FontAwesome không có
-import {
-    SiShazam, SiTidal, SiPandora,
-    SiIheartradio, SiMixcloud, SiTencentqq
-} from 'react-icons/si';
-
-// 2. Helper Component để render Logo
-const DSPLogo = ({ code, url, name }: { code: string, url?: string, name: string }) => {
-    // Chuẩn hóa code về chữ hoa để so sánh
-    const c = code.toUpperCase();
-
-    // --- Major DSPs ---
-    if (c.includes('SPOTIFY')) return <FaSpotify size={24} className="text-[#1DB954]" />;
-    if (c.includes('APPLE')) return <FaApple size={24} className="text-gray-200" />;
-    if (c.includes('YOUTUBE')) return <FaYoutube size={24} className="text-[#FF0000]" />;
-    if (c.includes('SOUNDCLOUD')) return <FaSoundcloud size={24} className="text-[#FF5500]" />;
-    if (c.includes('AMAZON')) return <FaAmazon size={24} className="text-[#FF9900]" />;
-    if (c.includes('TIKTOK')) return <FaTiktok size={24} className="text-[#00F2EA]" />;
-    if (c.includes('FACEBOOK') || c.includes('META')) return <FaFacebook size={24} className="text-[#1877F2]" />;
-    if (c.includes('SNAP')) return <FaSnapchatGhost size={24} className="text-[#FFFC00]" />;
-
-    // --- Niche / Specific Music DSPs (Dùng Simple Icons) ---
-    if (c.includes('SHAZAM')) return <SiShazam size={24} className="text-[#0088FF]" />;
-    if (c.includes('TIDAL')) return <SiTidal size={24} className="text-white" />;
-    if (c.includes('PANDORA')) return <SiPandora size={24} className="text-[#224099]" />;
-    if (c.includes('IHEART')) return <SiIheartradio size={24} className="text-[#C6002B]" />;
-    if (c.includes('MIXCLOUD')) return <SiMixcloud size={24} className="text-[#52AAD8]" />;
-    if (c.includes('TENCENT')) return <SiTencentqq size={24} className="text-white" />;
-
-    // --- Fallback ---
-    // 1. Nếu có URL ảnh (cho các trang nội địa VN như Zing, NCT, Keeng...)
-    if (url) return <img src={url} alt={name} className="w-6 h-6 rounded-md object-cover bg-white/10" />;
-
-    // 2. Nếu không có gì hết, hiển thị chữ cái đầu
-    return <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-[10px] font-bold text-gray-400">{name.charAt(0)}</div>;
-};
+import DSPLogo from '@/components/DSPLogo';
 
 const AdminDSPs: React.FC = () => {
     // ... (Giữ nguyên toàn bộ logic state và API bên dưới của bạn) ...

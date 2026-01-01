@@ -10,6 +10,7 @@ import {
 import { Label as LabelType, Release, Track, TrackArtist, TrackContributor, DspChannel, Artist } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import { PERFORMER_ROLES } from '../constants';
+import DSPLogo from '../components/DSPLogo';
 
 
 // --- CONSTANTS FOR SOUNDON COMPLIANCE ---
@@ -694,16 +695,14 @@ const ReleaseForm: React.FC = () => {
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-3 relative z-10">
-                                                            {dsp.logoUrl ? (
-                                                                <img src={dsp.logoUrl} alt={dsp.name} className="w-6 h-6 rounded-md object-cover bg-white/10" />
-                                                            ) : (
-                                                                <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-[8px] font-bold">{dsp.name.charAt(0)}</div>
-                                                            )}
-                                                            <span className="font-bold text-xs uppercase tracking-tight">{dsp.name}</span>
+                                                            {/* [UPDATE] Dùng DSPLogo thay vì logic ảnh cũ */}
+                                                            <div className="bg-white/5 p-1.5 rounded-lg">
+                                                                <DSPLogo code={dsp.code} url={dsp.logoUrl} name={dsp.name} size={20} />
+                                                            </div>
+                                                            <span className="font-bold text-xs uppercase tracking-tight truncate">{dsp.name}</span>
                                                         </div>
                                                         {isSelected && <CheckCircle2 size={16} className="text-blue-400 relative z-10" />}
 
-                                                        {/* Active Glow Effect */}
                                                         {isSelected && <div className="absolute inset-0 bg-blue-500/5 blur-md"></div>}
                                                     </div>
                                                 );

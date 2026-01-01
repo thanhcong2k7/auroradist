@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
-import { Release, Track } from '@/types';
+import { DspChannel, Release, Track } from '@/types';
 import {
     ArrowLeft, Download, CheckCircle, XCircle,
-    Save, AlertTriangle, FileAudio, Disc, Music2
+    Save, AlertTriangle, FileAudio, Disc, Music2,
+    Globe
 } from 'lucide-react';
+import DSPLogo from '@/components/DSPLogo';
 
 const AdminReleaseDetail: React.FC = () => {
     const { id } = useParams();
@@ -15,6 +17,7 @@ const AdminReleaseDetail: React.FC = () => {
     const [tracks, setTracks] = useState<Track[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [allDsps, setAllDsps] = useState<DspChannel[]>([]);
 
     // Form State cho Moderation
     const [upcInput, setUpcInput] = useState('');
@@ -30,6 +33,13 @@ const AdminReleaseDetail: React.FC = () => {
             const data = await api.admin.getReleaseDetail(releaseId);
             setRelease(data);
             // Sắp xếp track theo ID hoặc track number nếu có
+            const [relData, dspData] = await Promise.all([
+                api.admin.getReleaseDetail(releaseId),
+                api.admin.getAllDSPs()
+            ]);
+            setRelease(relData);
+            setAllDsps(dspData);
+
             setTracks(data.tracks.sort((a: any, b: any) => a.id - b.id));
 
             // Init input values (nếu đã có thì điền vào, không thì để trống)
@@ -182,6 +192,28 @@ const AdminReleaseDetail: React.FC = () => {
                         <div className="text-sm font-bold">{release.profiles?.name}</div>
                         <div className="text-xs text-gray-400 font-mono">{release.profiles?.email}</div>
                         {release.profiles?.legal_name && <div className="text-xs text-gray-500">Legal: {release.profiles.legal_name}</div>}
+                    </div>
+                    <div className="bg-[#111] p-5 rounded-xl border border-white/5 space-y-4">
+                        <h3 className="text-xs font-black uppercase text-blue-500 tracking-widest flex items-center gap-2">
+                            <Globe size={14} /> Selected Stores
+                        </h3>
+
+                        {(!release.selectedDsps || release.selectedDsps.length === 0) ? (
+                            <p className="text-xs text-gray-500 font-mono">No stores selected.</p>
+                        ) : (
+                            <div className="flex flex-wrap gap-2">
+                                {release.selectedDsps.map((code: string) => {
+                                    // Tìm thông tin chi tiết của DSP từ list allDsps dựa vào code
+                                    const dspInfo = allDsps.find(d => d.code === code);
+                                    return (
+                                        <div key={code} className="flex items-center gap-2 bg-black border border-white/10 px-3 py-1.5 rounded-lg" title={dspInfo?.name || code}>
+                                            <DSPLogo code={code} url={dspInfo?.logoUrl} name={dspInfo?.name || code} size={14} />
+                                            <span className="text-[10px] font-bold text-gray-300 uppercase">{dspInfo?.name || code}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
 
