@@ -6,6 +6,7 @@ import {
   MessageSquare, Plus, Search, Loader2, X, Send, 
   AlertCircle, CheckCircle2, Clock, Filter, ChevronRight, User
 } from 'lucide-react';
+import { formatDate } from '@/services/utils';
 
 const Support: React.FC = () => {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -137,7 +138,7 @@ const Support: React.FC = () => {
                   <h3 className="text-xs font-bold uppercase tracking-tight mb-3 line-clamp-1 group-hover:text-blue-400 transition-colors">{ticket.subject}</h3>
                   <div className="flex justify-between items-center text-xs font-mono text-gray-400 uppercase">
                     <span>{ticket.category}</span>
-                    <span>{new Date(ticket.updatedAt).toLocaleDateString()}</span>
+                    <span>{formatDate(ticket.created_at)}</span>
                   </div>
                 </div>
               ))
@@ -157,11 +158,6 @@ const Support: React.FC = () => {
                     <p className="text-xs font-mono text-gray-400 uppercase mt-1">Status: {selectedTicket.status} // ID: {selectedTicket.id}</p>
                   </div>
                 </div>
-                <div className="hidden md:flex gap-2">
-                  <div className={`text-[8px] font-black px-3 py-1 rounded-full uppercase border ${selectedTicket.priority === 'HIGH' ? 'border-red-500/20 text-red-500' : 'border-white/10 text-gray-400'}`}>
-                    PRIO: {selectedTicket.priority}
-                  </div>
-                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[#080808]">
@@ -170,7 +166,7 @@ const Support: React.FC = () => {
                     <div className={`max-w-[80%] flex flex-col ${msg.role === 'USER' ? 'items-end' : 'items-start'}`}>
                       <div className="flex items-center gap-2 mb-1.5 px-1">
                         <span className="text-xs font-mono text-gray-700 uppercase">{msg.senderName}</span>
-                        <span className="text-[8px] font-mono text-gray-800">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-[10px] font-mono text-gray-300">{formatDate(msg.timestamp)}</span>
                       </div>
                       <div className={`p-4 rounded-2xl text-xs leading-relaxed ${msg.role === 'USER' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'}`}>
                         {msg.content}

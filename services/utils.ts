@@ -1,6 +1,6 @@
 export const getResizedImage = (url: string | undefined, size: number = 200) => {
   if (!url) return 'https://via.placeholder.com/' + size;
-  
+
   // Nếu là ảnh local hoặc base64 thì trả về nguyên gốc
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
 
@@ -69,3 +69,27 @@ export default async function getCroppedImg(
     );
   });
 }
+export const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return 'N/A';
+
+  try {
+    const date = new Date(dateString);
+
+    // Kiểm tra xem date có hợp lệ không trước khi format
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false // Dùng định dạng 24h
+    }).format(date);
+  } catch (error) {
+    console.error("Error parsing date:", dateString, error);
+    return 'Error Date';
+  }
+};

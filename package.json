@@ -1,7 +1,7 @@
 {
   "name": "aurora-music-dashboard",
   "private": true,
-  "version": "0.25.12",
+  "version": "0.26.01",
   "description": "Aurora Music Distribution | Client Dashboard",
   "type": "module",
   "scripts": {
