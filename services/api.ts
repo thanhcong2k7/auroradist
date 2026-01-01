@@ -460,6 +460,37 @@ export const api = {
         contributors: t.contributors || []
       })) as Track[];
     },
+    
+    getByReleaseId: async (releaseId: number) => {
+      const { data, error } = await supabase
+        .from('tracks')
+        .select('*')
+        .eq('release_id', releaseId)
+        .order('id', { ascending: true }); // Optional: order by ID or track number
+      
+      if (error) throw error;
+
+      // reuse the mapping logic to ensure camelCase matches your frontend types
+      return data.map((t: any) => ({
+        id: t.id,
+        releaseId: t.release_id,
+        isrc: t.isrc,
+        name: t.name,
+        version: t.version,
+        duration: t.duration,
+        status: t.status,
+        audioUrl: t.audio_url,
+        filename: t.filename,
+        hasLyrics: t.has_lyrics,
+        lyricsLanguage: t.lyrics_language,
+        lyricsText: t.lyrics_text,
+        isExplicit: t.is_explicit,
+        hasExplicitVersion: t.has_explicit_version,
+        tiktokClipStartTime: t.tiktok_clip_start_time,
+        artists: t.artists || [],
+        contributors: t.contributors || []
+      })) as Track[];
+    },
 
     save: async (track: any) => {
       const userId = await getUserId();

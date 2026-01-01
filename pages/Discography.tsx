@@ -40,12 +40,17 @@ const Discography: React.FC = () => {
     }
   };
 
-  const handlePreview = (release: Release) => {
-    // In a real app, you'd fetch specific tracks for this release ID
-    // For now, filtering mock tracks or existing tracks in state
-    const tracks = MOCK_TRACKS.filter(t => t.releaseId === release.id);
-    setPreviewTracks(tracks);
+  const handlePreview = async (release: Release) => {
     setPreviewRelease(release);
+    setPreviewTracks([]); // Clear previous state
+    try {
+        // 2. Fetch tracks from Supabase
+        const tracks = await api.tracks.getByReleaseId(release.id);
+        setPreviewTracks(tracks);
+    } catch (error) {
+        console.error("Failed to load tracks for preview", error);
+        // Optional: Add a visual indicator or alert if fetch fails
+    }
   };
 
   const handleActionClick = (release: Release) => {
