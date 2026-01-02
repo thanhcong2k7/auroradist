@@ -93,3 +93,26 @@ export const formatDate = (dateString: string | null | undefined) => {
     return 'Error Date';
   }
 };
+export const getAudioDuration = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const audio = new Audio(objectUrl);
+
+    audio.onloadedmetadata = () => {
+      const totalSeconds = Math.floor(audio.duration);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      
+      // Format 00:00
+      const formatted = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      
+      URL.revokeObjectURL(objectUrl);
+      resolve(formatted);
+    };
+
+    audio.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve('00:00');
+    };
+  });
+};

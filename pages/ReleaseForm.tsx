@@ -10,6 +10,7 @@ import {
 import { Label as LabelType, Release, Track, TrackArtist, TrackContributor, DspChannel, Artist } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import DSPLogo from '../components/DSPLogo';
+import { getAudioDuration } from '@/services/utils';
 
 // --- CONSTANTS ---
 const RELEASE_FORMATS = ['SINGLE', 'EP', 'ALBUM'];
@@ -600,7 +601,7 @@ const ReleaseForm: React.FC = () => {
                                 <div className="space-y-6 animate-fade-in">
                                     {trackTab === 'GENERAL' && (
                                         <div className="space-y-6">
-                                            <div className="bg-black/20 p-4 rounded-xl border border-white/5"><FileUploader type="audio" accept="audio/wav,audio/flac,audio/mp3" label="Master File *" currentUrl={currentTrack.audioUrl} onUploadComplete={(url) => setCurrentTrack({ ...currentTrack, audioUrl: url })} /></div>
+                                            <div className="bg-black/20 p-4 rounded-xl border border-white/5"><FileUploader type="audio" accept="audio/wav,audio/flac,audio/mp3" label="Master File *" currentUrl={currentTrack.audioUrl} onUploadComplete={async (url, file) => setCurrentTrack({ ...currentTrack, audioUrl: url, duration: await getAudioDuration(file) })} /></div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-1 col-span-2"><label className="text-xs uppercase font-bold text-gray-500">Track Title <span className="text-red-500">*</span></label><input type="text" value={currentTrack.name || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, name: e.target.value })} className={`w-full bg-black border ${trackErrors.name ? 'border-red-500' : 'border-white/10'} rounded-lg px-4 py-3 text-sm font-bold focus:border-blue-500 outline-none`} placeholder="Song Name" /></div>
                                                 <div className="space-y-1"><label className="text-xs uppercase font-bold text-gray-500">ISRC Code</label><input type="text" value={currentTrack.isrc || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, isrc: e.target.value.toUpperCase() })} className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none uppercase" placeholder="US-XXX-24..." /></div>

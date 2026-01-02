@@ -5,6 +5,7 @@ import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Gl
 import FileUploader from '../components/FileUploader';
 import { PERFORMER_ROLES } from '../constants';
 import { useMusicPlayer } from '../components/MusicPlayerContext';
+import { getAudioDuration } from '@/services/utils';
 
 const Tracks: React.FC = () => {
   const [artistList, setArtistList] = useState<Artist[]>([]);
@@ -346,7 +347,7 @@ const Tracks: React.FC = () => {
               {trackTab === 'GENERAL' && (
                 <div className="space-y-8 animate-fade-in">
                   <div className={errors.audioUrl ? "border border-red-500/50 rounded-xl p-1" : ""}>
-                    <FileUploader type="audio" accept="audio/wav" label="Master Recording (Lossless)" currentUrl={currentTrack.audioUrl} onUploadComplete={(url) => setCurrentTrack({ ...currentTrack, audioUrl: url })} />
+                    <FileUploader type="audio" accept="audio/wav" label="Master Recording (Lossless)" currentUrl={currentTrack.audioUrl} onUploadComplete={async (url, file) => setCurrentTrack({ ...currentTrack, audioUrl: url, duration: await getAudioDuration(file) })} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
