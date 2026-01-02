@@ -273,16 +273,37 @@ export const api = {
       })) as Release[];
     },
 
-    save: async (release: any) => { // using any to accept new fields before types.ts update
+    createDraft: async () => {
       const userId = await getUserId();
 
-      // UPDATED: Transform TS camelCase to DB snake_case for new fields
+      const { data, error } = await supabase
+        .from('releases')
+        .insert({
+          title: 'Untitled Release', // Tên mặc định
+          status: 'DRAFT',
+          uid: userId,
+          // Các trường khác để null hoặc default theo DB
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    save: async (release: any) => {
+      const userId = await getUserId();
+
+      // [FIX] Convert empty string to null for Dates
+      const releaseDate = release.releaseDate ? release.releaseDate : null;
+      const originalReleaseDate = release.originalReleaseDate ? release.originalReleaseDate : null;
+
       const payload = {
         title: release.title,
         version: release.version,
         label_id: release.labelId || null,
-        release_date: release.releaseDate,
-        original_release_date: release.originalReleaseDate,
+        release_date: releaseDate, // Đã fix
+        original_release_date: originalReleaseDate, // Đã fix
         upc: release.upc,
         cover_art: release.coverArt,
         copyright_year: release.copyrightYear,
@@ -291,13 +312,11 @@ export const api = {
         phonogram_line: release.phonogramLine,
         status: release.status,
         selected_dsps: release.selectedDsps || [],
-        // New SoundOn Fields
         genre: release.genre,
-        sub_genre: release.subGenre, // subGenre -> sub_genre
+        sub_genre: release.subGenre,
         language: release.language,
         format: release.format,
         territories: release.territories,
-
         uid: userId
       };
 
@@ -311,6 +330,7 @@ export const api = {
           .select()
           .single();
       } else {
+        // Fallback (ít khi dùng nếu đã tạo draft trước)
         result = await supabase
           .from('releases')
           .insert(payload)
@@ -321,6 +341,7 @@ export const api = {
       if (result.error) throw result.error;
       return result.data;
     },
+
 
     deleteRelease: async (id: number) => {
       const userId = await getUserId();

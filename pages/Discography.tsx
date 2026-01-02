@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Plus, Edit2, Trash2, Search, AlertCircle, Loader2, Info, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Release, Track } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import { MOCK_TRACKS } from '../constants'; // Fallback for tracks
@@ -9,8 +9,10 @@ import RevenueSplitModal from '../components/RevenueSplitModal';
 import { PieChart } from 'lucide-react';
 
 const Discography: React.FC = () => {
+  const navigate = useNavigate();
   const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Preview State
@@ -41,6 +43,19 @@ const Discography: React.FC = () => {
       setLoading(false);
     }
   };
+  const handleCreateDraft = async () => {
+    setCreating(true);
+    try {
+      const newRelease = await api.catalog.createDraft();
+      // Chuyển hướng ngay sang trang Edit với ID mới
+      navigate(`/discography/edit/${newRelease.id}`);
+    } catch (err: any) {
+      alert("Failed to initialize release: " + err.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
 
   const handlePreview = async (release: Release) => {
     setPreviewRelease(release);
@@ -98,9 +113,14 @@ const Discography: React.FC = () => {
           <h1 className="text-3xl font-black uppercase mb-1">Discography</h1>
           <p className="text-gray-400 font-mono text-sm">Manage your releases and distribution status.</p>
         </div>
-        <Link to="/discography/new" className="px-6 py-2 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition shadow-[0_0_15px_rgba(37,99,235,0.4)] flex items-center gap-2 text-sm">
-          <Plus size={16} /> New Release
-        </Link>
+        <button
+          onClick={handleCreateDraft}
+          disabled={creating}
+          className="px-6 py-2 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition shadow-[0_0_15px_rgba(37,99,235,0.4)] flex items-center gap-2 text-sm disabled:opacity-50"
+        >
+          {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+          New Release
+        </button>
       </div>
 
       <div className="flex gap-4 mb-6">
