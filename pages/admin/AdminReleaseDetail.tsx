@@ -59,28 +59,55 @@ const AdminReleaseDetail: React.FC = () => {
 
     const handleApprove = async () => {
         if (!upcInput.trim()) return alert("Error: UPC is required to approve.");
-        const missingIsrc = tracks.some(t => !isrcInputs[t.id]?.trim());
-        if (missingIsrc) return alert("Error: All tracks must have an ISRC assigned.");
-        if (!confirm("Confirm APPROVE? This will push the release to distribution queue.")) return;
+
+        // Validate ISRCs
+        const isrcList: { id: number, isrc: string }[] = [];
+        for (const t of tracks) {
+            const val = isrcInputs[t.id];
+            if (!val || !val.trim()) {
+                return alert(`Error: Track "${t.name}" is missing ISRC.`);
+            }
+            isrcList.push({ id: t.id, isrc: val.trim() });
+        }
+
+        if (!confirm("Confirm APPROVE? This will distribute the release and email the user.")) return;
 
         setSubmitting(true);
         try {
-            await api.admin.updateReleaseMetadata(release.id, { upc: upcInput, status: 'ACCEPTED' });
-            await Promise.all(tracks.map(t => api.admin.updateTrackISRC(t.id, isrcInputs[t.id])));
-            alert("Release Accepted & Live!");
+            // [UPDATED] Gọi API mới (Edge Function)
+            await api.admin.moderateRelease(release.id, 'APPROVE', {
+                upc: upcInput,
+                isrcs: isrcList
+            });
+
+            alert("Release Approved! Email notification sent.");
             navigate('/admin/releases');
-        } catch (err: any) { alert("Error: " + err.message); } finally { setSubmitting(false); }
+        } catch (err: any) {
+            alert("Error: " + err.message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleReject = async () => {
-        const reason = prompt("Enter rejection reason for the user:");
+        const reason = prompt("Enter rejection reason (Will be emailed to user):");
         if (reason === null) return;
+        if (!reason.trim()) return alert("Rejection reason is required.");
+
         setSubmitting(true);
         try {
-            await api.admin.updateReleaseMetadata(release.id, { status: 'REJECTED', rejection_reason: reason });
-            alert("Release Rejected.");
+            // [UPDATED] Gọi API mới (Edge Function)
+            await api.admin.moderateRelease(release.id, 'REJECT', {
+                reason: reason
+            });
+
+            alert("Release Rejected. User notified.");
             navigate('/admin/releases');
-        } catch (err: any) { alert("Error: " + err.message); } finally { setSubmitting(false); }
+        } catch (err: any) {
+            alert("Error: " + err.message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const getSortedSelectedDsps = () => {

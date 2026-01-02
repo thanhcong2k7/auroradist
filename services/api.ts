@@ -1028,6 +1028,32 @@ export const api = {
 
       if (error) throw error;
       return data;
-    }
+    },
+    moderateRelease: async (
+      releaseId: number,
+      action: 'APPROVE' | 'REJECT',
+      payload: { upc?: string, isrcs?: { id: number, isrc: string }[], reason?: string }
+    ) => {
+      const { data, error } = await supabase.functions.invoke('admin-moderate-release', {
+        body: {
+          action,
+          releaseId,
+          payload
+        }
+      });
+
+      if (error) {
+        console.error("Moderation Error:", error);
+        throw new Error(error.message || "Failed to process moderation.");
+      }
+
+      // Nếu function trả về lỗi logic
+      if (data && data.error) {
+        throw new Error(data.error);
+      }
+
+      return { success: true };
+    },
+
   }
 };
