@@ -17,7 +17,7 @@ const AdminRevenue: React.FC = () => {
     const [withdrawals, setWithdrawals] = useState<any[]>([]);
     const [loadingW, setLoadingW] = useState(false);
     const [actionProcessing, setActionProcessing] = useState<string | null>(null);
-
+    const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
     useEffect(() => {
         if (activeTab === 'WITHDRAWALS') loadWithdrawals();
     }, [activeTab]);
@@ -47,6 +47,7 @@ const AdminRevenue: React.FC = () => {
     const processRevenue = async (rows: any[]) => {
         // 1. Tính tổng tiền để Review trước (Dry Run client side)
         const totalAmount = rows.reduce((sum, row) => sum + parseFloat(row['Net Revenue'] || row['Amount'] || 0), 0);
+        const reportingDate = new Date(reportMonth + "-01").toISOString();
 
         if (!confirm(`Bulk Process Summary:\n- Records: ${rows.length}\n- Total Payout: $${totalAmount.toFixed(2)}\n\nProceed to distribute?`)) return;
 
@@ -63,7 +64,7 @@ const AdminRevenue: React.FC = () => {
             // 3. Gọi hàm Bulk RPC (Chỉ 1 request duy nhất)
             const { data, error } = await supabase.rpc('admin_distribute_revenue_bulk', {
                 p_items: payload,
-                p_month: new Date().toISOString()
+                p_month: reportingDate
             });
 
             if (error) throw error;
@@ -220,6 +221,18 @@ const AdminRevenue: React.FC = () => {
                         <div>
                             <h3 className="font-bold text-white">Upload Royalty Report</h3>
                             <p className="text-xs text-gray-500 mt-1">Required Columns: <span className="font-mono text-green-400">UPC, Amount</span></p>
+                        </div>
+                        <div className="w-full">
+                            <label className="block text-[10px] text-gray-500 font-bold uppercase mb-1">Reporting Month</label>
+                            <input
+                                type="month"
+                                value={reportMonth}
+                                onChange={(e) => setReportMonth(e.target.value)}
+                                className="w-full bg-black border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-green-500"
+                            />
+                            <p className="text-[10px] text-gray-600 mt-1">
+                                Splits created AFTER this month will be ignored.
+                            </p>
                         </div>
                         <label className={`px-6 py-3 bg-white text-black font-bold uppercase text-xs rounded-lg cursor-pointer hover:bg-gray-200 transition flex items-center gap-2 ${processing ? 'opacity-50 pointer-events-none' : ''}`}>
                             {processing ? <Loader2 className="animate-spin" /> : <Upload size={16} />}

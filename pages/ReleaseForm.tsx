@@ -11,6 +11,7 @@ import { Label as LabelType, Release, Track, TrackArtist, TrackContributor, DspC
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import { PERFORMER_ROLES } from '../constants';
 import DSPLogo from '../components/DSPLogo';
+import BulkTrackUploader from '../components/BulkTrackUploader';
 
 
 // --- CONSTANTS FOR SOUNDON COMPLIANCE ---

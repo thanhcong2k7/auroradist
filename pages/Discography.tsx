@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import { Release, Track } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import { MOCK_TRACKS } from '../constants'; // Fallback for tracks
+import RevenueSplitModal from '../components/RevenueSplitModal';
+import { PieChart } from 'lucide-react';
 
 const Discography: React.FC = () => {
   const [releases, setReleases] = useState<Release[]>([]);
@@ -21,7 +23,7 @@ const Discography: React.FC = () => {
     release: Release | null;
     type: 'TAKEDOWN' | 'DELETE' | null;
   }>({ show: false, release: null, type: null });
-
+  const [splitModal, setSplitModal] = useState<{ show: boolean, id: number, title: string }>({ show: false, id: 0, title: '' });
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -149,7 +151,13 @@ const Discography: React.FC = () => {
                       <Edit2 size={14} />
                     </Link>
                   )}
-
+                  <button
+                    onClick={() => setSplitModal({ show: true, id: release.id, title: release.title })}
+                    className="p-1.5 bg-black/80 text-white hover:text-purple-400 rounded backdrop-blur-sm border border-white/10"
+                    title="Revenue Splits"
+                  >
+                    <PieChart size={14} />
+                  </button>
                   {/* Delete/Takedown Button - Hide if Checking */}
                   {release.status !== 'CHECKING' && (
                     <button
@@ -240,6 +248,12 @@ const Discography: React.FC = () => {
           </div>
         </div>
       )}
+      <RevenueSplitModal
+        isOpen={splitModal.show}
+        onClose={() => setSplitModal({ show: false, id: 0, title: '' })}
+        releaseId={splitModal.id}
+        releaseTitle={splitModal.title}
+      />
     </div>
   );
 };

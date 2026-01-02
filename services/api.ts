@@ -344,6 +344,41 @@ export const api = {
 
       if (error) throw error;
       return { success: true };
+    },
+    getSplits: async (releaseId: number) => {
+      const { data, error } = await supabase
+        .from('revenue_splits')
+        .select('*, profiles(email, name)') // Join để hiện tên người nhận
+        .eq('release_id', releaseId);
+      if (error) throw error;
+      return data;
+    },
+
+    // Thêm người chia tiền (Dựa vào Email)
+    addSplit: async (releaseId: number, email: string, percentage: number) => {
+      // 1. Tìm User ID từ Email
+      const { data: user, error: uError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (uError || !user) throw new Error("User email not found in system.");
+
+      // 2. Thêm vào bảng Split
+      const { error } = await supabase.from('revenue_splits').insert({
+        release_id: releaseId,
+        recipient_uid: user.id,
+        percentage: percentage
+      });
+
+      if (error) throw error;
+    },
+
+    // Xóa split
+    deleteSplit: async (splitId: number) => {
+      const { error } = await supabase.from('revenue_splits').delete().eq('id', splitId);
+      if (error) throw error;
     }
   },
 
@@ -932,7 +967,7 @@ export const api = {
 
     replyTicket: async (ticketId: string, content: string) => {
       const userId = await getUserId();
-      
+
       // 1. Insert tin nhắn vai trò ADMIN
       const { error } = await supabase.from('ticket_messages').insert({
         ticket_id: ticketId,
@@ -959,19 +994,19 @@ export const api = {
         .from('support_tickets')
         .update({ status: status, updated_at: new Date().toISOString() })
         .eq('id', ticketId);
-      
+
       if (error) throw error;
     },
 
     getTicketDetail: async (ticketId: string) => {
-        const { data, error } = await supabase
+      const { data, error } = await supabase
         .from('support_tickets')
         .select('*, profiles(name, email, avatar), messages:ticket_messages(*)')
         .eq('id', ticketId)
         .single();
-        
-        if (error) throw error;
-        return data;
+
+      if (error) throw error;
+      return data;
     }
   }
 };
