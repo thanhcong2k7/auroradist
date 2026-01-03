@@ -13,10 +13,11 @@ import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Login from './pages/Login';
 import About from './pages/About';
-import { api, supabase } from './services/api'; // Dùng instance từ api.ts
+import UpdatePassword from './pages/UpdatePassword'; // Import new page
+import { api, supabase } from './services/api';
 import { Toaster } from 'sonner';
 
-// Import các trang Admin (Tạm thời tạo Placeholder component nếu chưa có file)
+// Import Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminReleases from './pages/admin/AdminReleases';
 import AdminReleaseDetail from './pages/admin/AdminReleaseDetail';
@@ -35,19 +36,12 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     const checkAdmin = async () => {
       try {
-        console.log("Checking admin status...");
-
         const profile = await api.auth.getProfile();
-        console.log("Profile fetched:", profile); // Xem role trả về là gì
-
         if (profile && profile.role === 'ADMIN') {
           setIsAdmin(true);
-        } else {
-          console.warn("User role is not ADMIN:", profile?.role);
         }
       } catch (e: any) {
-        console.error("Not admin");
-        console.error("Admin Check Error Details:", e.message, e);
+        console.error("Admin Check Error:", e);
       } finally {
         setLoading(false);
       }
@@ -61,7 +55,6 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const App: React.FC = () => {
-  // isAuth = null nghĩa là đang "Loading/Checking", chưa quyết định
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -69,14 +62,10 @@ const App: React.FC = () => {
 
     const checkUserSession = async () => {
       try {
-        // [QUAN TRỌNG] Dùng getUser() để verify token với server Supabase
-        // Nếu token ở local storage hết hạn, hàm này sẽ trả về error ngay.
         const { data: { user }, error } = await supabase.auth.getUser();
-
         if (mounted) {
           if (error || !user) {
             setIsAuthenticated(false);
-            // Xóa rác nếu có
             localStorage.removeItem('aurora_session');
           } else {
             setIsAuthenticated(true);
@@ -90,7 +79,7 @@ const App: React.FC = () => {
 
     checkUserSession();
 
-    // Lắng nghe sự kiện thay đổi auth (Login, Logout, Auto-refresh token)
+    // LISTEN FOR AUTH EVENTS (Includes Invite/Reset Link detection)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth Event:', event);
 
@@ -100,12 +89,15 @@ const App: React.FC = () => {
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         localStorage.removeItem('aurora_session');
+      } else if (event === 'PASSWORD_RECOVERY') {
+        // [IMPORTANT] Handle Invite/Reset Link -> Redirect to Password Update
+        setIsAuthenticated(true); // User is technically logged in via the token
+        // Force redirect using window.location since we are outside the Router context here
+        window.location.hash = '#/update-password';
       }
     });
 
-    // Lắng nghe sự kiện force-logout từ api.ts (Phòng hờ)
     const handleForceLogout = () => {
-      console.warn("Force logout triggered");
       setIsAuthenticated(false);
       localStorage.removeItem('aurora_session');
     };
@@ -118,7 +110,6 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Màn hình Loading trong lúc chờ check server (tránh flash Dashboard)
   if (isAuthenticated === null) {
     return (
       <div className="h-screen w-screen bg-black flex items-center justify-center text-white font-mono">
@@ -130,17 +121,18 @@ const App: React.FC = () => {
     );
   }
 
-  // Nếu chưa auth -> Render Login
   if (!isAuthenticated) {
     return <Login onLogin={() => setIsAuthenticated(true)} />;
   }
 
-  // Nếu đã auth -> Render App
   return (
     <Router>
       <Toaster position="top-center" richColors theme="dark" />
       <Routes>
-        {/* === GROUP 1: USER ROUTES (Có Layout User) === */}
+        {/* NEW ROUTE: Password Update (Standalone, authenticated) */}
+        <Route path="/update-password" element={<UpdatePassword />} />
+
+        {/* === GROUP 1: USER ROUTES === */}
         <Route element={<Layout onLogout={() => supabase.auth.signOut()}><Outlet /></Layout>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/discography" element={<Discography />} />
@@ -156,11 +148,11 @@ const App: React.FC = () => {
           <Route path="/about" element={<About />} />
         </Route>
 
-        {/* === GROUP 2: ADMIN ROUTES (Layout Admin riêng nằm trong AdminRoute) === */}
+        {/* === GROUP 2: ADMIN ROUTES === */}
         <Route path="/admin" element={
           <AdminRoute>
             <AdminLayout>
-              <Outlet /> {/* Sử dụng Outlet để render các trang con */}
+              <Outlet />
             </AdminLayout>
           </AdminRoute>
         }>
@@ -175,7 +167,6 @@ const App: React.FC = () => {
           <Route path="users/:id" element={<AdminUserDetail />} />
         </Route>
 
-        {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
