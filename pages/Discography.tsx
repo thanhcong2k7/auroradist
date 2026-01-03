@@ -113,10 +113,14 @@ const Discography: React.FC = () => {
 
   const clearFilters = () => setSelectedStatuses([]);
 
-  const filteredReleases = releases.filter(r =>
-    r.title?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
-    r.artist?.toLowerCase().includes(searchQuery?.toLowerCase())
-  );
+  const filteredReleases = releases.filter(r => {
+    const matchesSearch =
+      r.title?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
+      r.artist?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
+      (r.upc && r.upc.includes(searchQuery));
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(r.status);
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -159,8 +163,8 @@ const Discography: React.FC = () => {
               key={status}
               onClick={() => toggleStatusFilter(status)}
               className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase transition border ${isActive
-                  ? 'bg-blue-600 text-white border-blue-500'
-                  : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
+                ? 'bg-blue-600 text-white border-blue-500'
+                : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
                 }`}
             >
               {status}
