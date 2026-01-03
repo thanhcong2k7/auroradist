@@ -14,7 +14,7 @@ import Support from './pages/Support';
 import Login from './pages/Login';
 import About from './pages/About';
 import { api, supabase } from './services/api'; // Dùng instance từ api.ts
-
+import { Toaster } from 'sonner';
 
 // Import các trang Admin (Tạm thời tạo Placeholder component nếu chưa có file)
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -138,6 +138,7 @@ const App: React.FC = () => {
   // Nếu đã auth -> Render App
   return (
     <Router>
+      <Toaster position="top-center" richColors theme="dark" />
       <Routes>
         {/* === GROUP 1: USER ROUTES (Có Layout User) === */}
         <Route element={<Layout onLogout={() => supabase.auth.signOut()}><Outlet /></Layout>}>

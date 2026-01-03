@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Plus, Edit2, Trash2, Search, AlertCircle, Loader2, Info, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, AlertCircle, Loader2, Info, Eye, Filter, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Release, Track } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import { MOCK_TRACKS } from '../constants'; // Fallback for tracks
 import RevenueSplitModal from '../components/RevenueSplitModal';
 import { PieChart } from 'lucide-react';
-
+import { toast } from 'sonner';
+const STATUS_OPTIONS = ['DRAFT', 'CHECKING', 'ACCEPTED', 'REJECTED', 'TAKENDOWN', 'ERROR'];
 const Discography: React.FC = () => {
   const navigate = useNavigate();
   const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
   // Preview State
   const [previewRelease, setPreviewRelease] = useState<Release | null>(null);
@@ -50,7 +52,7 @@ const Discography: React.FC = () => {
       // Chuyển hướng ngay sang trang Edit với ID mới
       navigate(`/discography/edit/${newRelease.id}`);
     } catch (err: any) {
-      alert("Failed to initialize release: " + err.message);
+      toast.error("Failed to initialize release: " + err.message);
     } finally {
       setCreating(false);
     }
@@ -66,7 +68,8 @@ const Discography: React.FC = () => {
       setPreviewTracks(tracks);
     } catch (error) {
       console.error("Failed to load tracks for preview", error);
-      // Optional: Add a visual indicator or alert if fetch fails
+      toast.error(`Failed to load tracks for preview.${error}`);
+      // Optional: Add a visual indicator or toast.error if fetch fails
     }
   };
 
@@ -95,11 +98,20 @@ const Discography: React.FC = () => {
       }
       setConfirmModal({ show: false, release: null, type: null });
     } catch (err) {
-      alert("Failed to process request.");
+      toast.error("Failed to process request.");
     } finally {
       setActionLoading(false);
     }
   };
+  const toggleStatusFilter = (status: string) => {
+    setSelectedStatuses(prev =>
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const clearFilters = () => setSelectedStatuses([]);
 
   const filteredReleases = releases.filter(r =>
     r.title?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
@@ -134,6 +146,35 @@ const Discography: React.FC = () => {
             className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition font-mono placeholder-gray-700"
           />
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-xs font-mono text-gray-500 uppercase flex items-center gap-1 mr-2">
+          <Filter size={12} /> Filter:
+        </span>
+        {STATUS_OPTIONS.map(status => {
+          const isActive = selectedStatuses.includes(status);
+          return (
+            <button
+              key={status}
+              onClick={() => toggleStatusFilter(status)}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase transition border ${isActive
+                  ? 'bg-blue-600 text-white border-blue-500'
+                  : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
+                }`}
+            >
+              {status}
+            </button>
+          );
+        })}
+        {selectedStatuses.length > 0 && (
+          <button
+            onClick={clearFilters}
+            className="ml-auto text-[10px] text-red-400 hover:text-red-300 font-bold uppercase flex items-center gap-1"
+          >
+            <X size={12} /> Clear Filters
+          </button>
+        )}
       </div>
 
       {loading ? (
