@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { api } from '../services/api';
 import { Transaction, PayoutMethod } from '../types';
 import { DollarSign, Download, Clock, Loader2, CheckCircle2, X, CreditCard, AlertCircle, ArrowUpRight, Ban } from 'lucide-react';
@@ -176,7 +177,7 @@ const Wallet: React.FC = () => {
                                 {payoutMethods.length === 0 ? (
                                     <div className="p-4 border border-red-500/20 bg-red-500/5 rounded-xl text-center">
                                         <p className="text-xs text-red-400 font-bold uppercase">No Payout Methods Found</p>
-                                        <a href="/settings" className="text-[10px] text-gray-400 underline mt-1 block">Configure in Settings</a>
+                                        <Link to="/settings" className="text-[10px] text-gray-400 underline mt-1 block">Configure in Settings</Link>
                                     </div>
                                 ) : (
                                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
