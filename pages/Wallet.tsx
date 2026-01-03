@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { Transaction, PayoutMethod } from '../types';
 import { DollarSign, Download, Clock, Loader2, CheckCircle2, X, CreditCard, AlertCircle, ArrowUpRight, Ban } from 'lucide-react';
