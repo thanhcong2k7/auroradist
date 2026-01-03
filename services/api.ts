@@ -645,8 +645,17 @@ export const api = {
         .eq('uid', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data || { availableBalance: 0, pendingClearance: 0, lifetimeEarnings: 0 };
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 là lỗi không tìm thấy dòng nào
+
+      // Nếu không có dữ liệu, trả về 0
+      if (!data) return { availableBalance: 0, pendingClearance: 0, lifetimeEarnings: 0 };
+
+      // [FIX QUAN TRỌNG] Map từ snake_case (DB) sang camelCase (Frontend)
+      return {
+        availableBalance: data.available_balance,     // DB: available_balance -> FE: availableBalance
+        pendingClearance: data.pending_clearance,     // DB: pending_clearance -> FE: pendingClearance
+        lifetimeEarnings: data.lifetime_earnings      // DB: lifetime_earnings -> FE: lifetimeEarnings
+      };
     },
 
     getTransactions: async () => {
