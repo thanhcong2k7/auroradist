@@ -102,8 +102,8 @@ const Discography: React.FC = () => {
   };
 
   const filteredReleases = releases.filter(r =>
-    r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.artist.toLowerCase().includes(searchQuery.toLowerCase())
+    r.title?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
+    r.artist?.toLowerCase().includes(searchQuery?.toLowerCase())
   );
 
   return (
