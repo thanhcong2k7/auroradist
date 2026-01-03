@@ -716,6 +716,21 @@ export const api = {
       });
       if (txError) throw txError;
 
+      const { error: txError2 } = await supabase.from('wallet_summary').update({
+        available_balance: (await supabase
+          .from('wallet_summary')
+          .select('available_balance')
+          .eq('uid', userId)
+          .single()).data.available_balance - amount,
+        pending_clearance: await supabase
+        .from('wallet_summary')
+        .select('pending_clearance')
+        .eq('uid', userId)
+        .single().then(res => res.data.pending_clearance + amount),
+        updated_at: new Date().toISOString()
+      }).eq('uid', userId);
+      if (txError2) throw txError2;
+
       await supabase.from('action_logs').insert({
         action: 'WITHDRAWAL_REQUEST',
         details: `Requested $${amount} via ${methodId}`,
