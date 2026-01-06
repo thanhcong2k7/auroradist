@@ -719,7 +719,6 @@ export const api = {
 
       return { success: true, data };
     },
-
     support: {
       getTickets: async () => {
         const userId = await getUserId();
