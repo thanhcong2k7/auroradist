@@ -705,379 +705,362 @@ export const api = {
     },
 
     requestWithdrawal: async (amount: number, methodId: string) => {
-      const userId = await getUserId();
+      // Không cần lấy userId ở đây nữa vì hàm SQL dùng auth.uid() để bảo mật tuyệt đối
 
-      const { error: txError } = await supabase.from('transactions').insert({
-        amount: amount,
-        type: 'WITHDRAWAL',
-        status: 'PENDING',
-        date: new Date().toISOString(),
-        uid: userId
-      });
-      if (txError) throw txError;
-
-      const { error: txError2 } = await supabase.from('wallet_summary').update({
-        available_balance: (await supabase
-          .from('wallet_summary')
-          .select('available_balance')
-          .eq('uid', userId)
-          .single()).data.available_balance - amount,
-        pending_clearance: await supabase
-        .from('wallet_summary')
-        .select('pending_clearance')
-        .eq('uid', userId)
-        .single().then(res => res.data.pending_clearance + amount),
-        updated_at: new Date().toISOString()
-      }).eq('uid', userId);
-      if (txError2) throw txError2;
-
-      await supabase.from('action_logs').insert({
-        action: 'WITHDRAWAL_REQUEST',
-        details: `Requested $${amount} via ${methodId}`,
-        uid: userId
-      });
-
-      return { success: true };
-    }
-  },
-
-  support: {
-    getTickets: async () => {
-      const userId = await getUserId();
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .select('*, messages:ticket_messages(*)')
-        .eq('uid', userId)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      return data as SupportTicket[];
-    },
-
-    createTicket: async (data: Partial<SupportTicket>) => {
-      const userId = await getUserId();
-
-      const { data: ticket, error: tError } = await supabase
-        .from('support_tickets')
-        .insert({
-          subject: data.subject,
-          category: data.category,
-          status: 'OPEN',
-          uid: userId
-        })
-        .select()
-        .single();
-
-      if (tError) throw tError;
-
-      if (data.messages && data.messages.length > 0) {
-        await api.support.addMessage(ticket.id, data.messages[0].content);
-      }
-
-      return ticket;
-    },
-
-    addMessage: async (ticketId: string, content: string) => {
-      const userId = await getUserId();
-
-      const { error } = await supabase.from('ticket_messages').insert({
-        ticket_id: ticketId,
-        content: content,
-        sender_id: userId,
-        role: 'USER',
-        uid: userId
-      });
-
-      if (error) throw error;
-
-      await supabase
-        .from('support_tickets')
-        .update({ updated_at: new Date().toISOString(), status: 'OPEN' })
-        .eq('id', ticketId)
-        .eq('uid', userId);
-
-      const { data: updatedTicket } = await supabase
-        .from('support_tickets')
-        .select('*, messages:ticket_messages(*)')
-        .eq('id', ticketId)
-        .single();
-
-      return updatedTicket;
-    }
-  },
-
-  admin: {
-    // 1. Lấy toàn bộ Releases (cho trang Moderation)
-    getAllReleases: async (statusFilter?: string) => {
-      let query = supabase
-        .from('releases')
-        .select('*, profiles(email, name)') // Join bảng profiles để biết ai upload
-        .order('created_at', { ascending: false });
-
-      if (statusFilter) {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data.map((r: any) => ({
-        ...r,
-        coverArt: r.cover_art,        // Fix ảnh bìa
-        releaseDate: r.release_date,  // Fix ngày tháng
-        labelId: r.label_id,
-        // Giữ lại các trường khác
-      }));
-    },
-
-    getPendingWithdrawals: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*, profiles(email, name, legal_name)')
-        .eq('type', 'WITHDRAWAL')
-        .eq('status', 'PENDING')
-        .order('date', { ascending: true }); // Cũ nhất lên đầu
-
-      if (error) throw error;
-      return data;
-    },
-
-    // 9. Xử lý rút tiền (Duyệt/Từ chối)
-    processWithdrawal: async (txnId: string, status: 'COMPLETED' | 'REJECTED', note?: string) => {
-      const { error } = await supabase.rpc('admin_process_withdrawal', {
-        p_txn_id: txnId,
-        p_status: status,
-        p_note: note || null
-      });
-
-      if (error) throw error;
-      return { success: true };
-    },
-
-    // 2. Lấy chi tiết Release kèm Tracks (Admin View)
-    getReleaseDetail: async (id: number) => {
-      const { data, error } = await supabase
-        .from('releases')
-        .select('*, tracks(*), profiles(email, name, legal_name), labels(id, name)')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return {
-        ...data,
-        coverArt: data.cover_art,       // [FIX QUAN TRỌNG]
-        releaseDate: data.release_date,
-        labelId: data.label_id,
-        selectedDsps: data.selected_dsps || [],
-        labelName: data.labels ? data.labels.name : 'Independent',
-        // Map mảng tracks bên trong
-        tracks: data.tracks.map((t: any) => ({
-          ...t,
-          audioUrl: t.audio_url,      // [FIX QUAN TRỌNG] Load Audio
-          releaseId: t.release_id,
-          isrc: t.isrc,
-          // Các trường artist/contributors thường lưu dạng JSONB nên không bị ảnh hưởng, 
-          // nhưng nếu cần thiết hãy check kỹ structure JSON
-        }))
-      };
-    },
-
-    // 3. Hành động Moderation: Cập nhật UPC/Status
-    updateReleaseMetadata: async (id: number, updates: {
-      upc?: string,
-      status?: string,
-      rejection_reason?: string
-    }) => {
-      // Khi update ngược lại DB, ta dùng snake_case (nếu cần) hoặc object mapping
-      // Tuy nhiên Supabase JS client đủ thông minh để map nếu key khớp column.
-      // Nhưng để chắc ăn, ta map thủ công payload update nếu tên khác nhau.
-      // Ở đây upc và status trùng tên nên ok.
-      const { data, error } = await supabase
-        .from('releases')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-
-    // 4. Hành động Tracks: Cập nhật ISRC
-    updateTrackISRC: async (trackId: number, isrc: string) => {
-      const { error } = await supabase
-        .from('tracks')
-        .update({ isrc: isrc })
-        .eq('id', trackId);
-
-      if (error) throw error;
-      return { success: true };
-    },
-
-    // 5. User Management: Lấy danh sách user
-    getUsers: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-
-    // 6. User Management: Xóa user (Admin only)
-    deleteUser: async (userId: string) => {
-      // Lưu ý: Client-side chỉ xóa được profile. 
-      // Để xóa hoàn toàn trong Auth, cần dùng Edge Function (sẽ làm ở bước sau).
-      // Tạm thời ta xóa profile để "soft ban".
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-      if (error) throw error;
-    },
-    getUserProfileFull: async (userId: string) => {
-      // 1. Lấy Profile + Wallet
-      const { data: profile, error: pError } = await supabase
-        .from('profiles')
-        .select('*, wallet_summary(*)')
-        .eq('id', userId)
-        .single();
-
-      if (pError) throw pError;
-
-      // 2. Lấy danh sách Releases của User này
-      const { data: releases, error: rError } = await supabase
-        .from('releases')
-        .select('*')
-        .eq('uid', userId)
-        .order('created_at', { ascending: false });
-
-      if (rError) throw rError;
-
-      return {
-        ...profile,
-        wallet: profile.wallet_summary, // Map lại cho gọn
-        releases: releases.map((r: any) => ({
-          ...r,
-          coverArt: r.cover_art, // Map snake_case
-          releaseDate: r.release_date
-        }))
-      };
-    },
-    getAllDSPs: async () => {
-      const { data, error } = await supabase
-        .from('dsp_channels')
-        .select('*')
-        .order('id', { ascending: true });
-      if (error) throw error;
-      return data;
-    },
-
-    saveDSP: async (dsp: Partial<DspChannel>) => {
-      const payload = {
-        name: dsp.name,
-        code: dsp.code,
-        logo_url: dsp.logoUrl,
-        is_enabled: dsp.isEnabled
-      };
-
-      let query;
-      if (dsp.id) {
-        query = supabase.from('dsp_channels').update(payload).eq('id', dsp.id);
-      } else {
-        query = supabase.from('dsp_channels').insert(payload);
-      }
-
-      const { error } = await query;
-      if (error) throw error;
-    },
-
-    toggleDSPStatus: async (id: number, isEnabled: boolean) => {
-      const { error } = await supabase
-        .from('dsp_channels')
-        .update({ is_enabled: isEnabled })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    getAllTickets: async () => {
-      // Join bảng profiles để biết ai gửi
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .select('*, profiles(name, email, avatar), messages:ticket_messages(*)')
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-
-    replyTicket: async (ticketId: string, content: string) => {
-      const userId = await getUserId();
-
-      // 1. Insert tin nhắn vai trò ADMIN
-      const { error } = await supabase.from('ticket_messages').insert({
-        ticket_id: ticketId,
-        content: content,
-        sender_id: userId,
-        role: 'ADMIN',
-        uid: userId
-      });
-
-      if (error) throw error;
-
-      // 2. Update timestamp cho ticket để nó nổi lên đầu
-      await supabase
-        .from('support_tickets')
-        .update({ updated_at: new Date().toISOString(), status: 'IN_PROGRESS' }) // Tự động chuyển sang đang xử lý
-        .eq('id', ticketId);
-
-      // 3. Trả về dữ liệu mới nhất của ticket đó để update UI
-      return api.admin.getTicketDetail(ticketId);
-    },
-
-    updateTicketStatus: async (ticketId: string, status: string) => {
-      const { error } = await supabase
-        .from('support_tickets')
-        .update({ status: status, updated_at: new Date().toISOString() })
-        .eq('id', ticketId);
-
-      if (error) throw error;
-    },
-
-    getTicketDetail: async (ticketId: string) => {
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .select('*, profiles(name, email, avatar), messages:ticket_messages(*)')
-        .eq('id', ticketId)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    moderateRelease: async (
-      releaseId: number,
-      action: 'APPROVE' | 'REJECT',
-      payload: { upc?: string, isrcs?: { id: number, isrc: string }[], reason?: string }
-    ) => {
-      const { data, error } = await supabase.functions.invoke('admin-moderate-release', {
-        body: {
-          action,
-          releaseId,
-          payload
-        }
+      const { data, error } = await supabase.rpc('user_request_withdrawal', {
+        p_amount: amount,
+        p_method_id: methodId
       });
 
       if (error) {
-        console.error("Moderation Error:", error);
-        throw new Error(error.message || "Failed to process moderation.");
+        console.error("Withdrawal RPC Error:", error);
+        throw new Error(error.message || "Failed to process withdrawal request.");
       }
 
-      // Nếu function trả về lỗi logic
-      if (data && data.error) {
-        throw new Error(data.error);
-      }
-
-      return { success: true };
+      return { success: true, data };
     },
 
-  }
-};
+    support: {
+      getTickets: async () => {
+        const userId = await getUserId();
+        const { data, error } = await supabase
+          .from('support_tickets')
+          .select('*, messages:ticket_messages(*)')
+          .eq('uid', userId)
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+        return data as SupportTicket[];
+      },
+
+      createTicket: async (data: Partial<SupportTicket>) => {
+        const userId = await getUserId();
+
+        const { data: ticket, error: tError } = await supabase
+          .from('support_tickets')
+          .insert({
+            subject: data.subject,
+            category: data.category,
+            status: 'OPEN',
+            uid: userId
+          })
+          .select()
+          .single();
+
+        if (tError) throw tError;
+
+        if (data.messages && data.messages.length > 0) {
+          await api.support.addMessage(ticket.id, data.messages[0].content);
+        }
+
+        return ticket;
+      },
+
+      addMessage: async (ticketId: string, content: string) => {
+        const userId = await getUserId();
+
+        const { error } = await supabase.from('ticket_messages').insert({
+          ticket_id: ticketId,
+          content: content,
+          sender_id: userId,
+          role: 'USER',
+          uid: userId
+        });
+
+        if (error) throw error;
+
+        await supabase
+          .from('support_tickets')
+          .update({ updated_at: new Date().toISOString(), status: 'OPEN' })
+          .eq('id', ticketId)
+          .eq('uid', userId);
+
+        const { data: updatedTicket } = await supabase
+          .from('support_tickets')
+          .select('*, messages:ticket_messages(*)')
+          .eq('id', ticketId)
+          .single();
+
+        return updatedTicket;
+      }
+    },
+
+    admin: {
+      // 1. Lấy toàn bộ Releases (cho trang Moderation)
+      getAllReleases: async (statusFilter?: string) => {
+        let query = supabase
+          .from('releases')
+          .select('*, profiles(email, name)') // Join bảng profiles để biết ai upload
+          .order('created_at', { ascending: false });
+
+        if (statusFilter) {
+          query = query.eq('status', statusFilter);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data.map((r: any) => ({
+          ...r,
+          coverArt: r.cover_art,        // Fix ảnh bìa
+          releaseDate: r.release_date,  // Fix ngày tháng
+          labelId: r.label_id,
+          // Giữ lại các trường khác
+        }));
+      },
+
+      getPendingWithdrawals: async () => {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*, profiles(email, name, legal_name)')
+          .eq('type', 'WITHDRAWAL')
+          .eq('status', 'PENDING')
+          .order('date', { ascending: true }); // Cũ nhất lên đầu
+
+        if (error) throw error;
+        return data;
+      },
+
+      // 9. Xử lý rút tiền (Duyệt/Từ chối)
+      processWithdrawal: async (txnId: string, status: 'COMPLETED' | 'REJECTED', note?: string) => {
+        const { data, error } = await supabase.rpc('admin_process_withdrawal', {
+          p_txn_id: txnId,
+          p_status: status,
+          p_note: note || null
+        });
+
+        if (error) {
+          console.error("Admin Process Withdrawal Error:", error);
+          throw new Error(error.message || "Failed to update withdrawal status.");
+        }
+
+        return { success: true, data };
+      },
+
+      // 2. Lấy chi tiết Release kèm Tracks (Admin View)
+      getReleaseDetail: async (id: number) => {
+        const { data, error } = await supabase
+          .from('releases')
+          .select('*, tracks(*), profiles(email, name, legal_name), labels(id, name)')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+        return {
+          ...data,
+          coverArt: data.cover_art,       // [FIX QUAN TRỌNG]
+          releaseDate: data.release_date,
+          labelId: data.label_id,
+          selectedDsps: data.selected_dsps || [],
+          labelName: data.labels ? data.labels.name : 'Independent',
+          // Map mảng tracks bên trong
+          tracks: data.tracks.map((t: any) => ({
+            ...t,
+            audioUrl: t.audio_url,      // [FIX QUAN TRỌNG] Load Audio
+            releaseId: t.release_id,
+            isrc: t.isrc,
+            // Các trường artist/contributors thường lưu dạng JSONB nên không bị ảnh hưởng, 
+            // nhưng nếu cần thiết hãy check kỹ structure JSON
+          }))
+        };
+      },
+
+      // 3. Hành động Moderation: Cập nhật UPC/Status
+      updateReleaseMetadata: async (id: number, updates: {
+        upc?: string,
+        status?: string,
+        rejection_reason?: string
+      }) => {
+        // Khi update ngược lại DB, ta dùng snake_case (nếu cần) hoặc object mapping
+        // Tuy nhiên Supabase JS client đủ thông minh để map nếu key khớp column.
+        // Nhưng để chắc ăn, ta map thủ công payload update nếu tên khác nhau.
+        // Ở đây upc và status trùng tên nên ok.
+        const { data, error } = await supabase
+          .from('releases')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      },
+
+      // 4. Hành động Tracks: Cập nhật ISRC
+      updateTrackISRC: async (trackId: number, isrc: string) => {
+        const { error } = await supabase
+          .from('tracks')
+          .update({ isrc: isrc })
+          .eq('id', trackId);
+
+        if (error) throw error;
+        return { success: true };
+      },
+
+      // 5. User Management: Lấy danh sách user
+      getUsers: async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+      },
+
+      // 6. User Management: Xóa user (Admin only)
+      deleteUser: async (userId: string) => {
+        // Lưu ý: Client-side chỉ xóa được profile. 
+        // Để xóa hoàn toàn trong Auth, cần dùng Edge Function (sẽ làm ở bước sau).
+        // Tạm thời ta xóa profile để "soft ban".
+        const { error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+        if (error) throw error;
+      },
+      getUserProfileFull: async (userId: string) => {
+        // 1. Lấy Profile + Wallet
+        const { data: profile, error: pError } = await supabase
+          .from('profiles')
+          .select('*, wallet_summary(*)')
+          .eq('id', userId)
+          .single();
+
+        if (pError) throw pError;
+
+        // 2. Lấy danh sách Releases của User này
+        const { data: releases, error: rError } = await supabase
+          .from('releases')
+          .select('*')
+          .eq('uid', userId)
+          .order('created_at', { ascending: false });
+
+        if (rError) throw rError;
+
+        return {
+          ...profile,
+          wallet: profile.wallet_summary, // Map lại cho gọn
+          releases: releases.map((r: any) => ({
+            ...r,
+            coverArt: r.cover_art, // Map snake_case
+            releaseDate: r.release_date
+          }))
+        };
+      },
+      getAllDSPs: async () => {
+        const { data, error } = await supabase
+          .from('dsp_channels')
+          .select('*')
+          .order('id', { ascending: true });
+        if (error) throw error;
+        return data;
+      },
+
+      saveDSP: async (dsp: Partial<DspChannel>) => {
+        const payload = {
+          name: dsp.name,
+          code: dsp.code,
+          logo_url: dsp.logoUrl,
+          is_enabled: dsp.isEnabled
+        };
+
+        let query;
+        if (dsp.id) {
+          query = supabase.from('dsp_channels').update(payload).eq('id', dsp.id);
+        } else {
+          query = supabase.from('dsp_channels').insert(payload);
+        }
+
+        const { error } = await query;
+        if (error) throw error;
+      },
+
+      toggleDSPStatus: async (id: number, isEnabled: boolean) => {
+        const { error } = await supabase
+          .from('dsp_channels')
+          .update({ is_enabled: isEnabled })
+          .eq('id', id);
+        if (error) throw error;
+      },
+      getAllTickets: async () => {
+        // Join bảng profiles để biết ai gửi
+        const { data, error } = await supabase
+          .from('support_tickets')
+          .select('*, profiles(name, email, avatar), messages:ticket_messages(*)')
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+      },
+
+      replyTicket: async (ticketId: string, content: string) => {
+        const userId = await getUserId();
+
+        // 1. Insert tin nhắn vai trò ADMIN
+        const { error } = await supabase.from('ticket_messages').insert({
+          ticket_id: ticketId,
+          content: content,
+          sender_id: userId,
+          role: 'ADMIN',
+          uid: userId
+        });
+
+        if (error) throw error;
+
+        // 2. Update timestamp cho ticket để nó nổi lên đầu
+        await supabase
+          .from('support_tickets')
+          .update({ updated_at: new Date().toISOString(), status: 'IN_PROGRESS' }) // Tự động chuyển sang đang xử lý
+          .eq('id', ticketId);
+
+        // 3. Trả về dữ liệu mới nhất của ticket đó để update UI
+        return api.admin.getTicketDetail(ticketId);
+      },
+
+      updateTicketStatus: async (ticketId: string, status: string) => {
+        const { error } = await supabase
+          .from('support_tickets')
+          .update({ status: status, updated_at: new Date().toISOString() })
+          .eq('id', ticketId);
+
+        if (error) throw error;
+      },
+
+      getTicketDetail: async (ticketId: string) => {
+        const { data, error } = await supabase
+          .from('support_tickets')
+          .select('*, profiles(name, email, avatar), messages:ticket_messages(*)')
+          .eq('id', ticketId)
+          .single();
+
+        if (error) throw error;
+        return data;
+      },
+      moderateRelease: async (
+        releaseId: number,
+        action: 'APPROVE' | 'REJECT',
+        payload: { upc?: string, isrcs?: { id: number, isrc: string }[], reason?: string }
+      ) => {
+        const { data, error } = await supabase.functions.invoke('admin-moderate-release', {
+          body: {
+            action,
+            releaseId,
+            payload
+          }
+        });
+
+        if (error) {
+          console.error("Moderation Error:", error);
+          throw new Error(error.message || "Failed to process moderation.");
+        }
+
+        // Nếu function trả về lỗi logic
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
+
+        return { success: true };
+      },
+
+    }
+  };
