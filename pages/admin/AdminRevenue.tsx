@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx'; // CHANGED: Import SheetJS
 import { api, supabase } from '@/services/api';
 import {
-    DollarSign, Upload, CheckCircle2,
-    Loader2, XCircle, Calendar, FileSpreadsheet
+    DollarSign, Upload, FileText, CheckCircle2,
+    Loader2, XCircle, Calendar
 } from 'lucide-react';
 
 const AdminRevenue: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'INGEST' | 'WITHDRAWALS'>('WITHDRAWALS');
+
+    // --- States for Ingestion ---
     const [processing, setProcessing] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
+
+    // --- States for Withdrawals ---
     const [withdrawals, setWithdrawals] = useState<any[]>([]);
     const [loadingW, setLoadingW] = useState(false);
     const [actionProcessing, setActionProcessing] = useState<string | null>(null);
@@ -31,92 +35,89 @@ const AdminRevenue: React.FC = () => {
         }
     };
 
+    // --- NEW: HANDLE EXCEL FILE UPLOAD ---
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Reset logs
-        setLogs(["Reading file..."]);
-
         const reader = new FileReader();
+
         reader.onload = (evt) => {
-            try {
-                const bstr = evt.target?.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
+            const bstr = evt.target?.result;
+            // Read the workbook
+            const wb = XLSX.read(bstr, { type: 'binary' });
 
-                // Priority: "Data Sheet" > First Sheet
-                let sheetName = wb.SheetNames.find(n => n.toLowerCase().trim() === "data sheet");
-                if (!sheetName) {
-                    setLogs(prev => ["⚠️ 'Data Sheet' not found. Using first sheet.", ...prev]);
-                    sheetName = wb.SheetNames[0];
-                }
-
-                const ws = wb.Sheets[sheetName];
-                // Use raw: false to treat everything as text initially to avoid scientific notation
-                const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
-                processRevenue(data);
-            } catch (err: any) {
-                setLogs(prev => [`❌ File Read Error: ${err.message}`, ...prev]);
+            // 1. Logic to find "Data Sheet" or fallback to first sheet
+            let sheetName = wb.SheetNames.find(n => n === "Data Sheet");
+            if (!sheetName) {
+                console.warn("'Data Sheet' not found, using first sheet.");
+                sheetName = wb.SheetNames[0];
             }
+
+            const ws = wb.Sheets[sheetName];
+
+            // 2. Convert to JSON, but keep raw values to prevent auto-formatting issues
+            const data = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+            // Pass to processing function
+            processRevenue(data);
         };
+
         reader.readAsBinaryString(file);
     };
 
     const processRevenue = async (rows: any[]) => {
+        // 1. AGGREGATION STEP (Sum royalties by UPC + PLATFORM)
+        // Key format: "UPC::PLATFORM"
         const aggregator: Record<string, number> = {};
         let rowCount = 0;
 
-        // Helper to find column value by partial name match
-        const findVal = (row: any, ...keys: string[]) => {
-            const foundKey = Object.keys(row).find(k =>
-                keys.some(search => k.toLowerCase().includes(search.toLowerCase()))
-            );
-            return foundKey ? row[foundKey] : null;
-        };
-
         rows.forEach(row => {
-            // 1. GET UPC (Flexible search)
-            const rawUpc = findVal(row, 'UPC', 'Barcode', 'Grid');
-            let upc = String(rawUpc || '').trim();
+            // A. Get UPC
+            const getVal = (keyPart: string) => {
+                const key = Object.keys(row).find(k => k.toLowerCase().includes(keyPart.toLowerCase()));
+                return key ? row[key] : null;
+            };
 
-            // 2. GET PLATFORM (Flexible search)
-            // Look for "Music Service", "Service", "Store"
-            const rawService = findVal(row, 'Music Service', 'Service', 'Store') || 'Other';
-            // Clean: "YouTube - Ads" -> "YouTube"
+            const rawUpc = getVal('UPC') || getVal('Barcode') || getVal('Grid');
+            let upc = String(rawUpc).trim();
+
+            // B. Get Platform (Music Service) - NEW LOGIC
+            const rawService = row['Music Service'] || row['Service'] || row['Store'] || 'Other';
+            // Clean up name: "YouTube - Audio tier" -> "YouTube"
             let platform = String(rawService).split(' - ')[0].trim();
-            if (!platform || platform.toLowerCase() === 'undefined') platform = 'Other';
+            if (!platform) platform = 'Other';
 
-            // 3. GET AMOUNT
-            // Look for "Royalty", "Net Revenue", "Amount", "USD"
-            const rawAmount = findVal(row, 'Royalty', 'Net Revenue', 'Amount', 'USD');
+            // C. Get Amount
+            let rawAmount = row['Royalty'] || row['Royalty GBP'] || row['Net Revenue'] || row['Amount'] || row['USD'];
+            const amount = typeof rawAmount === 'string'
+                ? parseFloat(rawAmount.replace(/,/g, ''))
+                : parseFloat(rawAmount);
 
-            // Safe Number Parsing (Fixes TypeScript error)
-            const amountStr = String(rawAmount || '0').replace(/,/g, '');
-            const amount = parseFloat(amountStr);
-
-            // 4. VALIDATE & AGGREGATE
-            if (upc && upc !== '' && upc !== 'undefined' && amount && !isNaN(amount)) {
-                // Fix Excel Scientific Notation (e.g. "5.06E+12")
+            // Validation
+            if (upc && upc !== 'undefined' && amount && !isNaN(amount)) {
+                // Fix Scientific Notation
                 if (upc.includes('E+') || upc.includes('e+')) {
                     try {
                         upc = Number(upc).toLocaleString('fullwide', { useGrouping: false });
                     } catch (e) { }
                 }
 
-                // Composite Key: UPC + Platform
+                // Create Composite Key: 5057805::YouTube
                 const key = `${upc}::${platform}`;
                 aggregator[key] = (aggregator[key] || 0) + amount;
                 rowCount++;
             }
         });
 
-        // 5. CONVERT TO PAYLOAD
-        const payload = Object.entries(aggregator).map(([key, total]) => {
+        // 2. Prepare Payload
+        // We split the key back into UPC and Platform
+        const payload = Object.entries(aggregator).map(([key, amount]) => {
             const [upc, platform] = key.split('::');
             return {
                 upc,
                 platform,
-                amount: parseFloat(total.toFixed(6))
+                amount: parseFloat(amount.toFixed(6))
             };
         }).filter(item => item.amount > 0);
 
@@ -124,16 +125,17 @@ const AdminRevenue: React.FC = () => {
         const reportingDate = new Date(reportMonth + "-01").toISOString();
 
         if (payload.length === 0) {
-            alert("No valid rows found. Check if CSV has 'UPC' and 'Royalty' columns.");
+            alert("No valid data found.");
             return;
         }
 
-        if (!confirm(`Confirm Distribution:\n\n- Valid Rows: ${rowCount}\n- Records (UPC x Store): ${payload.length}\n- Total Payout: $${totalAmount.toLocaleString()}\n\nProceed?`)) return;
+        if (!confirm(`Bulk Summary:\n\n- Rows: ${rowCount}\n- Records (UPC x Store): ${payload.length}\n- Total Payout: $${totalAmount.toLocaleString()}\n\nProceed?`)) return;
 
         setProcessing(true);
-        setLogs(prev => ["Uploading data to database...", ...prev]);
+        setLogs(["Sending detailed platform data..."]);
 
         try {
+            // 3. Send to Updated RPC
             const { data, error } = await supabase.rpc('admin_distribute_revenue_bulk', {
                 p_items: payload,
                 p_month: reportingDate
@@ -142,120 +144,198 @@ const AdminRevenue: React.FC = () => {
             if (error) throw error;
 
             setLogs(prev => [
-                `✅ SUCCESS!`,
-                `Processed: ${data.success_count} releases`,
-                `Failed: ${data.error_count} (UPC not found)`,
+                `✅ COMPLETED`,
+                `Processed: ${data.success_count}`,
+                `Errors: ${data.error_count}`,
                 ...prev
             ]);
 
-            if (data.errors?.length) {
-                setLogs(prev => [...data.errors.slice(0, 10), `...and ${data.errors.length - 10} more`, ...prev]);
-            }
+            if (data.errors?.length) setLogs(prev => [...data.errors, ...prev]);
 
         } catch (err: any) {
-            setLogs(prev => [`❌ DATABASE ERROR: ${err.message}`, ...prev]);
-            alert("Distribution failed.");
+            setLogs(prev => [`ERROR: ${err.message}`, ...prev]);
+            alert("Failed.");
         } finally {
             setProcessing(false);
         }
     };
 
-    // ... handleProcessTxn (Keep existing logic) ...
-    const handleProcessTxn = async (txnId: string, status: 'COMPLETED' | 'REJECTED') => {
-        let note = '';
-        if (status === 'REJECTED') {
-            const reason = prompt("Rejection Reason:");
-            if (!reason) return;
-            note = reason;
-        } else if (!confirm("Confirm transfer?")) return;
+    // 2. Prepare Payload
+    const payload = Object.entries(aggregator).map(([upc, amount]) => ({
+        upc,
+        amount: parseFloat(amount.toFixed(6)) // Round to avoid floating point weirdness
+    })).filter(item => item.amount > 0);
 
-        setActionProcessing(txnId);
-        try {
-            await api.admin.processWithdrawal(txnId, status, note);
-            setWithdrawals(prev => prev.filter(tx => tx.id !== txnId));
-        } catch (err: any) {
-            alert(err.message);
-        } finally {
-            setActionProcessing(null);
+    const totalAmount = payload.reduce((sum, item) => sum + item.amount, 0);
+    const reportingDate = new Date(reportMonth + "-01").toISOString();
+
+    if (payload.length === 0) {
+        alert("No valid revenue data found. Please ensure the Excel file has 'UPC' and 'Royalty' columns.");
+        return;
+    }
+
+    if (!confirm(`Bulk Process Summary:\n\n- File Rows Read: ${rows.length}\n- Valid Rows Processed: ${rowCount}\n- Unique Releases (UPCs): ${payload.length}\n- Total Payout: $${totalAmount.toLocaleString()}\n\nProceed to distribute?`)) return;
+
+    setProcessing(true);
+    setLogs(["Preparing bulk payload..."]);
+
+    try {
+        // 3. Send to Supabase RPC
+        const { data, error } = await supabase.rpc('admin_distribute_revenue_bulk', {
+            p_items: payload,
+            p_month: reportingDate
+        });
+
+        if (error) throw error;
+
+        setLogs(prev => [
+            `✅ BATCH COMPLETE`,
+            `Success: ${data.success_count} releases updated`,
+            `Failed: ${data.error_count} UPCs not found (Revenue kept by house)`,
+            ...prev
+        ]);
+
+        if (data.errors && data.errors.length > 0) {
+            setLogs(prev => [...data.errors, ...prev]);
         }
-    };
 
-    return (
-        <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20">
-            <div className="border-b border-white/10 pb-4 flex justify-between items-end">
-                <div>
-                    <h1 className="text-2xl font-black uppercase tracking-tight text-white">Finance Central</h1>
-                    <p className="text-gray-500 text-xs font-mono uppercase">Revenue & Cashflow Management</p>
-                </div>
+    } catch (err: any) {
+        setLogs(prev => [`[CRITICAL ERROR] ${err.message}`, ...prev]);
+        alert("Batch processing failed. Check logs.");
+    } finally {
+        setProcessing(false);
+    }
+};
+
+// --- LOGIC WITHDRAWAL (UNCHANGED) ---
+const handleProcessTxn = async (txnId: string, status: 'COMPLETED' | 'REJECTED') => {
+    let note = '';
+    if (status === 'REJECTED') {
+        const reason = prompt("Enter reason for rejection:");
+        if (reason === null) return;
+        if (!reason) return alert("Reason is required.");
+        note = reason;
+    } else {
+        if (!confirm("Confirm transfer completed?")) return;
+    }
+
+    setActionProcessing(txnId);
+    try {
+        await api.admin.processWithdrawal(txnId, status, note);
+        setWithdrawals(prev => prev.filter(tx => tx.id !== txnId));
+        alert(status === 'COMPLETED' ? "Approved." : "Rejected.");
+    } catch (err: any) {
+        alert("Error: " + err.message);
+    } finally {
+        setActionProcessing(null);
+    }
+};
+
+return (
+    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-20">
+        <div className="border-b border-white/10 pb-4 flex justify-between items-end">
+            <div>
+                <h1 className="text-2xl font-black uppercase tracking-tight text-white">Finance Central</h1>
+                <p className="text-gray-500 text-xs font-mono uppercase">Revenue & Cashflow Management</p>
             </div>
-
-            <div className="flex gap-4">
-                <button onClick={() => setActiveTab('WITHDRAWALS')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase transition ${activeTab === 'WITHDRAWALS' ? 'bg-blue-600 text-white' : 'bg-[#111] text-gray-500'}`}>Withdrawals ({withdrawals.length})</button>
-                <button onClick={() => setActiveTab('INGEST')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase transition ${activeTab === 'INGEST' ? 'bg-green-600 text-white' : 'bg-[#111] text-gray-500'}`}>Royalty Ingestion</button>
-            </div>
-
-            {activeTab === 'WITHDRAWALS' && (
-                <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden min-h-[400px]">
-                    {loadingW ? <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div> : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs">
-                                <thead className="bg-black/50 text-gray-500 font-mono uppercase">
-                                    <tr>
-                                        <th className="px-6 py-4">Date</th>
-                                        <th className="px-6 py-4">Identity</th>
-                                        <th className="px-6 py-4">Amount</th>
-                                        <th className="px-6 py-4 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5 text-gray-300">
-                                    {withdrawals.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-gray-600">No pending requests</td></tr>}
-                                    {withdrawals.map((tx) => (
-                                        <tr key={tx.id} className="hover:bg-white/5 transition">
-                                            <td className="px-6 py-4 font-mono text-gray-500">{new Date(tx.date).toLocaleDateString()}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="font-bold text-white">{tx.profiles?.name}</div>
-                                                <div className="text-[10px] text-gray-500">{tx.profiles?.email}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-lg font-black">${tx.amount?.toFixed(2)}</td>
-                                            <td className="px-6 py-4 flex justify-end gap-2">
-                                                {actionProcessing === tx.id ? <Loader2 className="animate-spin" /> : (
-                                                    <>
-                                                        <button onClick={() => handleProcessTxn(tx.id, 'REJECTED')} className="p-2 bg-red-900/20 text-red-500 rounded hover:bg-red-900/40"><XCircle size={14} /></button>
-                                                        <button onClick={() => handleProcessTxn(tx.id, 'COMPLETED')} className="p-2 bg-green-900/20 text-green-500 rounded hover:bg-green-900/40"><CheckCircle2 size={14} /></button>
-                                                    </>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {activeTab === 'INGEST' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="bg-[#111] p-8 rounded-xl border border-white/10 text-center space-y-4">
-                        <div className="p-4 bg-green-500/10 rounded-full text-green-500 w-fit mx-auto"><FileSpreadsheet size={32} /></div>
-                        <div>
-                            <h3 className="font-bold text-white">Upload Report</h3>
-                            <p className="text-xs text-gray-500">Supports .XLSX / .CSV</p>
-                        </div>
-                        <input type="month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-green-500" />
-                        <label className={`block w-full py-3 bg-white text-black font-bold uppercase text-xs rounded-lg cursor-pointer hover:bg-gray-200 transition ${processing ? 'opacity-50' : ''}`}>
-                            {processing ? 'Processing...' : 'Select File'}
-                            <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} disabled={processing} />
-                        </label>
-                    </div>
-                    <div className="bg-black border border-white/10 rounded-xl p-4 h-64 overflow-y-auto font-mono text-[10px] space-y-1 custom-scrollbar">
-                        {logs.length === 0 && <div className="text-gray-600 text-center mt-20">Waiting for upload...</div>}
-                        {logs.map((log, i) => <div key={i} className={log.includes('ERROR') || log.includes('Failed') ? 'text-red-500' : 'text-green-500'}>{log}</div>)}
-                    </div>
-                </div>
-            )}
         </div>
-    );
+
+        {/* Tabs */}
+        <div className="flex gap-4">
+            <button onClick={() => setActiveTab('WITHDRAWALS')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition ${activeTab === 'WITHDRAWALS' ? 'bg-blue-600 text-white' : 'bg-[#111] text-gray-500 hover:text-white'}`}>
+                Withdrawal Requests ({withdrawals.length})
+            </button>
+            <button onClick={() => setActiveTab('INGEST')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition ${activeTab === 'INGEST' ? 'bg-green-600 text-white' : 'bg-[#111] text-gray-500 hover:text-white'}`}>
+                Royalty Ingestion
+            </button>
+        </div>
+
+        {/* === TAB 1: WITHDRAWALS === */}
+        {activeTab === 'WITHDRAWALS' && (
+            <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden min-h-[400px]">
+                {loadingW ? (
+                    <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
+                ) : withdrawals.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-gray-600 gap-2">
+                        <CheckCircle2 size={32} className="opacity-50" />
+                        <p className="text-xs font-mono uppercase">All Clear. No pending requests.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                            <thead className="bg-black/50 text-gray-500 font-mono uppercase">
+                                <tr>
+                                    <th className="px-6 py-4">Request Date</th>
+                                    <th className="px-6 py-4">User Identity</th>
+                                    <th className="px-6 py-4">Amount</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-gray-300">
+                                {withdrawals.map((tx) => (
+                                    <tr key={tx.id} className="hover:bg-white/[0.02] transition">
+                                        <td className="px-6 py-4 font-mono text-gray-500">
+                                            <div className="flex items-center gap-2"><Calendar size={12} /> {new Date(tx.date).toLocaleDateString()}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-white">{tx.profiles?.name || 'Unknown'}</div>
+                                            <div className="text-[10px] text-gray-500 font-mono">{tx.profiles?.email}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-lg font-black text-white">${tx.amount?.toFixed(2)}</div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {actionProcessing === tx.id ? <Loader2 className="animate-spin ml-auto" size={16} /> : (
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => handleProcessTxn(tx.id, 'REJECTED')} className="px-3 py-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg font-bold uppercase text-[10px] transition"><XCircle size={12} /> Reject</button>
+                                                    <button onClick={() => handleProcessTxn(tx.id, 'COMPLETED')} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold uppercase text-[10px] transition flex items-center gap-1 shadow-lg"><CheckCircle2 size={12} /> Paid</button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        )}
+
+        {/* === TAB 2: INGESTION (EXCEL) === */}
+        {activeTab === 'INGEST' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-[#111] p-8 rounded-xl border border-white/10 flex flex-col items-center justify-center text-center space-y-4">
+                    <div className="p-4 bg-green-500/10 rounded-full text-green-500"><DollarSign size={32} /></div>
+                    <div>
+                        <h3 className="font-bold text-white">Upload Royalty Report (XLSX)</h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Must have columns: <span className="font-mono text-green-400">UPC</span> and <span className="font-mono text-green-400">Royalty</span>
+                        </p>
+                    </div>
+                    <div className="w-full">
+                        <label className="block text-[10px] text-gray-500 font-bold uppercase mb-1">Reporting Month</label>
+                        <input type="month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-green-500" />
+                    </div>
+                    <label className={`px-6 py-3 bg-white text-black font-bold uppercase text-xs rounded-lg cursor-pointer hover:bg-gray-200 transition flex items-center gap-2 ${processing ? 'opacity-50 pointer-events-none' : ''}`}>
+                        {processing ? <Loader2 className="animate-spin" /> : <Upload size={16} />}
+                        {processing ? 'Processing...' : 'Select Excel File'}
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls, .csv"
+                            className="hidden"
+                            onChange={handleFileUpload}
+                            disabled={processing}
+                        />
+                    </label>
+                </div>
+                <div className="bg-black border border-white/10 rounded-xl p-4 h-64 overflow-y-auto font-mono text-[10px] space-y-1 custom-scrollbar">
+                    {logs.length === 0 && <div className="text-gray-600 text-center mt-20">Waiting for Excel upload...</div>}
+                    {logs.map((log, i) => <div key={i} className={log.includes('Failed') || log.includes('ERROR') ? 'text-red-500' : 'text-green-500'}>{log}</div>)}
+                </div>
+            </div>
+        )}
+    </div>
+);
 };
 
 export default AdminRevenue;
