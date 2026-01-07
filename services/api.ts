@@ -681,16 +681,17 @@ export const api = {
     },
 
     savePayoutMethod: async (pm: Partial<PayoutMethod>) => {
-      const userId = await getUserId();
-      const payload = { ...pm, uid: userId };
+      const { data, error } = await supabase.rpc('save_secure_payout_method', {
+        p_type: pm.type,
+        p_name: pm.name,
+        p_details: pm.details, // Pass raw data, function encrypts it
+        p_account_holder: pm.account_holder,
+        p_bank_name: pm.bank_name,
+        p_swift_code: pm.swift_code
+      });
 
-      const { data, error } = await supabase
-        .from('payout_methods')
-        .upsert(payload)
-        .select()
-        .single();
       if (error) throw error;
-      return data as PayoutMethod;
+      return { success: true };
     },
 
     deletePayoutMethod: async (id: string) => {
