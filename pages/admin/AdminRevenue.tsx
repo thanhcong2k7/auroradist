@@ -67,59 +67,80 @@ const AdminRevenue: React.FC = () => {
     };
 
     const processRevenue = async (rows: any[]) => {
-        // 1. AGGREGATION STEP (Sum royalties by UPC)
+        // 1. AGGREGATION STEP (Sum royalties by UPC + PLATFORM)
+        // Key format: "UPC::PLATFORM"
         const aggregator: Record<string, number> = {};
         let rowCount = 0;
 
         rows.forEach(row => {
-            // Flexible Key Matching for UPC
-            // Excel imports might have spaces or case sensitivity issues, so we clean keys
+            // A. GET UPC
             const getVal = (keyPart: string) => {
                 const key = Object.keys(row).find(k => k.toLowerCase().includes(keyPart.toLowerCase()));
                 return key ? row[key] : null;
             };
 
             const rawUpc = getVal('UPC') || getVal('Barcode') || getVal('Grid');
-            // IMPORTANT: Force String to prevent Excel scientific notation interpretation if it slipped through
-            const upc = String(rawUpc).trim();
+            let upc = String(rawUpc || '').trim();
 
-            // Flexible Key Matching for Amount
-            // "Royalty" comes from your specific file, others are fallbacks
+            // B. GET PLATFORM (Music Service) - NEW LOGIC
+            // Look for "Music Service" specific to your CSV, or generic fallbacks
+            const rawService = row['Music Service'] || getVal('Service') || getVal('Store') || 'Other';
+
+            // Clean up name: "YouTube - Audio tier revenue" -> "YouTube"
+            let platform = String(rawService).split(' - ')[0].trim();
+            if (!platform || platform === 'undefined') platform = 'Other';
+
+            // C. GET AMOUNT
+            // Your CSV has "Royalty" and "Royalty GBP".
             let rawAmount = row['Royalty'] || row['Royalty GBP'] || row['Net Revenue'] || row['Amount'] || row['USD'];
 
-            // Handle currency strings like "1,200.50" or number types
             const amount = typeof rawAmount === 'string'
                 ? parseFloat(rawAmount.replace(/,/g, ''))
                 : parseFloat(rawAmount);
 
-            if (upc && upc !== 'undefined' && amount && !isNaN(amount)) {
-                // If the UPC somehow still looks like 5.06E+12, warn or handle it (though XLSX usually fixes this)
-                aggregator[upc] = (aggregator[upc] || 0) + amount;
+            // VALIDATION
+            if (upc && upc !== 'undefined' && upc !== '' && amount && !isNaN(amount)) {
+                // Fix Scientific Notation (e.g. 5.06E+12)
+                if (upc.includes('E+') || upc.includes('e+')) {
+                    try {
+                        upc = Number(upc).toLocaleString('fullwide', { useGrouping: false });
+                    } catch (e) { }
+                }
+
+                // Create Composite Key: 5057805::YouTube
+                // This ensures we calculate totals separately for each store
+                const key = `${upc}::${platform}`;
+                aggregator[key] = (aggregator[key] || 0) + amount;
                 rowCount++;
             }
         });
 
-        // 2. Prepare Payload
-        const payload = Object.entries(aggregator).map(([upc, amount]) => ({
-            upc,
-            amount: parseFloat(amount.toFixed(6)) // Round to avoid floating point weirdness
-        })).filter(item => item.amount > 0);
+        // 2. PREPARE PAYLOAD
+        // We split the key back into UPC and Platform
+        const payload = Object.entries(aggregator).map(([key, amount]) => {
+            const [upc, platform] = key.split('::');
+            return {
+                upc,
+                platform,
+                amount: parseFloat(amount.toFixed(6))
+            };
+        }).filter(item => item.amount > 0);
 
         const totalAmount = payload.reduce((sum, item) => sum + item.amount, 0);
         const reportingDate = new Date(reportMonth + "-01").toISOString();
 
         if (payload.length === 0) {
-            alert("No valid revenue data found. Please ensure the Excel file has 'UPC' and 'Royalty' columns.");
+            alert("No valid data found. Check CSV headers.");
             return;
         }
 
-        if (!confirm(`Bulk Process Summary:\n\n- File Rows Read: ${rows.length}\n- Valid Rows Processed: ${rowCount}\n- Unique Releases (UPCs): ${payload.length}\n- Total Payout: $${totalAmount.toLocaleString()}\n\nProceed to distribute?`)) return;
+        if (!confirm(`Bulk Summary:\n\n- Rows Processed: ${rowCount}\n- Records (UPC x Store): ${payload.length}\n- Total Payout: ${totalAmount.toLocaleString()}\n\nProceed?`)) return;
 
         setProcessing(true);
-        setLogs(["Preparing bulk payload..."]);
+        setLogs(["Sending detailed platform data..."]);
 
         try {
-            // 3. Send to Supabase RPC
+            // 3. SEND TO SUPABASE
             const { data, error } = await supabase.rpc('admin_distribute_revenue_bulk', {
                 p_items: payload,
                 p_month: reportingDate
@@ -128,9 +149,9 @@ const AdminRevenue: React.FC = () => {
             if (error) throw error;
 
             setLogs(prev => [
-                `✅ BATCH COMPLETE`,
-                `Success: ${data.success_count} releases updated`,
-                `Failed: ${data.error_count} UPCs not found (Revenue kept by house)`,
+                `✅ COMPLETED`,
+                `Processed: ${data.success_count}`,
+                `Errors: ${data.error_count}`,
                 ...prev
             ]);
 
@@ -139,8 +160,8 @@ const AdminRevenue: React.FC = () => {
             }
 
         } catch (err: any) {
-            setLogs(prev => [`[CRITICAL ERROR] ${err.message}`, ...prev]);
-            alert("Batch processing failed. Check logs.");
+            setLogs(prev => [`ERROR: ${err.message}`, ...prev]);
+            alert("Failed.");
         } finally {
             setProcessing(false);
         }
