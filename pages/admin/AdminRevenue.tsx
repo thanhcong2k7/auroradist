@@ -46,23 +46,63 @@ const AdminRevenue: React.FC = () => {
     };
 
     const processRevenue = async (rows: any[]) => {
-        // 1. Tính tổng tiền để Review trước (Dry Run client side)
-        const totalAmount = rows.reduce((sum, row) => sum + parseFloat(row['Net Revenue'] || row['Amount'] || 0), 0);
+        // 1. AGGREGATION STEP (Crucial for 1111.csv format)
+        const aggregator: Record<string, number> = {};
+
+        let rowCount = 0;
+
+        rows.forEach(row => {
+            // Handle UPC key variations from CSV
+            const upc = (row['UPC'] || row['Barcode'] || row['Grid'])?.toString().trim();
+
+            // Handle Amount variations. 
+            // NOTE: Your CSV has "Royalty" and "Royalty GBP". 
+            // You must decide which currency your app uses. Assuming 'Royalty' is the main one.
+            const rawAmount = row['Royalty'] || row['Net Revenue'] || row['Amount'] || row['USD'];
+
+            // Parse float, handling strings like "1,000.00"
+            const amount = typeof rawAmount === 'string'
+                ? parseFloat(rawAmount.replace(/,/g, ''))
+                : parseFloat(rawAmount);
+
+            if (upc && amount && !isNaN(amount)) {
+                // Fix Scientific Notation from Excel (e.g. 5.06E+12) if it happens
+                let cleanUpc = upc;
+                if (cleanUpc.includes('E+')) {
+                    // This is a simple catch, but ideally, fix CSV export to not use Scientific notation
+                    cleanUpc = Number(upc).toLocaleString('fullwide', { useGrouping: false });
+                }
+
+                aggregator[cleanUpc] = (aggregator[cleanUpc] || 0) + amount;
+                rowCount++;
+            }
+        });
+
+        // 2. Convert Aggregated Data to Payload
+        const payload = Object.entries(aggregator).map(([upc, amount]) => ({
+            upc,
+            amount: parseFloat(amount.toFixed(6)) // Round to avoid floating point errors
+        })).filter(i => i.amount > 0);
+
+        const totalAmount = payload.reduce((sum, item) => sum + item.amount, 0);
         const reportingDate = new Date(reportMonth + "-01").toISOString();
 
-        if (!confirm(`Bulk Process Summary:\n- Records: ${rows.length}\n- Total Payout: $${totalAmount.toFixed(2)}\n\nProceed to distribute?`)) return;
+        if (payload.length === 0) {
+            alert("No valid revenue data found. Check CSV headers (Need 'UPC' and 'Royalty').");
+            return;
+        }
+
+        if (!confirm(`Bulk Process Summary:
+    - Raw Rows Processed: ${rowCount}
+    - Aggregated Releases: ${payload.length}
+    - Total Payout: $${totalAmount.toFixed(2)}
+    
+    Proceed to distribute?`)) return;
 
         setProcessing(true);
         setLogs(["Preparing bulk payload..."]);
 
-        // 2. Chuẩn bị dữ liệu sạch
-        const payload = rows.map(row => ({
-            upc: (row['UPC'] || row['Barcode'])?.toString().trim(),
-            amount: parseFloat(row['Net Revenue'] || row['Amount'] || row['USD'])
-        })).filter(item => item.upc && item.amount > 0);
-
         try {
-            // 3. Gọi hàm Bulk RPC (Chỉ 1 request duy nhất)
             const { data, error } = await supabase.rpc('admin_distribute_revenue_bulk', {
                 p_items: payload,
                 p_month: reportingDate
@@ -72,16 +112,14 @@ const AdminRevenue: React.FC = () => {
 
             setLogs(prev => [
                 `✅ BATCH COMPLETE`,
-                `Success: ${data.success_count} records`,
-                `Failed: ${data.error_count} records`,
+                `Success: ${data.success_count} releases updated`,
+                `Failed: ${data.error_count} UPCs not found`,
                 ...prev
             ]);
 
             if (data.errors && data.errors.length > 0) {
                 setLogs(prev => [...data.errors, ...prev]);
             }
-
-            alert(`Distribution Complete!\nSuccess: ${data.success_count}\nFailed: ${data.error_count}`);
 
         } catch (err: any) {
             setLogs(prev => [`[CRITICAL ERROR] ${err.message}`, ...prev]);
