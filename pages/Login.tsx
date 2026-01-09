@@ -108,7 +108,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-wide rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
+              className="w-full py-5 bg-brand-primary hover:opacity-90 text-white font-bold uppercase tracking-wide rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
             >
               {loading ? (
                 <>Verifying <Loader2 className="animate-spin" size={18} /></>
