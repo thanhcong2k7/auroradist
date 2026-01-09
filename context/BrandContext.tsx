@@ -21,27 +21,30 @@ const defaultSettings: BrandSettings = {
 const BrandContext = createContext<BrandSettings>(defaultSettings);
 
 // Helper: Chuyển Hex sang RGB channels (ví dụ: "#ffffff" -> "255 255 255")
-const hexToRgbChannels = (hex: string) => {
-    // Xóa dấu # nếu có
-    hex = hex.replace('#', '');
-
-    // Xử lý dạng ngắn (ví dụ: F00 -> FF0000)
-    if (hex.length === 3) {
-        hex = hex.split('').map(char => char + char).join('');
+const hexToRgbChannels = (hex: string | null | undefined) => {
+    // [FIX 2] Fallback về màu mặc định nếu hex null/undefined/sai format
+    if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) {
+        return '37 99 235'; // Default Blue
     }
 
-    // Parse
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
+    let c = hex.substring(1);
+    if (c.length === 3) {
+        c = c.split('').map(char => char + char).join('');
+    }
 
-    // Nếu parse lỗi (NaN), trả về màu mặc định (Blue 600)
+    if (c.length !== 6) return '37 99 235';
+
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+
     if (isNaN(r) || isNaN(g) || isNaN(b)) {
         return '37 99 235';
     }
 
     return `${r} ${g} ${b}`;
 }
+
 
 export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [settings, setSettings] = useState<BrandSettings>(defaultSettings);
