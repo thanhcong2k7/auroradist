@@ -5,7 +5,9 @@ import { DspChannel, Release, Track } from '@/types';
 import {
     ArrowLeft, Download, CheckCircle, XCircle,
     Disc, Music2, Globe, Calendar, Clock, MapPin,
-    Mic2, AlertOctagon, User, Layers, Hash
+    Mic2, AlertOctagon, User, Layers, Hash,
+    Loader2,
+    Save
 } from 'lucide-react';
 import DSPLogo from '@/components/DSPLogo';
 
@@ -186,6 +188,14 @@ const AdminReleaseDetail: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex gap-3">
+                    <button
+                        onClick={handleSaveDraft}
+                        disabled={submitting}
+                        className="px-4 py-2 bg-blue-600/10 text-blue-500 border border-blue-600/20 hover:bg-blue-600/20 rounded-lg font-bold uppercase text-xs flex items-center gap-2 transition"
+                    >
+                        {submitting ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
+                        Save Draft
+                    </button>
                     {isModerationMode ? (
                         <>
                             <button onClick={handleReject} disabled={submitting} className="px-4 py-2 bg-red-900/20 text-red-500 border border-red-900/50 hover:bg-red-900/40 rounded-lg font-bold uppercase text-xs flex items-center gap-2 transition">
