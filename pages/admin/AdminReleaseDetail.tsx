@@ -55,6 +55,32 @@ const AdminReleaseDetail: React.FC = () => {
         }
     };
 
+    const handleSaveDraft = async () => {
+        // Gom dữ liệu ISRC từ state isrcInputs
+        const isrcList = Object.entries(isrcInputs).map(([trackId, isrcCode]) => ({
+            id: Number(trackId),
+            isrc: isrcCode
+        }));
+
+        const payload = {
+            upc: upcInput,
+            isrcs: isrcList
+        };
+
+        setSubmitting(true);
+        try {
+            // Gọi hàm API bạn đã định nghĩa
+            await api.admin.saveReleaseMetadata(release.id, payload);
+
+            alert("Metadata saved successfully!");
+            // Không navigate đi đâu cả, để admin có thể tiếp tục sửa nếu muốn
+        } catch (err: any) {
+            console.error(err);
+            alert("Failed to save: " + err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
     const isModerationMode = release?.status === 'CHECKING';
 
     const handleApprove = async () => {
