@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -95,7 +95,7 @@ export default function BulkTrackUploader({
             />
 
             {uploading ? (
-                <div className="text-blue-400">
+                <div className="text-brand-primary">
                     <p>Đang upload {Object.keys(progress).length} bài...</p>
                     <p className="text-xs text-gray-400">Vui lòng không tắt trình duyệt</p>
                 </div>

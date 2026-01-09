@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Release, Track } from '../types';
 import { X, Disc, Calendar, Hash, Building2, AlertOctagon, CheckCircle2, Clock, FileAudio, Eye } from 'lucide-react';
 
@@ -89,7 +89,7 @@ const ReleasePreviewDialog: React.FC<ReleasePreviewProps> = ({ isOpen, onClose, 
                             <div className="grid grid-cols-2 gap-4 text-xs">
                                 <div className="space-y-1">
                                     <span className="text-gray-500 font-mono uppercase block">Release Date</span>
-                                    <div className="flex items-center gap-2 font-bold"><Calendar size={14} className="text-blue-500" /> {release.releaseDate || 'Not Scheduled'}</div>
+                                    <div className="flex items-center gap-2 font-bold"><Calendar size={14} className="text-brand-primary" /> {release.releaseDate || 'Not Scheduled'}</div>
                                 </div>
                                 <div className="space-y-1">
                                     <span className="text-gray-500 font-mono uppercase block">Label Imprint</span>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { api, supabase } from '@/services/api';
 import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, Save, Loader2, Search } from 'lucide-react';
@@ -192,7 +192,7 @@ const AdminAnalytics: React.FC = () => {
                         <h3 className="font-bold text-lg">Upload Daily Streams/Views CSV</h3>
                         <p className="text-gray-500 text-sm">Supports Revelator/Nodable format</p>
                     </div>
-                    <label className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl cursor-pointer transition flex items-center gap-2">
+                    <label className="px-6 py-3 bg-brand-primary hover:bg-brand-primary text-white font-bold rounded-xl cursor-pointer transition flex items-center gap-2">
                         <Upload size={18} /> Select File
                         <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
                     </label>
@@ -234,7 +234,7 @@ const AdminAnalytics: React.FC = () => {
                         ))}
                     </div>
 
-                    <button onClick={saveToDatabase} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest rounded-xl transition shadow-lg flex justify-center gap-2">
+                    <button onClick={saveToDatabase} className="w-full py-4 bg-brand-primary hover:bg-brand-primary text-white font-black uppercase tracking-widest rounded-xl transition shadow-lg flex justify-center gap-2">
                         <Save size={18} /> Confirm & Ingest
                     </button>
                 </div>
@@ -245,7 +245,7 @@ const AdminAnalytics: React.FC = () => {
                 <div className="bg-[#111] p-6 rounded-xl border border-white/10 h-96 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-bold uppercase text-xs tracking-widest flex items-center gap-2">
-                            {step === 'SAVING' ? <Loader2 className="animate-spin text-blue-500" /> : <CheckCircle2 className="text-green-500" />}
+                            {step === 'SAVING' ? <Loader2 className="animate-spin text-brand-primary" /> : <CheckCircle2 className="text-green-500" />}
                             System Log
                         </h3>
                     </div>

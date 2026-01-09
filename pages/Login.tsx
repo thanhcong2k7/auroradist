@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Key, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 import { useBrand } from '@/context/BrandContext';
@@ -159,7 +159,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           <div className="mt-8 flex justify-between items-center text-xs font-mono text-gray-400 uppercase tracking-widest border-t border-white/5 pt-6">
             <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div> SYS.LIVE</span>
-            <a href="https://auroramusicvietnam.net/#contact" className="hover:text-blue-400 transition-colors">Request Access</a>
+            <a href="https://auroramusicvietnam.net/#contact" className="hover:text-brand-primary transition-colors">Request Access</a>
           </div>
         </div>
 

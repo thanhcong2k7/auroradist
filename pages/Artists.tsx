@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { User, Mail, Music2, Plus, X, Save, MapPin, Edit2, Trash2, Search, Loader2 } from 'lucide-react';
 import { Artist } from '../types';
 import FileUploader from '../components/FileUploader';
@@ -106,7 +106,7 @@ const Artists: React.FC = () => {
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="px-6 py-2 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition shadow-[0_0_15px_rgba(37,99,235,0.4)] flex items-center gap-2 text-sm"
+                    className="px-6 py-2 bg-brand-primary text-white font-bold uppercase hover:bg-brand-primary transition shadow-[0_0_15px_rgba(37,99,235,0.4)] flex items-center gap-2 text-sm"
                 >
                     <Plus size={16} /> New Artist
                 </button>
@@ -114,19 +114,19 @@ const Artists: React.FC = () => {
 
             {/* MISSING FEATURE 1: Search Bar UI */}
             <div className="relative max-w-md group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={16} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-primary transition-colors" size={16} />
                 <input 
                     type="text" 
                     placeholder="SEARCH ROSTER..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition font-mono uppercase placeholder:text-gray-700"
+                    className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-primary transition font-mono uppercase placeholder:text-gray-700"
                 />
             </div>
 
             {loading && artists.length === 0 ? (
                 <div className="h-64 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-blue-500" size={32} />
+                    <Loader2 className="animate-spin text-brand-primary" size={32} />
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -137,7 +137,7 @@ const Artists: React.FC = () => {
                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition flex gap-2">
                                 <button
                                     onClick={() => handleOpenModal(artist)}
-                                    className="p-2 bg-white/5 hover:bg-blue-600 hover:text-white rounded-lg text-gray-400 transition"
+                                    className="p-2 bg-white/5 hover:bg-brand-primary hover:text-white rounded-lg text-gray-400 transition"
                                     title="Edit Profile"
                                 >
                                     <Edit2 size={16} />
@@ -151,7 +151,7 @@ const Artists: React.FC = () => {
                                 </button>
                             </div>
 
-                            <img src={artist.avatar || 'https://via.placeholder.com/150'} alt={artist.name} className="w-24 h-24 rounded-full object-cover border-2 border-white/10 group-hover:border-blue-500/50 transition" />
+                            <img src={artist.avatar || 'https://via.placeholder.com/150'} alt={artist.name} className="w-24 h-24 rounded-full object-cover border-2 border-white/10 group-hover:border-brand-primary/50 transition" />
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-xl font-bold mb-1">{artist.name}</h3>
                                 {artist.legalName && <p className="text-xs text-gray-500 font-mono mb-3">LEGAL: {artist.legalName}</p>}
@@ -159,7 +159,7 @@ const Artists: React.FC = () => {
                                 <div className="space-y-1 mb-4">
                                     {artist.email && (
                                         <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
-                                            <Mail size={12} className="text-blue-500" /> {artist.email}
+                                            <Mail size={12} className="text-brand-primary" /> {artist.email}
                                         </div>
                                     )}
                                     {artist.spotifyId && (
@@ -212,7 +212,7 @@ const Artists: React.FC = () => {
                                 {/* Right Side: Fields */}
                                 <div className="flex-1 space-y-8">
                                     <div className="space-y-4">
-                                        <h4 className="text-xs font-bold uppercase text-blue-400 flex items-center gap-2 border-b border-white/5 pb-2">
+                                        <h4 className="text-xs font-bold uppercase text-brand-primary flex items-center gap-2 border-b border-white/5 pb-2">
                                             <User size={14} /> Identity
                                         </h4>
                                         <div className="space-y-4">
@@ -222,7 +222,7 @@ const Artists: React.FC = () => {
                                                     type="text"
                                                     value={formData.name}
                                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition font-bold text-lg"
+                                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-brand-primary transition font-bold text-lg"
                                                     placeholder="e.g. The Midnight"
                                                 />
                                             </div>
@@ -232,7 +232,7 @@ const Artists: React.FC = () => {
                                                     type="text"
                                                     value={formData.legalName}
                                                     onChange={(e) => setFormData({ ...formData, legalName: e.target.value })}
-                                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition"
+                                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-brand-primary transition"
                                                     placeholder="For individuals or copyright holders"
                                                 />
                                             </div>
@@ -241,7 +241,7 @@ const Artists: React.FC = () => {
 
                                     {/* Profiles */}
                                     <div className="space-y-4">
-                                        <h4 className="text-xs font-bold uppercase text-blue-400 flex items-center gap-2 border-b border-white/5 pb-2">
+                                        <h4 className="text-xs font-bold uppercase text-brand-primary flex items-center gap-2 border-b border-white/5 pb-2">
                                             <Music2 size={14} /> Artist Profiles
                                         </h4>
                                         <div className="space-y-3">
@@ -280,7 +280,7 @@ const Artists: React.FC = () => {
 
                                     {/* Contact */}
                                     <div className="space-y-4">
-                                        <h4 className="text-xs font-bold uppercase text-blue-400 flex items-center gap-2 border-b border-white/5 pb-2">
+                                        <h4 className="text-xs font-bold uppercase text-brand-primary flex items-center gap-2 border-b border-white/5 pb-2">
                                             <MapPin size={14} /> Contact Info
                                         </h4>
                                         <div className="space-y-3">
@@ -290,7 +290,7 @@ const Artists: React.FC = () => {
                                                     type="email"
                                                     value={formData.email}
                                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition"
+                                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-brand-primary transition"
                                                     placeholder="management@artist.com"
                                                 />
                                             </div>
@@ -300,7 +300,7 @@ const Artists: React.FC = () => {
                                                     type="text"
                                                     value={formData.address}
                                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition"
+                                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm focus:outline-none focus:border-brand-primary transition"
                                                     placeholder="Street, City, Country"
                                                 />
                                             </div>
@@ -315,7 +315,7 @@ const Artists: React.FC = () => {
                             <button onClick={() => setShowModal(false)} className="px-4 py-2 border border-white/10 text-white font-bold uppercase rounded text-xs hover:bg-white/5">
                                 Cancel
                             </button>
-                            <button onClick={handleSave} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs flex items-center gap-2">
+                            <button onClick={handleSave} className="px-6 py-2 bg-brand-primary hover:bg-brand-primary text-white font-bold uppercase rounded text-xs flex items-center gap-2">
                                 <Save size={14} /> {editingId ? 'Update Profile' : 'Save Profile'}
                             </button>
                         </div>

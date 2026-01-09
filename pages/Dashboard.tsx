@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Activity, Disc, TrendingUp, DollarSign, ArrowRight, Loader2, Eye, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -152,7 +152,7 @@ const Dashboard: React.FC = () => {
                 >
                   <img src={getResizedImage(release.coverArt, 80)} alt={release.title} className="w-10 h-10 rounded-lg object-cover" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-xs truncate uppercase tracking-tight group-hover:text-blue-400 transition-colors">{release.title}</div>
+                    <div className="font-bold text-xs truncate uppercase tracking-tight group-hover:text-brand-primary transition-colors">{release.title}</div>
                     <div className="text-xs text-gray-400 font-mono truncate uppercase mt-0.5">{release.artist}</div>
                   </div>
                   <div className={`text-[8px] font-black font-mono px-2 py-0.5 rounded-full border ${release.status === 'ACCEPTED' ? 'border-green-500/30 text-green-500' :

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { Transaction, PayoutMethod } from '../types';
@@ -91,19 +91,19 @@ const Wallet: React.FC = () => {
             {/* Cards Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Main Balance Card */}
-                <div className="md:col-span-2 bg-[#080808] border border-blue-500/10 p-8 rounded-2xl relative overflow-hidden group shadow-lg">
-                    <div className="absolute top-0 right-0 p-32 bg-blue-500/5 blur-[80px] rounded-full pointer-events-none"></div>
+                <div className="md:col-span-2 bg-[#080808] border border-brand-primary/10 p-8 rounded-2xl relative overflow-hidden group shadow-lg">
+                    <div className="absolute top-0 right-0 p-32 bg-brand-primary/5 blur-[80px] rounded-full pointer-events-none"></div>
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-end md:items-center">
                         <div>
-                            <div className="flex items-center gap-2 text-blue-400 font-sans font-black tracking-wide text-xs uppercase mb-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> Net Liquidity (Available)
+                            <div className="flex items-center gap-2 text-brand-primary font-sans font-black tracking-wide text-xs uppercase mb-3">
+                                <div className="w-1.5 h-1.5 rounded-full bg-brand-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> Net Liquidity (Available)
                             </div>
                             <div className="text-6xl font-black text-white tracking-tighter">${summary?.availableBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                         </div>
                         <button
                             onClick={() => setShowWithdrawModal(true)}
                             disabled={!summary?.availableBalance || summary.availableBalance <= 0}
-                            className="mt-6 md:mt-0 px-8 py-4 bg-blue-600 text-white font-black uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all rounded-xl shadow-xl flex items-center gap-3 disabled:opacity-30 active:scale-[0.98]"
+                            className="mt-6 md:mt-0 px-8 py-4 bg-brand-primary text-white font-black uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all rounded-xl shadow-xl flex items-center gap-3 disabled:opacity-30 active:scale-[0.98]"
                         >
                             <DollarSign size={18} /> Request Disbursement
                         </button>
@@ -141,7 +141,7 @@ const Wallet: React.FC = () => {
                             <select
                                 value={itemsPerPage}
                                 onChange={handleLimitChange}
-                                className="bg-black border border-white/10 rounded-lg px-2 py-1 text-[10px] font-bold text-white focus:border-blue-500 outline-none appearance-none pr-6 cursor-pointer"
+                                className="bg-black border border-white/10 rounded-lg px-2 py-1 text-[10px] font-bold text-white focus:border-brand-primary outline-none appearance-none pr-6 cursor-pointer"
                             >
                                 <option value={5}>5</option>
                                 <option value={10}>10</option>
@@ -168,7 +168,7 @@ const Wallet: React.FC = () => {
                             {loading ? (
                                 <tr>
                                     <td colSpan={5} className="p-10 text-center">
-                                        <Loader2 className="animate-spin mx-auto text-blue-500" />
+                                        <Loader2 className="animate-spin mx-auto text-brand-primary" />
                                     </td>
                                 </tr>
                             ) : currentTransactions.length === 0 ? (
@@ -188,7 +188,7 @@ const Wallet: React.FC = () => {
                                         <td className="px-6 py-4">
                                             <div className="font-bold uppercase text-white mb-1">{txn.type}</div>
                                             {txn.note && (
-                                                <div className="text-[10px] text-blue-400 font-mono border-l-2 border-blue-500/30 pl-2 max-w-xs truncate" title={txn.note}>
+                                                <div className="text-[10px] text-brand-primary font-mono border-l-2 border-brand-primary/30 pl-2 max-w-xs truncate" title={txn.note}>
                                                     {txn.note}
                                                 </div>
                                             )}
@@ -245,14 +245,14 @@ const Wallet: React.FC = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
                     <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
                         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
-                            <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Fund Disbursement</h3>
+                            <h3 className="font-bold uppercase tracking-widest text-xs text-brand-primary">Fund Disbursement</h3>
                             <button onClick={() => setShowWithdrawModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
                         </div>
                         <form onSubmit={handleWithdrawalSubmit} className="p-8 space-y-6">
                             <div className="space-y-1">
                                 <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Quantum Allocation (USD)</label>
                                 <div className="relative">
-                                    <input type="number" step="0.01" max={summary?.availableBalance} value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-3xl font-black focus:border-blue-500 outline-none transition placeholder:text-gray-900" placeholder="0.00" required />
+                                    <input type="number" step="0.01" max={summary?.availableBalance} value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-3xl font-black focus:border-brand-primary outline-none transition placeholder:text-gray-900" placeholder="0.00" required />
                                 </div>
                                 <p className="text-xs text-gray-700 font-mono mt-2 uppercase tracking-widest text-right">Cap: ${summary?.availableBalance.toFixed(2)}</p>
                             </div>
@@ -267,7 +267,7 @@ const Wallet: React.FC = () => {
                                 ) : (
                                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                                         {payoutMethods.map(pm => (
-                                            <div key={pm.id} onClick={() => setSelectedMethod(pm.id)} className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${selectedMethod === pm.id ? 'bg-blue-600/5 border-blue-500/30' : 'bg-black/40 border-white/5'}`}>
+                                            <div key={pm.id} onClick={() => setSelectedMethod(pm.id)} className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${selectedMethod === pm.id ? 'bg-brand-primary/5 border-brand-primary/30' : 'bg-black/40 border-white/5'}`}>
                                                 <div className="flex items-center gap-4">
                                                     <CreditCard size={16} className="text-gray-400" />
                                                     <div>
@@ -275,14 +275,14 @@ const Wallet: React.FC = () => {
                                                         <p className="text-xs font-mono text-gray-400">{pm.details}</p>
                                                     </div>
                                                 </div>
-                                                {selectedMethod === pm.id && <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_blue]"></div>}
+                                                {selectedMethod === pm.id && <div className="w-2 h-2 rounded-full bg-brand-primary shadow-[0_0_8px_blue]"></div>}
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
 
-                            <button type="submit" disabled={requesting || !withdrawAmount || !selectedMethod} className="w-full py-4 bg-blue-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-xl shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-30">
+                            <button type="submit" disabled={requesting || !withdrawAmount || !selectedMethod} className="w-full py-4 bg-brand-primary text-white font-black uppercase text-xs tracking-[0.2em] rounded-xl shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-30">
                                 {requesting ? <Loader2 size={16} className="animate-spin" /> : 'Synchronize Withdrawal'}
                             </button>
                         </form>

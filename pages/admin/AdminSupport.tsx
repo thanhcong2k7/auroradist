@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+﻿import React, { useEffect, useState, useRef } from 'react';
 import { api } from '@/services/api';
 import { SupportTicket } from '@/types';
 import {
@@ -88,7 +88,7 @@ const AdminSupport: React.FC = () => {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'OPEN': return 'text-green-500 border-green-500/20 bg-green-500/5';
-            case 'IN_PROGRESS': return 'text-blue-500 border-blue-500/20 bg-blue-500/5';
+            case 'IN_PROGRESS': return 'text-brand-primary border-brand-primary/20 bg-brand-primary/5';
             case 'RESOLVED': return 'text-gray-500 border-gray-500/20 bg-gray-500/5';
             default: return 'text-gray-500';
         }
@@ -132,7 +132,7 @@ const AdminSupport: React.FC = () => {
                                 placeholder="Search ID, Subject, Email..."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
-                                className="w-full bg-black border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:border-blue-500 outline-none"
+                                className="w-full bg-black border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white focus:border-brand-primary outline-none"
                             />
                         </div>
                         <div className="flex gap-2">
@@ -154,7 +154,7 @@ const AdminSupport: React.FC = () => {
                                     <div
                                         key={ticket.id}
                                         onClick={() => setSelectedTicket(ticket)}
-                                        className={`p-4 cursor-pointer transition hover:bg-white/5 ${selectedTicket?.id === ticket.id ? 'bg-white/5 border-l-2 border-blue-500' : 'border-l-2 border-transparent'}`}
+                                        className={`p-4 cursor-pointer transition hover:bg-white/5 ${selectedTicket?.id === ticket.id ? 'bg-white/5 border-l-2 border-brand-primary' : 'border-l-2 border-transparent'}`}
                                     >
                                         <div className="flex justify-between items-start mb-1">
                                             <span className={`text-[8px] px-2 py-0.5 rounded border font-black uppercase ${getStatusColor(ticket.status)}`}>{ticket.status}</span>
@@ -162,7 +162,7 @@ const AdminSupport: React.FC = () => {
                                         </div>
                                         <div className="font-bold text-sm text-white mb-1 truncate">{ticket.subject}</div>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[8px] font-bold text-white">
+                                            <div className="w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center text-[8px] font-bold text-white">
                                                 {ticket.profiles?.name?.charAt(0).toUpperCase() || 'U'}
                                             </div>
                                             <span className="text-xs text-gray-400 truncate">{ticket.profiles?.email}</span>
@@ -214,13 +214,13 @@ const AdminSupport: React.FC = () => {
                                     <div key={msg.id} className={`flex ${msg.role === 'ADMIN' ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[75%] ${msg.role === 'ADMIN' ? 'items-end' : 'items-start'} flex flex-col`}>
                                             <div className="flex items-center gap-2 mb-1 px-1">
-                                                <span className={`text-[10px] font-bold uppercase ${msg.role === 'ADMIN' ? 'text-blue-500' : 'text-gray-400'}`}>
+                                                <span className={`text-[10px] font-bold uppercase ${msg.role === 'ADMIN' ? 'text-brand-primary' : 'text-gray-400'}`}>
                                                     {msg.role === 'ADMIN' ? 'Aurora Support' : selectedTicket.profiles?.name}
                                                 </span>
                                                 <span className="text-[10px] text-gray-600 font-mono">{formatTime(msg.created_at)}</span>
                                             </div>
                                             <div className={`p-3 rounded-2xl text-xs leading-relaxed ${msg.role === 'ADMIN'
-                                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                                ? 'bg-brand-primary text-white rounded-tr-none'
                                                 : 'bg-[#222] border border-white/10 text-gray-300 rounded-tl-none'
                                                 }`}>
                                                 {msg.content}
@@ -244,12 +244,12 @@ const AdminSupport: React.FC = () => {
                                             value={replyContent}
                                             onChange={e => setReplyContent(e.target.value)}
                                             placeholder="Type a response to the user..."
-                                            className="w-full bg-black border border-white/10 rounded-xl py-3 pl-4 pr-12 text-xs text-white focus:border-blue-500 outline-none transition"
+                                            className="w-full bg-black border border-white/10 rounded-xl py-3 pl-4 pr-12 text-xs text-white focus:border-brand-primary outline-none transition"
                                         />
                                         <button
                                             type="submit"
                                             disabled={sending || !replyContent.trim()}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition disabled:opacity-50"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-brand-primary hover:bg-brand-primary text-white rounded-lg transition disabled:opacity-50"
                                         >
                                             {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                         </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; // [SỬA 1]: Import Link từ router
 import { api, supabase } from '@/services/api';
 import { UserProfile } from '@/types';
@@ -71,7 +71,7 @@ const AdminUsers: React.FC = () => {
                     <h1 className="text-2xl font-black uppercase tracking-tight">Identity Registry</h1>
                     <p className="text-gray-500 text-xs font-mono uppercase">User Access Control</p>
                 </div>
-                <button onClick={() => setShowInviteModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase rounded-lg flex items-center gap-2 transition">
+                <button onClick={() => setShowInviteModal(true)} className="px-4 py-2 bg-brand-primary hover:bg-brand-primary text-white font-bold text-xs uppercase rounded-lg flex items-center gap-2 transition">
                     <Plus size={16} /> New User
                 </button>
             </div>
@@ -84,7 +84,7 @@ const AdminUsers: React.FC = () => {
 
                             {/* Thông tin User (Avatar, Tên...) */}
                             <div className="flex gap-4">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-lg ${user.role === 'ADMIN' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-lg ${user.role === 'ADMIN' ? 'bg-red-600 text-white' : 'bg-brand-primary text-white'}`}>
                                     {user.name?.charAt(0).toUpperCase() || 'U'}
                                 </div>
                                 <div>
@@ -92,7 +92,7 @@ const AdminUsers: React.FC = () => {
                                     <div className="text-xs text-gray-500 font-mono flex items-center gap-1 mt-1">
                                         <Mail size={10} /> {user.email}
                                     </div>
-                                    <div className={`text-[10px] font-black uppercase mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded border ${user.role === 'ADMIN' ? 'border-red-500 text-red-500' : 'border-blue-500/30 text-blue-500'}`}>
+                                    <div className={`text-[10px] font-black uppercase mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded border ${user.role === 'ADMIN' ? 'border-red-500 text-red-500' : 'border-brand-primary/30 text-brand-primary'}`}>
                                         {user.role === 'ADMIN' ? <Shield size={10} /> : <User size={10} />}
                                         {user.role}
                                     </div>
@@ -103,7 +103,7 @@ const AdminUsers: React.FC = () => {
                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition flex gap-2">
                                 <Link
                                     to={`/admin/users/${user.id}`}
-                                    className="p-2 bg-black/80 hover:bg-blue-600 hover:text-white text-gray-400 rounded-lg border border-white/10 transition"
+                                    className="p-2 bg-black/80 hover:bg-brand-primary hover:text-white text-gray-400 rounded-lg border border-white/10 transition"
                                     title="View Full Profile"
                                 >
                                     <Eye size={14} />
@@ -136,10 +136,10 @@ const AdminUsers: React.FC = () => {
                         <div className="p-6">
                             {/* Tabs */}
                             <div className="flex bg-black p-1 rounded-lg mb-6 border border-white/5">
-                                <button onClick={() => setInviteMode('INVITE')} className={`flex-1 py-2 text-xs font-bold uppercase rounded transition ${inviteMode === 'INVITE' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                                <button onClick={() => setInviteMode('INVITE')} className={`flex-1 py-2 text-xs font-bold uppercase rounded transition ${inviteMode === 'INVITE' ? 'bg-brand-primary text-white' : 'text-gray-500 hover:text-gray-300'}`}>
                                     Send Invite
                                 </button>
-                                <button onClick={() => setInviteMode('CREATE')} className={`flex-1 py-2 text-xs font-bold uppercase rounded transition ${inviteMode === 'CREATE' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                                <button onClick={() => setInviteMode('CREATE')} className={`flex-1 py-2 text-xs font-bold uppercase rounded transition ${inviteMode === 'CREATE' ? 'bg-brand-primary text-white' : 'text-gray-500 hover:text-gray-300'}`}>
                                     Create Directly
                                 </button>
                             </div>
@@ -149,7 +149,7 @@ const AdminUsers: React.FC = () => {
                                     <label className="text-[10px] text-gray-500 font-mono uppercase block mb-1">Target Email</label>
                                     <div className="relative">
                                         <Mail size={14} className="absolute left-3 top-3 text-gray-600" />
-                                        <input type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-xs text-white focus:border-blue-500 outline-none" placeholder="user@domain.com" required />
+                                        <input type="email" value={newUserEmail} onChange={e => setNewUserEmail(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-xs text-white focus:border-brand-primary outline-none" placeholder="user@domain.com" required />
                                     </div>
                                 </div>
 
@@ -158,7 +158,7 @@ const AdminUsers: React.FC = () => {
                                         <label className="text-[10px] text-gray-500 font-mono uppercase block mb-1">Set Password</label>
                                         <div className="relative">
                                             <Key size={14} className="absolute left-3 top-3 text-gray-600" />
-                                            <input type="password" value={newUserPass} onChange={e => setNewUserPass(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-xs text-white focus:border-blue-500 outline-none" placeholder="••••••••" required />
+                                            <input type="password" value={newUserPass} onChange={e => setNewUserPass(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg py-2.5 pl-9 pr-4 text-xs text-white focus:border-brand-primary outline-none" placeholder="••••••••" required />
                                         </div>
                                     </div>
                                 )}

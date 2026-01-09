@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import { SupportTicket, TicketMessage } from '../types';
@@ -80,7 +80,7 @@ const Support: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'OPEN': return 'text-blue-500 border-blue-500/20 bg-blue-500/5';
+      case 'OPEN': return 'text-brand-primary border-brand-primary/20 bg-brand-primary/5';
       case 'IN_PROGRESS': return 'text-yellow-500 border-yellow-500/20 bg-yellow-500/5';
       case 'RESOLVED': return 'text-green-500 border-green-500/20 bg-green-500/5';
       default: return 'text-gray-500 border-white/5 bg-white/5';
@@ -95,7 +95,7 @@ const Support: React.FC = () => {
             <h1 className="text-2xl font-black uppercase tracking-tight">Communications</h1>
             <p className="text-gray-400 font-mono text-xs uppercase tracking-widest opacity-60">Technical & Operational Liaison</p>
           </div>
-          <button onClick={() => setShowNewModal(true)} className="px-5 py-2.5 bg-blue-600 text-white font-black uppercase hover:bg-white hover:text-black transition-all shadow-lg flex items-center gap-2 text-xs rounded-xl tracking-widest">
+          <button onClick={() => setShowNewModal(true)} className="px-5 py-2.5 bg-brand-primary text-white font-black uppercase hover:bg-white hover:text-black transition-all shadow-lg flex items-center gap-2 text-xs rounded-xl tracking-widest">
             <Plus size={16} /> New Transmission
           </button>
         </div>
@@ -104,13 +104,13 @@ const Support: React.FC = () => {
           {/* Ticket List */}
           <div className={`w-full lg:w-96 flex flex-col gap-4 ${selectedTicket ? 'hidden lg:flex' : 'flex'}`}>
             <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-blue-500 transition-colors" size={14} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-brand-primary transition-colors" size={14} />
               <input
                 type="text"
                 placeholder="search tickets..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-surface border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs font-mono focus:border-blue-500 transition-all outline-none uppercase placeholder:text-gray-600"
+                className="w-full bg-surface border border-white/5 rounded-xl py-3 pl-10 pr-4 text-xs font-mono focus:border-brand-primary transition-all outline-none uppercase placeholder:text-gray-600"
               />
             </div>
 
@@ -127,15 +127,15 @@ const Support: React.FC = () => {
                   <div
                     key={ticket.id}
                     onClick={() => setSelectedTicket(ticket)}
-                    className={`p-5 rounded-2xl border transition-all cursor-pointer group ${selectedTicket?.id === ticket.id ? 'bg-blue-600/5 border-blue-500/50' : 'bg-surface border-white/5 hover:border-white/10'}`}
+                    className={`p-5 rounded-2xl border transition-all cursor-pointer group ${selectedTicket?.id === ticket.id ? 'bg-brand-primary/5 border-brand-primary/50' : 'bg-surface border-white/5 hover:border-white/10'}`}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-mono text-blue-500 font-bold">{ticket.id}</span>
+                      <span className="text-xs font-mono text-brand-primary font-bold">{ticket.id}</span>
                       <span className={`text-[8px] font-black px-2 py-0.5 rounded border uppercase tracking-tighter ${getStatusColor(ticket.status)}`}>
                         {ticket.status}
                       </span>
                     </div>
-                    <h3 className="text-xs font-bold uppercase tracking-tight mb-3 line-clamp-1 group-hover:text-blue-400 transition-colors">{ticket.subject}</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-tight mb-3 line-clamp-1 group-hover:text-brand-primary transition-colors">{ticket.subject}</h3>
                     <div className="flex justify-between items-center text-xs font-mono text-gray-400 uppercase">
                       <span>{ticket.category}</span>
                       <span>{formatDate(ticket.created_at)}</span>
@@ -154,7 +154,7 @@ const Support: React.FC = () => {
                   <div className="flex items-center gap-4">
                     <button onClick={() => setSelectedTicket(null)} className="lg:hidden p-2 text-gray-500 hover:text-white"><ChevronRight className="rotate-180" size={20} /></button>
                     <div>
-                      <h3 className="text-xs font-black uppercase tracking-widest text-blue-500">{selectedTicket.subject}</h3>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-brand-primary">{selectedTicket.subject}</h3>
                       <p className="text-xs font-mono text-gray-400 uppercase mt-1">Status: {selectedTicket.status} // ID: {selectedTicket.id}</p>
                     </div>
                   </div>
@@ -168,7 +168,7 @@ const Support: React.FC = () => {
                           <span className="text-xs font-mono text-gray-700 uppercase">{msg.senderName}</span>
                           <span className="text-[10px] font-mono text-gray-300">{formatDate(msg.created_at)}</span>
                         </div>
-                        <div className={`p-4 rounded-2xl text-xs leading-relaxed ${msg.role === 'USER' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'}`}>
+                        <div className={`p-4 rounded-2xl text-xs leading-relaxed ${msg.role === 'USER' ? 'bg-brand-primary text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-gray-300 rounded-tl-none'}`}>
                           {msg.content}
                         </div>
                       </div>
@@ -184,12 +184,12 @@ const Support: React.FC = () => {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="ENTER TRANSMISSION..."
-                      className="w-full bg-black border border-white/10 rounded-xl py-4 pl-6 pr-16 text-xs focus:border-blue-500 outline-none transition placeholder:text-gray-900"
+                      className="w-full bg-black border border-white/10 rounded-xl py-4 pl-6 pr-16 text-xs focus:border-brand-primary outline-none transition placeholder:text-gray-900"
                     />
                     <button
                       type="submit"
                       disabled={isSubmitting || !newMessage.trim()}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-lg hover:bg-white hover:text-black transition-all disabled:opacity-20"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-brand-primary text-white rounded-lg hover:bg-white hover:text-black transition-all disabled:opacity-20"
                     >
                       {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                     </button>
@@ -213,19 +213,19 @@ const Support: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
-              <h3 className="font-black uppercase tracking-widest text-xs text-blue-500">Initialize Support Session</h3>
+              <h3 className="font-black uppercase tracking-widest text-xs text-brand-primary">Initialize Support Session</h3>
               <button onClick={() => setShowNewModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
             </div>
             <form onSubmit={handleCreateTicket} className="p-8 space-y-6">
               <div className="space-y-1">
                 <label className="text-xs font-sans text-gray-400 tracking-widest ml-1">Subject</label>
-                <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="e.g. Asset Ingestion Failure" required />
+                <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-brand-primary outline-none" placeholder="e.g. Asset Ingestion Failure" required />
               </div>
 
               <div className="gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-sans text-gray-400 tracking-widest ml-1">Category</label>
-                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs uppercase font-bold tracking-widest focus:border-blue-500 outline-none">
+                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as any)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs uppercase font-bold tracking-widest focus:border-brand-primary outline-none">
                     <option value="TECHNICAL">Technical</option>
                     <option value="FINANCIAL">Financial</option>
                     <option value="DISTRIBUTION">Distribution</option>
@@ -239,13 +239,13 @@ const Support: React.FC = () => {
                 <textarea
                   value={newContent}
                   onChange={e => setNewContent(e.target.value)}
-                  className="w-full h-32 bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none"
+                  className="w-full h-32 bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-brand-primary outline-none"
                   placeholder="Describe the anomaly..."
                   required
                 />
               </div>
 
-              <button type="submit" disabled={isSubmitting || !newSubject || !newContent} className="w-full py-4 bg-blue-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-xl shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-30">
+              <button type="submit" disabled={isSubmitting || !newSubject || !newContent} className="w-full py-4 bg-brand-primary text-white font-black uppercase text-xs tracking-[0.2em] rounded-xl shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-30">
                 {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : 'Commit Transmission'}
               </button>
             </form>
@@ -257,3 +257,4 @@ const Support: React.FC = () => {
 };
 
 export default Support;
+
