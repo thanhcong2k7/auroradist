@@ -5,11 +5,10 @@ export default {
     extend: {
       colors: {
         brand: {
-          // Cấu trúc này giúp Tailwind hiểu: rgb(R G B / alpha)
           primary: 'rgb(var(--brand-primary) / <alpha-value>)',
           secondary: 'rgb(var(--brand-secondary) / <alpha-value>)',
-          bg: 'var(--brand-bg)', 
-          surface: 'var(--brand-surface)',
+          bg: '#050505', 
+          surface: '#111111',
         }
       }
     },

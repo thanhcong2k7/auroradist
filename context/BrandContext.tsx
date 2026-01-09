@@ -22,16 +22,25 @@ const BrandContext = createContext<BrandSettings>(defaultSettings);
 
 // Helper: Chuyển Hex sang RGB channels (ví dụ: "#ffffff" -> "255 255 255")
 const hexToRgbChannels = (hex: string) => {
-    let c: any;
-    if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-        c = hex.substring(1).split('');
-        if (c.length === 3) {
-            c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-        }
-        c = '0x' + c.join('');
-        return `${(c >> 16) & 255} ${(c >> 8) & 255} ${c & 255}`;
+    // Xóa dấu # nếu có
+    hex = hex.replace('#', '');
+
+    // Xử lý dạng ngắn (ví dụ: F00 -> FF0000)
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
     }
-    return '37 99 235'; // Default fallback (Blue 600) nếu hex lỗi
+
+    // Parse
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // Nếu parse lỗi (NaN), trả về màu mặc định (Blue 600)
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+        return '37 99 235';
+    }
+
+    return `${r} ${g} ${b}`;
 }
 
 export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

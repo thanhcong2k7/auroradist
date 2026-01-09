@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ĐỊNH NGHĨA MÀU MẶC ĐỊNH */
+:root {
+  /* Định dạng chuẩn: R G B (không có dấu phẩy, dùng khoảng trắng) */
+  --brand-primary: 37 99 235;    /* Blue 600 */
+  --brand-secondary: 147 51 234; /* Purple 600 */
+  --brand-bg: 5 5 5;             /* #050505 */
+  --brand-surface: 17 17 17;     /* #111111 */
+}
+
+/* Scrollbar tùy chỉnh cho đẹp (Optional) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--brand-primary) / 0.3);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--brand-primary) / 0.8);
+}

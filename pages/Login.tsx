@@ -52,7 +52,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="min-h-screen bg-background text-white font-sans flex items-center justify-center p-6 relative overflow-hidden">
       <div
         className="absolute top-0 left-0 w-full h-full pointer-events-none"
-        style={{ background: `radial-gradient(circle at 50% 0%, ${brand.primary_color}20, transparent 70%)` }} // 20 là opacity hex
+        style={{ background: `radial-gradient(circle at 50% 0%, rgb(var(--brand-primary) / 0.2), transparent 70%)` }}
       ></div>
 
       <div className="w-full max-w-md relative z-10">
