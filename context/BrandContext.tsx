@@ -90,7 +90,9 @@ export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
         fetchSettings();
     }, []);
-
+    useEffect(() => {
+        applyTheme(settings);
+    }, [settings]);
     const updateFavicon = (url: string) => {
         if (!url) return;
         let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
