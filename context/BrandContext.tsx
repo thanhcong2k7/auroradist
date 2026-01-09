@@ -13,12 +13,26 @@ interface BrandSettings {
 const defaultSettings: BrandSettings = {
     app_name: 'Aurora Music Vietnam',
     logo_url: '/logo.png',
-    primary_color: '#2563eb',
-    secondary_color: '#9333ea',
+    primary_color: '#2563eb',   // Blue 600
+    secondary_color: '#9333ea', // Purple 600
     support_email: 'demo@example.com'
 };
 
 const BrandContext = createContext<BrandSettings>(defaultSettings);
+
+// Helper: Chuyển Hex sang RGB channels (ví dụ: "#ffffff" -> "255 255 255")
+const hexToRgbChannels = (hex: string) => {
+    let c: any;
+    if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+        c = hex.substring(1).split('');
+        if (c.length === 3) {
+            c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        return `${(c >> 16) & 255} ${(c >> 8) & 255} ${c & 255}`;
+    }
+    return '37 99 235'; // Default fallback (Blue 600) nếu hex lỗi
+}
 
 export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [settings, setSettings] = useState<BrandSettings>(defaultSettings);
@@ -31,6 +45,9 @@ export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 applyTheme(data);
                 document.title = data.app_name || 'Music Distribution';
                 updateFavicon(data.favicon_url);
+            } else {
+                // Apply default nếu chưa có data DB
+                applyTheme(defaultSettings);
             }
         };
         fetchSettings();
@@ -38,10 +55,14 @@ export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const applyTheme = (s: BrandSettings) => {
         const root = document.documentElement;
-        root.style.setProperty('--brand-primary', s.primary_color);
-        root.style.setProperty('--brand-secondary', s.secondary_color);
-        // Tính toán màu surface (nhạt hơn bg một chút) nếu cần
-        // root.style.setProperty('--brand-bg', s.bg_color);
+
+        // QUAN TRỌNG: Chuyển Hex sang RGB channels trước khi set
+        root.style.setProperty('--brand-primary', hexToRgbChannels(s.primary_color));
+        root.style.setProperty('--brand-secondary', hexToRgbChannels(s.secondary_color));
+
+        // Các màu không cần opacity modifiers thì giữ nguyên hex cũng được, 
+        // nhưng tốt nhất nên quy hoạch màu nền riêng.
+        // root.style.setProperty('--brand-bg', s.bg_color || '#000000');
     };
 
     const updateFavicon = (url: string) => {

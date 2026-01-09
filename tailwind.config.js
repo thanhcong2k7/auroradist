@@ -4,11 +4,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Định nghĩa màu động
         brand: {
-          primary: 'var(--brand-primary)',
-          secondary: 'var(--brand-secondary)',
-          bg: 'var(--brand-bg)',
+          // Cấu trúc này giúp Tailwind hiểu: rgb(R G B / alpha)
+          primary: 'rgb(var(--brand-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--brand-secondary) / <alpha-value>)',
+          bg: 'var(--brand-bg)', 
           surface: 'var(--brand-surface)',
         }
       }
