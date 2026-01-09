@@ -6,12 +6,12 @@ import { Release } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import { getResizedImage } from '@/services/utils';
 import { Link } from 'react-router-dom';
-
+import { useBrand } from '@/context/BrandContext';
 // Component con hiển thị thẻ thống kê
 const StatCard: React.FC<{ label: string; value: string; icon: any; change?: string; loading?: boolean }> = ({ label, value, icon: Icon, change, loading }) => (
-  <div className="bg-surface border border-white/5 p-5 rounded-xl hover:border-blue-500/20 transition-all group shadow-sm">
+  <div className="bg-surface border border-white/5 p-5 rounded-xl hover:border-brand-primary/20 transition-all group shadow-sm">
     <div className="flex justify-between items-start mb-3">
-      <div className="p-2 bg-white/5 rounded-lg group-hover:bg-blue-500/10 group-hover:text-blue-400 transition-colors">
+      <div className="p-2 bg-white/5 rounded-lg group-hover:bg-brand-primary/20 group-hover:text-brand-primary transition-colors">
         <Icon size={18} />
       </div>
       {/* Ẩn phần % change nếu = 0% để đỡ rối */}
@@ -31,6 +31,7 @@ const StatCard: React.FC<{ label: string; value: string; icon: any; change?: str
 );
 
 const Dashboard: React.FC = () => {
+  const brand = useBrand();
   const [stats, setStats] = useState<any>({
     totalStreams: "0", revenue: "$0.00", activeReleases: "0", monthlyListeners: "0"
   });
@@ -69,8 +70,8 @@ const Dashboard: React.FC = () => {
         <div>
           <h3 className="text-sm font-black uppercase text-yellow-500 tracking-wider">System Beta Access</h3>
           <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-            Welcome to Aurora {appVersion}-beta. Some features are currently under active development.
-            Distribution timelines may vary. Please report any anomalies via the <Link to="/support" className="text-blue-400 hover:underline">Support Node</Link>.
+            Welcome to {brand.app_name} {appVersion}-beta. Some features are currently under active development.
+            Distribution timelines may vary. Please report any anomalies via the <Link to="/support" className="text-brand-primary hover:underline">Support Node</Link>.
           </p>
         </div>
       </div>
@@ -78,7 +79,7 @@ const Dashboard: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black uppercase tracking-tight">System Overview</h1>
           <p className="text-gray-500 font-mono text-xs uppercase tracking-widest flex items-center gap-2 mt-1">
-            {loading ? <Loader2 size={12} className="animate-spin text-blue-500" /> : <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_lime]"></div>}
+            {loading ? <Loader2 size={12} className="animate-spin text-brand-primary" /> : <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_lime]"></div>}
             Data Streams Active
           </p>
         </div>
@@ -96,7 +97,7 @@ const Dashboard: React.FC = () => {
         {/* Chart Section */}
         <div className="lg:col-span-2 bg-surface border border-white/5 rounded-2xl p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold uppercase text-xs tracking-widest text-blue-500">Streaming Velocity</h3>
+            <h3 className="font-bold uppercase text-xs tracking-widest text-brand-primary">Streaming Velocity</h3>
             <span className="text-xs font-mono text-gray-400 uppercase border border-white/5 px-2 py-1 rounded">Last 12 Months</span>
           </div>
           <div className="h-[300px] w-full">
@@ -105,8 +106,8 @@ const Dashboard: React.FC = () => {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorStreams" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      <stop offset="5%" stopColor={brand.primary_color} stopOpacity={0.2} />
+                      <stop offset="95%" stopColor={brand.primary_color} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
@@ -114,11 +115,11 @@ const Dashboard: React.FC = () => {
                   <YAxis stroke="#333" fontSize={10} tickLine={false} axisLine={false} tickMargin={10} width={40} tickFormatter={(value) => value >= 1000 ? `${value / 1000}k` : value} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#050505', border: '1px solid #111', borderRadius: '12px' }}
-                    itemStyle={{ color: '#3b82f6', fontSize: '12px', fontWeight: 900, textTransform: 'uppercase' }}
+                    itemStyle={{ color: brand.primary_color, fontSize: '12px', fontWeight: 900, textTransform: 'uppercase' }}
                     labelStyle={{ display: 'none' }}
                     cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
                   />
-                  <Area type="monotone" dataKey="streams" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorStreams)" animationDuration={1500} />
+                  <Area type="monotone" dataKey="streams" stroke={brand.primary_color} strokeWidth={2} fillOpacity={1} fill="url(#colorStreams)" animationDuration={1500} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -132,7 +133,7 @@ const Dashboard: React.FC = () => {
 
         {/* Recent Releases */}
         <div className="bg-surface border border-white/5 rounded-2xl p-6 flex flex-col shadow-sm">
-          <h3 className="font-bold uppercase text-xs tracking-widest text-blue-500 mb-6">Recent Activity</h3>
+          <h3 className="font-bold uppercase text-xs tracking-widest text-brand-primary mb-6">Recent Activity</h3>
           <div className="flex-1 space-y-3 overflow-y-auto max-h-[300px] custom-scrollbar">
             {loading ? (
               Array(4).fill(0).map((_, i) => (

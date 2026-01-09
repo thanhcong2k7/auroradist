@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Key, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
-
+import { useBrand } from '@/context/BrandContext';
 interface LoginProps {
   onLogin: () => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const brand = useBrand();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   // LOGIC MỚI: Bỏ lưu token thủ công, Bỏ check null thủ công, Dùng error message động
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Logic cũ: if (!email || !password) return setError('Identity required.'); -> Đã bỏ, dùng 'required' ở input
 
     setLoading(true);
@@ -49,20 +50,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-background text-white font-sans flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background FX - GIỮ NGUYÊN GIAO DIỆN CŨ */}
-      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.1),transparent_70%)] pointer-events-none"></div>
+      <div
+        className="absolute top-0 left-0 w-full h-full pointer-events-none"
+        style={{ background: `radial-gradient(circle at 50% 0%, ${brand.primary_color}20, transparent 70%)` }} // 20 là opacity hex
+      ></div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="mb-12 text-center animate-fade-in">
-          <div className="text-5xl font-black tracking-tighter uppercase mb-2">
-            Aurora<span className="text-blue-500">.</span>
-          </div>
+          {brand.logo_url ? (
+            <img src={brand.logo_url} className="h-16 mx-auto mb-4" />
+          ) : (
+            <div className="text-5xl font-black ...">
+              {brand.app_name}<span className="text-brand-primary">.</span>
+            </div>
+          )}
           <p className="text-gray-400 font-mono text-xs tracking-[0.3em] uppercase opacity-50">Global Distribution Node</p>
         </div>
 
         <div className="bg-surface/50 border border-white/10 p-10 rounded-3xl shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center gap-4 mb-8 p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
-            <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400">
+          <div className="flex items-center gap-4 mb-8 p-4 bg-brand-primary/5 border border-brand-primary/10 rounded-2xl">
+            <div className="p-3 bg-brand-primary/10 rounded-xl text-brand-primary">
               <ShieldCheck size={24} />
             </div>
             <div>
@@ -78,7 +85,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
+                className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-brand-primary/50 transition-all shadow-inner placeholder:text-gray-600"
                 placeholder="user@aurora.com"
                 required // LOGIC MỚI: Thêm required để thay thế check tay JS
               />
@@ -91,7 +98,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
+                  className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-brand-primary/50 transition-all shadow-inner placeholder:text-gray-600"
                   placeholder="••••••••"
                   required // LOGIC MỚI: Thêm required
                 />

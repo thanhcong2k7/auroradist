@@ -77,14 +77,21 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
         className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-surface border-r border-white/10 transform transition-transform duration-300 lg:transform-none flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <img src={brand.logo_url} className="h-8" />
+          {brand.logo_url ? (
+            <img src={brand.logo_url} alt={brand.app_name} className="h-8 w-auto object-contain" />
+          ) : (
+            // Fallback nếu không có logo: Hiển thị Tên
+            <div className="text-xl font-black tracking-tighter uppercase text-white">
+              {brand.app_name}<span className="text-brand-primary">.</span>
+            </div>
+          )}
           <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
             <X size={20} />
           </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-          <div className="px-2 mb-2 text-xs font-mono text-blue-500 uppercase tracking-widest">Modules</div>
+          <div className="px-2 mb-2 text-xs font-mono text-brand-primary/80 uppercase tracking-widest">Modules</div>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -99,7 +106,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
               >
                 <item.icon size={18} className={isActive ? 'text-brand-primary' : 'text-gray-500 group-hover:text-white'} />
                 <span className="font-mono uppercase text-xs tracking-widest">{item.label}</span>
-                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />}
+                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-primary shadow-[0_0_10px_var(--brand-primary)]" />}
               </Link>
             );
           })}
@@ -147,7 +154,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </button>
 
           <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-gray-500 uppercase tracking-widest">
-            <span className="text-blue-500">SYS.STATUS: ONLINE</span>
+            <span className="text-brand-primary">SYS.STATUS: ONLINE</span>
             <span>//</span>
             <span>{currentTime.toLocaleDateString('en-GB')}</span>
             <span>//</span>
@@ -155,7 +162,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link to="/discography/new" className="px-4 py-1.5 text-xs font-black border border-white/20 hover:bg-white hover:text-black transition uppercase rounded-full tracking-widest">
+            <Link to="/discography/new" className="px-4 py-1.5 text-xs font-black border border-white/20 hover:bg-brand-primary hover:border-brand-primary hover:text-white transition uppercase rounded-full tracking-widest">
               Upload
             </Link>
           </div>
@@ -171,11 +178,11 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
 };
 
 const Layout: React.FC<LayoutProps> = (props) => {
-    return (
-        <MusicPlayerProvider>
-            <LayoutContent {...props} />
-        </MusicPlayerProvider>
-    );
+  return (
+    <MusicPlayerProvider>
+      <LayoutContent {...props} />
+    </MusicPlayerProvider>
+  );
 };
 
 export default Layout;

@@ -11,7 +11,7 @@ interface BrandSettings {
 }
 
 const defaultSettings: BrandSettings = {
-    app_name: 'Aurora Music',
+    app_name: 'Aurora Music Vietnam',
     logo_url: '/logo.png',
     primary_color: '#2563eb',
     secondary_color: '#9333ea',
@@ -29,8 +29,7 @@ export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (data) {
                 setSettings(data);
                 applyTheme(data);
-                // Cập nhật Title và Favicon trang web
-                document.title = data.app_name;
+                document.title = data.app_name || 'Music Distribution';
                 updateFavicon(data.favicon_url);
             }
         };
