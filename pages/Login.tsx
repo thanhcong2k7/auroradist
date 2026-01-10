@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Key, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 import { useBrand } from '@/context/BrandContext';
+
 interface LoginProps {
   onLogin: () => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const brand = useBrand();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,6 +30,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    
     // Logic cũ: if (!email || !password) return setError('Identity required.'); -> Đã bỏ, dùng 'required' ở input
 
     setLoading(true);
@@ -50,15 +51,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-background text-white font-sans flex items-center justify-center p-6 relative overflow-hidden">
-      <div
-        className="absolute top-0 left-0 w-full h-full pointer-events-none"
-        style={{ background: `radial-gradient(circle at 50% 0%, rgb(var(--brand-primary) / 0.2), transparent 70%)` }}
-      ></div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="mb-12 text-center animate-fade-in">
-          {brand.logo_url ? (
-            <img src={brand.logo_url} className="h-16 mx-auto mb-4" />
           ) : (
             <div className="text-5xl font-black ...">
               {brand.app_name}<span className="text-brand-primary">.</span>
@@ -68,8 +63,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         <div className="bg-surface/50 border border-white/10 p-10 rounded-3xl shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center gap-4 mb-8 p-4 bg-brand-primary/5 border border-brand-primary/10 rounded-2xl">
-            <div className="p-3 bg-brand-primary/10 rounded-xl text-brand-primary">
               <ShieldCheck size={24} />
             </div>
             <div>
@@ -85,7 +78,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-brand-primary/50 transition-all shadow-inner placeholder:text-gray-600"
+                className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
                 placeholder="user@aurora.com"
                 required // LOGIC MỚI: Thêm required để thay thế check tay JS
               />
@@ -98,7 +91,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-brand-primary/50 transition-all shadow-inner placeholder:text-gray-600"
+                  className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
                   placeholder="••••••••"
                   required // LOGIC MỚI: Thêm required
                 />
@@ -115,7 +108,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-5 bg-brand-primary hover:opacity-90 text-white font-bold uppercase tracking-wide rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
+              className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-wide rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
             >
               {loading ? (
                 <>Verifying <Loader2 className="animate-spin" size={18} /></>
