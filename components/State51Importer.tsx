@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { api, supabase } from '@/services/api';
 import { Upload, Loader2, CheckCircle2, AlertTriangle, FileText, DollarSign, CloudLightning } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function State51Importer() {
     const [step, setStep] = useState<'IDLE' | 'PARSING' | 'PROCESSING' | 'COMPLETE'>('IDLE');
@@ -16,54 +17,83 @@ export default function State51Importer() {
         setStep('PARSING');
         setLogs(prev => [`Reading file: ${file.name}...`]);
 
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-                analyzeData(results.data);
-            },
-            error: (err) => {
-                setLogs(prev => [`CSV Error: ${err.message}`]);
-                setStep('IDLE');
-            }
-        });
+        // Check extension
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+
+        if (fileExt === 'xlsx' || fileExt === 'xls') {
+            // --- EXCEL PARSING LOGIC ---
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+
+                    // Convert to JSON (raw: false ensures dates are read as strings if possible)
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'dd-mm-yy' });
+                    analyzeData(jsonData);
+                } catch (err: any) {
+                    setLogs(prev => [`Excel Error: ${err.message}`]);
+                    setStep('IDLE');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            // --- CSV PARSING LOGIC (Existing) ---
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: async (results) => {
+                    analyzeData(results.data);
+                },
+                error: (err) => {
+                    setLogs(prev => [`CSV Error: ${err.message}`]);
+                    setStep('IDLE');
+                }
+            });
+        }
     };
 
     const analyzeData = (rows: any[]) => {
         let revenueSum = 0;
         let reportMonth = '';
 
-        // Filter valid rows based on your sample data keys
+        // Filter valid rows
         const validRows = rows.filter(r => r['ISRC'] && r['UPC']);
 
         if (validRows.length === 0) {
-            setLogs(prev => ["No valid rows found. Check CSV headers (ISRC, UPC required)."]);
+            setLogs(prev => ["No valid rows found. Check headers (ISRC, UPC required)."]);
             setStep('IDLE');
             return;
         }
 
         validRows.forEach(row => {
-            // Parse 'Royalty GBP' from your sample data
             const amount = parseFloat(row['Royalty GBP'] || '0');
             if (!isNaN(amount)) {
                 revenueSum += amount;
             }
         });
 
-        // Determine Month from "Start" column (Format: 01-06-22 -> DD-MM-YY)
+        // Date Parsing (Handle Excel's slash format vs CSV dash format)
         if (validRows.length > 0 && validRows[0]['Start']) {
             try {
-                const dateParts = validRows[0]['Start'].split('-'); // [01, 06, 22]
+                // Normalize "01/06/22" to "01-06-22" just in case
+                const dateStr = validRows[0]['Start'].replace(/\//g, '-');
+                const dateParts = dateStr.split('-'); // [01, 06, 22] or [01, 06, 2022]
+
                 if (dateParts.length === 3) {
-                    // Convert 22 to 2022, 06 to 06, 01 to 01 -> YYYY-MM-DD
-                    reportMonth = `20${dateParts[2]}-${dateParts[1]}-01`;
+                    let year = dateParts[2];
+                    // Handle 2-digit year "22" -> "2022"
+                    if (year.length === 2) year = `20${year}`;
+
+                    reportMonth = `${year}-${dateParts[1]}-01`;
                 }
             } catch (e) {
                 console.error("Date parsing error", e);
             }
         }
 
-        // Fallback date if parsing failed
         if (!reportMonth) {
             reportMonth = new Date().toISOString().slice(0, 7) + '-01';
         }
@@ -213,7 +243,7 @@ export default function State51Importer() {
 
             {step === 'IDLE' || step === 'COMPLETE' ? (
                 <div className="border-2 border-dashed border-white/10 rounded-xl p-8 hover:bg-white/5 transition text-center cursor-pointer relative group">
-                    <input type="file" accept=".csv" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                    <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
                     <Upload className="mx-auto text-gray-500 mb-2 group-hover:text-blue-500 transition-colors" />
                     <p className="text-sm font-bold text-white">Upload Report File</p>
                     <p className="text-xs text-gray-500 mt-1 font-mono">Requires: Start, UPC, ISRC, Total Units, Royalty GBP</p>
