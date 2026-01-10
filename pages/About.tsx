@@ -69,7 +69,7 @@ const About: React.FC = () => {
                                 <h2 className="relative z-10 text-4xl font-black uppercase">{APP_NAME}</h2>
                             )}
                         </div>
-                        <h2 className="text-2xl font-black uppercase tracking-tight text-white">Aurora<span className="text-blue-500">.</span></h2>
+                        <h2 className="text-2xl font-black uppercase tracking-tight text-white">{APP_NAME}<span className="text-blue-500">.</span></h2>
                         <span className="text-xs font-mono text-gray-500 uppercase tracking-widest mt-2">Distribution Client</span>
                         <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-orange-400 mt-4 border border-orange-500/20">
                             {buildProd.toUpperCase()} BUILD
@@ -81,7 +81,7 @@ const About: React.FC = () => {
 
                         {/* Update Status Section */}
                         <div className="space-y-2">
-                            <h3 className="text-lg font-bold text-white">About Aurora</h3>
+                            <h3 className="text-lg font-bold text-white">About Dashboard</h3>
                             <div className="flex items-center gap-3 text-sm">
                                 {isChecking ? (
                                     <>
@@ -91,7 +91,7 @@ const About: React.FC = () => {
                                 ) : upToDate ? (
                                     <>
                                         <CheckCircle2 size={18} className="text-green-500" />
-                                        <span className="text-gray-300">Aurora is up to date</span>
+                                        <span className="text-gray-300">Dashboard is up to date</span>
                                     </>
                                 ) : (
                                     <span className="text-red-500">Update check failed</span>

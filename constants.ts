@@ -228,4 +228,4 @@ export const WALLET_SUMMARY = {
 export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Aurora';
 // If this URL is set, the app will use an Image Logo. If empty, it uses the Text Name.
 export const APP_LOGO_URL = import.meta.env.VITE_APP_LOGO_URL || ''; 
-export const COPYRIGHT_TEXT = `© ${new Date().getFullYear()} ${APP_NAME} Music. All rights reserved.`;
+export const COPYRIGHT_TEXT = `© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.`;
