@@ -83,6 +83,9 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
                 {APP_NAME}<span className="text-blue-500">.</span>
               </div>
             )}
+            <div className="text-xl font-black tracking-tighter uppercase text-white">
+              {APP_NAME}<span className="text-blue-500">.</span>
+            </div>
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
             <X size={20} />
