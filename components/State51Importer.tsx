@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import { api, supabase } from '@/services/api';
 import { Upload, Loader2, CheckCircle2, AlertTriangle, FileText, DollarSign, CloudLightning } from 'lucide-react';
-import * as XLSX from 'xlsx';
 
 export default function State51Importer() {
     const [step, setStep] = useState<'IDLE' | 'PARSING' | 'PROCESSING' | 'COMPLETE'>('IDLE');
@@ -17,11 +17,9 @@ export default function State51Importer() {
         setStep('PARSING');
         setLogs(prev => [`Reading file: ${file.name}...`]);
 
-        // Check extension
         const fileExt = file.name.split('.').pop()?.toLowerCase();
 
         if (fileExt === 'xlsx' || fileExt === 'xls') {
-            // --- EXCEL PARSING LOGIC ---
             const reader = new FileReader();
             reader.onload = (evt) => {
                 try {
@@ -29,8 +27,6 @@ export default function State51Importer() {
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-
-                    // Convert to JSON (raw: false ensures dates are read as strings if possible)
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'dd-mm-yy' });
                     analyzeData(jsonData);
                 } catch (err: any) {
@@ -40,7 +36,6 @@ export default function State51Importer() {
             };
             reader.readAsArrayBuffer(file);
         } else {
-            // --- CSV PARSING LOGIC (Existing) ---
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
@@ -59,11 +54,10 @@ export default function State51Importer() {
         let revenueSum = 0;
         let reportMonth = '';
 
-        // Filter valid rows
         const validRows = rows.filter(r => r['ISRC'] && r['UPC']);
 
         if (validRows.length === 0) {
-            setLogs(prev => ["No valid rows found. Check headers (ISRC, UPC required)."]);
+            setLogs(prev => ["No valid rows found. Check CSV headers (ISRC, UPC required)."]);
             setStep('IDLE');
             return;
         }
@@ -75,18 +69,13 @@ export default function State51Importer() {
             }
         });
 
-        // Date Parsing (Handle Excel's slash format vs CSV dash format)
         if (validRows.length > 0 && validRows[0]['Start']) {
             try {
-                // Normalize "01/06/22" to "01-06-22" just in case
                 const dateStr = validRows[0]['Start'].replace(/\//g, '-');
-                const dateParts = dateStr.split('-'); // [01, 06, 22] or [01, 06, 2022]
-
+                const dateParts = dateStr.split('-');
                 if (dateParts.length === 3) {
                     let year = dateParts[2];
-                    // Handle 2-digit year "22" -> "2022"
                     if (year.length === 2) year = `20${year}`;
-
                     reportMonth = `${year}-${dateParts[1]}-01`;
                 }
             } catch (e) {
@@ -116,7 +105,6 @@ export default function State51Importer() {
             // --- PHASE 1: PREPARE DATA MAPPING ---
             setLogs(prev => ["Fetching system track map...", ...prev]);
 
-            // Get all tracks to map ISRC -> Track ID / User ID
             const { data: dbTracks, error: trackError } = await supabase
                 .from('tracks')
                 .select('id, isrc, uid');
@@ -128,7 +116,7 @@ export default function State51Importer() {
                 if (t.isrc) isrcMap.set(t.isrc.trim().toUpperCase(), { id: t.id, uid: t.uid });
             });
 
-            // --- PHASE 2: REVENUE AGGREGATION & ANALYTICS PREP ---
+            // --- PHASE 2: REVENUE AGGREGATION ---
             setLogs(prev => ["Processing rows...", ...prev]);
 
             const revenuePayload: Record<string, number> = {};
@@ -139,32 +127,25 @@ export default function State51Importer() {
                 const isrc = row['ISRC']?.trim().toUpperCase();
                 const amount = parseFloat(row['Royalty GBP'] || '0');
                 const streams = parseInt(row['Total Units'] || '0');
-
-                // Parse Platform: "Boomplay - Boomplay" -> "BOOMPLAY"
                 const platformRaw = row['Music Service'] || 'Unknown';
                 const platform = platformRaw.split(' - ')[0].toUpperCase().trim();
-
                 const country = row['Country of Sale'] || 'GLOBAL';
 
-                // 1. Prepare Revenue (Aggregate by UPC)
                 if (amount > 0 && upc) {
                     revenuePayload[upc] = (revenuePayload[upc] || 0) + amount;
                 }
 
-                // 2. Prepare Analytics (Map to User via ISRC)
                 if (isrcMap.has(isrc)) {
                     const trackInfo = isrcMap.get(isrc);
-
-                    // Insert into analytics_daily (or detailed depending on your DB schema)
                     analyticsPayload.push({
-                        date: summary.month, // Use report start date
+                        date: summary.month,
                         track_id: trackInfo.id,
                         uid: trackInfo.uid,
                         platform: platform === 'UNKNOWN' ? 'OTHER' : platform,
                         country: country,
                         count: streams,
-                        type: 'STREAM', // Defaulting to stream for unit counts
-                        revenue: amount // Optional: Store row-level revenue if table supports it
+                        type: 'STREAM',
+                        revenue: amount
                     });
                 }
             }
@@ -172,13 +153,9 @@ export default function State51Importer() {
             // --- PHASE 3: EXECUTE ANALYTICS INSERT ---
             if (analyticsPayload.length > 0) {
                 setLogs(prev => [`Inserting ${analyticsPayload.length} analytics records...`, ...prev]);
-
-                // Assuming 'analytics_daily' is the table used in AdminAnalytics.tsx
-                // Use batching for large datasets
                 const batchSize = 1000;
                 for (let i = 0; i < analyticsPayload.length; i += batchSize) {
                     const batch = analyticsPayload.slice(i, i + batchSize);
-                    // Note: Ensure your DB table structure matches these fields
                     const { error: anaError } = await supabase.from('analytics_daily').insert(batch);
                     if (anaError) {
                         console.error("Analytics Error", anaError);
@@ -204,10 +181,17 @@ export default function State51Importer() {
 
                 if (rpcError) throw rpcError;
 
+                // [FIXED LOGIC HERE]
+                const successCount = rpcData.success_count ?? 0;
+                const errorCount = rpcData.error_count ?? 0;
+                const errors = rpcData.errors || [];
+
+                // Update logs with specific error messages
                 setLogs(prev => [
                     `✅ Revenue Distribution Complete`,
-                    `Success: ${rpcData.success_count || rpcData.processed_count}`,
-                    `Errors: ${rpcData.error_count}`,
+                    `Success: ${successCount}`,
+                    `Errors: ${errorCount}`,
+                    ...errors.map((e: string) => `❌ ${e}`), // Add detailed errors to log
                     ...prev
                 ]);
             } else {
@@ -230,7 +214,7 @@ export default function State51Importer() {
                     <h3 className="font-bold text-white text-lg flex items-center gap-2">
                         <CloudLightning className="text-blue-500" /> State51 Import Node
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">Processor for State51 Conspiracy CSV Format</p>
+                    <p className="text-xs text-gray-500 mt-1">Processor for State51 Conspiracy CSV/XLSX Format</p>
                 </div>
                 {summary && (
                     <div className="text-right">
@@ -246,7 +230,7 @@ export default function State51Importer() {
                     <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
                     <Upload className="mx-auto text-gray-500 mb-2 group-hover:text-blue-500 transition-colors" />
                     <p className="text-sm font-bold text-white">Upload Report File</p>
-                    <p className="text-xs text-gray-500 mt-1 font-mono">Requires: Start, UPC, ISRC, Total Units, Royalty GBP</p>
+                    <p className="text-xs text-gray-500 mt-1 font-mono">Supports .CSV, .XLSX, .XLS</p>
                 </div>
             ) : (
                 <div className="p-8 text-center border border-white/10 rounded-xl bg-black/50">
@@ -279,7 +263,7 @@ export default function State51Importer() {
             <div className="h-48 bg-black rounded-lg border border-white/10 p-4 overflow-y-auto font-mono text-[10px] space-y-1 custom-scrollbar">
                 {logs.length === 0 && <span className="text-gray-700">Waiting for input stream...</span>}
                 {logs.map((log, i) => (
-                    <div key={i} className={log.includes('ERROR') ? 'text-red-500' : log.includes('✅') ? 'text-green-500' : 'text-gray-400'}>
+                    <div key={i} className={log.includes('ERROR') || log.includes('❌') ? 'text-red-500' : log.includes('✅') ? 'text-green-500' : 'text-gray-400'}>
                         <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString()}]</span>
                         {log}
                     </div>
