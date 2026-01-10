@@ -20,7 +20,6 @@ import { UserProfile } from '@/types';
 import { api } from '@/services/api';
 import { MusicPlayerProvider } from './MusicPlayerContext';
 import GlobalPlayer from './MusicPlayer/GlobalPlayer';
-import { useBrand } from '@/context/BrandContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,7 +27,6 @@ interface LayoutProps {
 }
 
 const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
-  const brand = useBrand();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -77,7 +75,9 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
         className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-surface border-r border-white/10 transform transition-transform duration-300 lg:transform-none flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <img src={brand.logo_url} className="h-8" />
+          <div className="text-xl font-black tracking-tighter uppercase text-white">
+            Aurora<span className="text-blue-500">.</span>
+          </div>
           <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
             <X size={20} />
           </button>
@@ -93,11 +93,11 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
                 to={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                  ? 'bg-brand-primary/10 text-brand-primary border border-blue-600/20'
+                  ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
               >
-                <item.icon size={18} className={isActive ? 'text-brand-primary' : 'text-gray-500 group-hover:text-white'} />
+                <item.icon size={18} className={isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-white'} />
                 <span className="font-mono uppercase text-xs tracking-widest">{item.label}</span>
                 {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />}
               </Link>

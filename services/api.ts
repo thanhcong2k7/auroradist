@@ -681,17 +681,16 @@ export const api = {
     },
 
     savePayoutMethod: async (pm: Partial<PayoutMethod>) => {
-      const { data, error } = await supabase.rpc('save_secure_payout_method', {
-        p_type: pm.type,
-        p_name: pm.name,
-        p_details: pm.details, // Pass raw data, function encrypts it
-        p_account_holder: pm.account_holder,
-        p_bank_name: pm.bank_name,
-        p_swift_code: pm.swift_code
-      });
+      const userId = await getUserId();
+      const payload = { ...pm, uid: userId };
 
+      const { data, error } = await supabase
+        .from('payout_methods')
+        .upsert(payload)
+        .select()
+        .single();
       if (error) throw error;
-      return { success: true };
+      return data as PayoutMethod;
     },
 
     deletePayoutMethod: async (id: string) => {
@@ -871,6 +870,10 @@ export const api = {
       status?: string,
       rejection_reason?: string
     }) => {
+      // Khi update ngược lại DB, ta dùng snake_case (nếu cần) hoặc object mapping
+      // Tuy nhiên Supabase JS client đủ thông minh để map nếu key khớp column.
+      // Nhưng để chắc ăn, ta map thủ công payload update nếu tên khác nhau.
+      // Ở đây upc và status trùng tên nên ok.
       const { data, error } = await supabase
         .from('releases')
         .update(updates)
@@ -1058,18 +1061,6 @@ export const api = {
 
       return { success: true };
     },
-    saveReleaseMetadata: async (releaseId: number, metadata: any) => {
-      const { data, error } = await supabase.functions.invoke('admin-save-release-metadata', {
-        body: {
-          releaseId,
-          metadata
-        }
-      });
 
-      if (error) throw error; // Lỗi mạng hoặc lỗi gọi function
-      if (data && data.error) throw new Error(data.error); // Lỗi logic từ bên trong function
-
-      return data;
-    }
   }
 };

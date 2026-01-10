@@ -57,32 +57,6 @@ const AdminReleaseDetail: React.FC = () => {
         }
     };
 
-    const handleSaveDraft = async () => {
-        // Gom dữ liệu ISRC từ state isrcInputs
-        const isrcList = Object.entries(isrcInputs).map(([trackId, isrcCode]) => ({
-            id: Number(trackId),
-            isrc: isrcCode
-        }));
-
-        const payload = {
-            upc: upcInput,
-            isrcs: isrcList
-        };
-
-        setSubmitting(true);
-        try {
-            // Gọi hàm API bạn đã định nghĩa
-            await api.admin.saveReleaseMetadata(release.id, payload);
-
-            alert("Metadata saved successfully!");
-            // Không navigate đi đâu cả, để admin có thể tiếp tục sửa nếu muốn
-        } catch (err: any) {
-            console.error(err);
-            alert("Failed to save: " + err.message);
-        } finally {
-            setSubmitting(false);
-        }
-    };
     const isModerationMode = release?.status === 'CHECKING';
 
     const handleApprove = async () => {
@@ -153,6 +127,32 @@ const AdminReleaseDetail: React.FC = () => {
     const formatDateTime = (dateString: string) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleString('en-GB');
+    };
+    const handleSaveDraft = async () => {
+        // Gom dữ liệu ISRC từ state isrcInputs
+        const isrcList = Object.entries(isrcInputs).map(([trackId, isrcCode]) => ({
+            id: Number(trackId),
+            isrc: isrcCode
+        }));
+
+        const payload = {
+            upc: upcInput,
+            isrcs: isrcList
+        };
+
+        setSubmitting(true);
+        try {
+            // Gọi hàm API bạn đã định nghĩa
+            await api.admin.saveReleaseMetadata(release.id, payload);
+
+            alert("Metadata saved successfully!");
+            // Không navigate đi đâu cả, để admin có thể tiếp tục sửa nếu muốn
+        } catch (err: any) {
+            console.error(err);
+            alert("Failed to save: " + err.message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (loading || !release) return <div className="p-10 text-white flex justify-center"><div className="animate-spin w-6 h-6 border-2 border-white rounded-full border-t-transparent"></div></div>;

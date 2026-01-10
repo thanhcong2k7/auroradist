@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { Transaction, PayoutMethod } from '../types';
-import {
-    DollarSign, Clock, Loader2, CheckCircle2, X,
-    CreditCard, Trash2, ChevronLeft, ChevronRight, Filter
+import { 
+    DollarSign, Clock, Loader2, CheckCircle2, X, 
+    CreditCard, Trash2, ChevronLeft, ChevronRight, Filter 
 } from 'lucide-react';
 
 const Wallet: React.FC = () => {
-    const [transactions, setTransactions] = useState<any[]>([]);
+    const [transactions, setTransactions] = useState<any[]>([]); 
     const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
     const [loading, setLoading] = useState(true);
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -75,7 +75,7 @@ const Wallet: React.FC = () => {
     const indexOfLastItem = itemsPerPage === 'ALL' ? transactions.length : currentPage * itemsPerPage;
     const indexOfFirstItem = itemsPerPage === 'ALL' ? 0 : indexOfLastItem - itemsPerPage;
     const currentTransactions = transactions.slice(indexOfFirstItem, indexOfLastItem);
-
+    
     // Calculate Totals
     const totalPages = itemsPerPage === 'ALL' ? 1 : Math.ceil(transactions.length / itemsPerPage);
 
@@ -133,14 +133,14 @@ const Wallet: React.FC = () => {
             <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm flex flex-col">
                 <div className="p-5 border-b border-white/5 flex justify-between items-center bg-black/40">
                     <h3 className="font-bold uppercase tracking-widest text-xs">Operational Ledger</h3>
-
+                    
                     {/* Items Per Page Selector */}
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] text-gray-500 font-bold uppercase hidden sm:inline">Rows per page:</span>
                         <div className="relative">
-                            <select
-                                value={itemsPerPage}
-                                onChange={handleLimitChange}
+                            <select 
+                                value={itemsPerPage} 
+                                onChange={handleLimitChange} 
                                 className="bg-black border border-white/10 rounded-lg px-2 py-1 text-[10px] font-bold text-white focus:border-blue-500 outline-none appearance-none pr-6 cursor-pointer"
                             >
                                 <option value={5}>5</option>
@@ -195,8 +195,8 @@ const Wallet: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`text-[8px] font-black px-2 py-1 rounded border uppercase ${txn.status === 'COMPLETED' ? 'border-green-500/20 text-green-500 bg-green-500/5' :
-                                                txn.status === 'REJECTED' ? 'border-red-500/20 text-red-500 bg-red-500/5' :
-                                                    'border-yellow-500/20 text-yellow-500 bg-yellow-500/5'
+                                                    txn.status === 'REJECTED' ? 'border-red-500/20 text-red-500 bg-red-500/5' :
+                                                        'border-yellow-500/20 text-yellow-500 bg-yellow-500/5'
                                                 }`}>
                                                 {txn.status}
                                             </span>
