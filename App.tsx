@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -28,7 +28,6 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminDSPs from './pages/admin/AdminDSPs';
 import AdminSupport from './pages/admin/AdminSupport';
-import AdminBranding from './pages/admin/AdminBranding';
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
@@ -115,7 +114,7 @@ const App: React.FC = () => {
     return (
       <div className="h-screen w-screen bg-black flex items-center justify-center text-white font-mono">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           <span className="text-xs uppercase tracking-widest text-gray-500">Establishing Uplink...</span>
         </div>
       </div>
@@ -158,7 +157,6 @@ const App: React.FC = () => {
           </AdminRoute>
         }>
           <Route index element={<AdminDashboard />} />
-          <Route path="branding" element={<AdminBranding />} />
           <Route path="releases" element={<AdminReleases />} />
           <Route path="releases/:id" element={<AdminReleaseDetail />} />
           <Route path="dsps" element={<AdminDSPs />} />

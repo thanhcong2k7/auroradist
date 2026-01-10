@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Upload, File, Check, X, Loader2, Image as ImageIcon, FileAudio } from 'lucide-react';
 
 interface FileUploaderProps {
@@ -85,7 +85,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
             <div
                 className={`relative group border-2 border-dashed rounded-xl transition-all duration-200 overflow-hidden ${dragActive
-                        ? 'border-brand-primary bg-brand-primary/10'
+                        ? 'border-blue-500 bg-blue-500/10'
                         : currentUrl
                             ? 'border-green-500/30 bg-surface'
                             : 'border-white/10 hover:border-white/30 bg-black'
@@ -105,11 +105,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
                 {uploading && (
                     <div className="absolute inset-0 bg-black/80 z-20 flex flex-col items-center justify-center">
-                        <Loader2 className="animate-spin text-brand-primary mb-2" size={32} />
+                        <Loader2 className="animate-spin text-blue-500 mb-2" size={32} />
                         <div className="w-1/2 h-1 bg-white/20 rounded-full overflow-hidden">
-                            <div className="h-full bg-brand-primary transition-all duration-200" style={{ width: `${progress}%` }} />
+                            <div className="h-full bg-blue-500 transition-all duration-200" style={{ width: `${progress}%` }} />
                         </div>
-                        <p className="text-xs font-mono text-brand-primary mt-2">UPLOADING TO R2...</p>
+                        <p className="text-xs font-mono text-blue-400 mt-2">UPLOADING TO R2...</p>
                     </div>
                 )}
 
@@ -164,4 +164,3 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 };
 
 export default FileUploader;
-

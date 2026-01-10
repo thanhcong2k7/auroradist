@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, supabase } from '../services/api';
 import FileUploader from '../components/FileUploader';
@@ -394,7 +394,7 @@ const ReleaseForm: React.FC = () => {
                     <div className="flex gap-3">
                         <button onClick={() => setShowPreview(true)} className="px-3 py-2 border border-white/10 hover:bg-white hover:text-black text-white font-bold uppercase rounded transition flex items-center gap-2 text-sm"><Eye size={14} /></button>
                         <button onClick={() => handleSave('DRAFT')} disabled={loading} className="px-4 py-2 border border-white/10 hover:bg-white hover:text-black text-white font-bold uppercase rounded transition flex items-center gap-2 text-sm disabled:opacity-50"><Save size={14} /> Save Draft</button>
-                        <button onClick={() => handleSave('CHECKING')} disabled={loading} className="px-6 py-2 bg-brand-primary hover:bg-brand-primary text-white font-bold uppercase rounded shadow-[0_0_20px_rgba(37,99,235,0.3)] transition flex items-center gap-2 text-sm disabled:opacity-50">{loading ? <Loader2 className="animate-spin" size={14} /> : <><Send size={14} /> Distribute</>}</button>
+                        <button onClick={() => handleSave('CHECKING')} disabled={loading} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded shadow-[0_0_20px_rgba(37,99,235,0.3)] transition flex items-center gap-2 text-sm disabled:opacity-50">{loading ? <Loader2 className="animate-spin" size={14} /> : <><Send size={14} /> Distribute</>}</button>
                         <button onClick={() => navigate('/discography')} className="text-gray-500 hover:text-white transition px-2"><X size={24} /></button>
                     </div>
                 </div>
@@ -412,7 +412,7 @@ const ReleaseForm: React.FC = () => {
                     {/* Steps */}
                     <div className="flex border-b border-white/10 mt-6">
                         {[1, 2, 3].map(step => (
-                            <button key={step} onClick={() => setCurrentStep(step)} className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2 border-b-2 ${currentStep === step ? 'text-brand-primary border-brand-primary' : 'text-gray-400 hover:text-gray-400 border-transparent'}`}>
+                            <button key={step} onClick={() => setCurrentStep(step)} className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-colors flex items-center gap-2 border-b-2 ${currentStep === step ? 'text-blue-500 border-blue-500' : 'text-gray-400 hover:text-gray-400 border-transparent'}`}>
                                 {step === 1 ? '1. Metadata' : step === 2 ? '2. Assets' : '3. Delivery'}
                             </button>
                         ))}
@@ -432,30 +432,30 @@ const ReleaseForm: React.FC = () => {
                                     <div className="bg-surface border border-white/5 p-8 rounded-xl space-y-6">
                                         {/* Metadata Fields */}
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            <div className="md:col-span-2"><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Album Title <span className="text-red-500">*</span></label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-brand-primary transition font-bold text-lg" placeholder="e.g. Neon Horizon" /></div>
-                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Version</label><input type="text" value={version} onChange={(e) => setVersion(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-brand-primary transition font-bold" placeholder="e.g. Remix" /></div>
+                                            <div className="md:col-span-2"><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Album Title <span className="text-red-500">*</span></label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold text-lg" placeholder="e.g. Neon Horizon" /></div>
+                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Version</label><input type="text" value={version} onChange={(e) => setVersion(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold" placeholder="e.g. Remix" /></div>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-6">
-                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Format <span className="text-red-500">*</span></label><select value={format} onChange={(e) => setFormat(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-brand-primary transition">{RELEASE_FORMATS.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
-                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Label Imprint</label><select value={labelId} onChange={(e) => setLabelId(Number(e.target.value))} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-brand-primary transition"><option value="">-- Independent --</option>{labels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select></div>
+                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Format <span className="text-red-500">*</span></label><select value={format} onChange={(e) => setFormat(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition">{RELEASE_FORMATS.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
+                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Label Imprint</label><select value={labelId} onChange={(e) => setLabelId(Number(e.target.value))} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition"><option value="">-- Independent --</option>{labels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select></div>
                                         </div>
 
-                                        <div className="p-4 bg-blue-900/10 border border-brand-primary/20 rounded-lg space-y-4">
+                                        <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg space-y-4">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label><select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-brand-primary"><option value="">Select Genre</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
+                                                <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label><select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500"><option value="">Select Genre</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
                                                 <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Sub-Genre</label><input type="text" value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs" /></div>
-                                                <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label><select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-brand-primary">{LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
+                                                <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label><select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">{LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Release Date <span className="text-red-500">*</span></label><input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-brand-primary transition text-gray-300" /></div>
-                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Orig. Release Date</label><input type="date" value={originalReleaseDate} onChange={(e) => setOriginalReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-brand-primary transition text-gray-300" /></div>
+                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Release Date <span className="text-red-500">*</span></label><input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
+                                            <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Orig. Release Date</label><input type="date" value={originalReleaseDate} onChange={(e) => setOriginalReleaseDate(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300" /></div>
                                         </div>
                                         <div className="space-y-2"><h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">©</span> Copyright <span className="text-red-500">*</span></h3><div className="flex gap-4"><div className="w-24"><input type="text" value={copyrightYear} onChange={(e) => setCopyrightYear(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center" placeholder="Year" /></div><div className="flex-1"><input type="text" value={copyrightLine} onChange={(e) => setCopyrightLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div></div></div>
                                         <div className="space-y-2 mt-4"><h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">℗</span> Phonogram <span className="text-red-500">*</span></h3><div className="flex gap-4"><div className="w-24"><input type="text" value={phonogramYear} onChange={(e) => setPhonogramYear(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center" placeholder="Year" /></div><div className="flex-1"><input type="text" value={phonogramLine} onChange={(e) => setPhonogramLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div></div></div>
-                                        <div className="space-y-2 mt-4"><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">UPC / Barcode</label><input type="text" value={upc} onChange={(e) => setUpc(e.target.value)} maxLength={13} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-brand-primary transition" placeholder="Auto-assigned if empty" /></div>
+                                        <div className="space-y-2 mt-4"><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">UPC / Barcode</label><input type="text" value={upc} onChange={(e) => setUpc(e.target.value)} maxLength={13} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition" placeholder="Auto-assigned if empty" /></div>
                                     </div>
                                 </div>
                             </>
@@ -467,7 +467,7 @@ const ReleaseForm: React.FC = () => {
                                 <div className="bg-surface border border-white/5 rounded-xl overflow-hidden">
                                     <div className="p-6 border-b border-white/10 flex justify-between items-center">
                                         <h3 className="font-bold uppercase tracking-wider text-sm flex items-center gap-2"><Disc size={16} /> Tracklist <span className="text-red-500">*</span></h3>
-                                        <button onClick={openTrackManager} className="px-4 py-2 bg-brand-primary hover:bg-brand-primary text-white font-bold uppercase rounded text-xs flex items-center gap-2 transition"><Plus size={14} /> Add Tracks</button>
+                                        <button onClick={openTrackManager} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs flex items-center gap-2 transition"><Plus size={14} /> Add Tracks</button>
                                     </div>
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-black/50 text-gray-400 font-sans text-xs uppercase">
@@ -486,7 +486,7 @@ const ReleaseForm: React.FC = () => {
                                                     <td className="px-6 py-4 font-mono text-gray-500">{idx + 1}</td>
                                                     <td className="px-6 py-4 font-bold">{track.name}</td>
                                                     <td className="px-6 py-4 text-gray-400">{track.artists?.map(a => a.name).join(', ') || '-'}</td>
-                                                    <td className="px-6 py-4 font-mono text-xs text-brand-primary">{(track as any).tiktokClipStartTime || '00:00'}</td>
+                                                    <td className="px-6 py-4 font-mono text-xs text-blue-400">{(track as any).tiktokClipStartTime || '00:00'}</td>
                                                     <td className="px-6 py-4 text-right font-mono text-gray-400">{track.duration}</td>
                                                     <td className="px-6 py-4 text-center">
                                                         <button
@@ -520,8 +520,8 @@ const ReleaseForm: React.FC = () => {
                                 <div className="bg-surface border border-white/5 rounded-xl p-6">
                                     <h3 className="font-bold uppercase tracking-wider text-sm mb-4 flex items-center gap-2"><Map size={16} /> Territories</h3>
                                     <div className="flex flex-col md:flex-row gap-4">
-                                        <div onClick={() => setIsWorldwide(true)} className={`flex-1 p-4 rounded-xl border cursor-pointer transition ${isWorldwide ? 'bg-brand-primary/10 border-brand-primary text-white' : 'bg-black/40 border-white/10 text-gray-500'}`}>
-                                            <div className="flex items-center justify-between mb-2"><span className="font-bold text-sm uppercase">Worldwide</span>{isWorldwide && <CheckCircle2 size={18} className="text-brand-primary" />}</div>
+                                        <div onClick={() => setIsWorldwide(true)} className={`flex-1 p-4 rounded-xl border cursor-pointer transition ${isWorldwide ? 'bg-blue-600/10 border-blue-500 text-white' : 'bg-black/40 border-white/10 text-gray-500'}`}>
+                                            <div className="flex items-center justify-between mb-2"><span className="font-bold text-sm uppercase">Worldwide</span>{isWorldwide && <CheckCircle2 size={18} className="text-blue-500" />}</div>
                                         </div>
                                         <div className={`flex-1 p-4 rounded-xl border cursor-not-allowed opacity-50 bg-black/20 border-white/5`}><div className="flex items-center justify-between mb-2"><span className="font-bold text-sm uppercase">Specific Territories</span></div></div>
                                     </div>
@@ -530,17 +530,17 @@ const ReleaseForm: React.FC = () => {
                                 <div className="bg-surface border border-white/5 rounded-xl p-8">
                                     <div className="flex justify-between items-center mb-6">
                                         <h3 className="font-bold uppercase tracking-wider text-sm flex items-center gap-2"><Globe size={16} /> Stores <span className="text-red-500">*</span></h3>
-                                        <button onClick={toggleAllStores} className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition px-3 py-1.5 bg-brand-primary/10 rounded-lg">{selectedStores.length > 0 ? 'Deselect All' : 'Select All'}</button>
+                                        <button onClick={toggleAllStores} className="text-[10px] font-bold uppercase tracking-widest text-blue-500 hover:text-white transition px-3 py-1.5 bg-blue-500/10 rounded-lg">{selectedStores.length > 0 ? 'Deselect All' : 'Select All'}</button>
                                     </div>
                                     {availableDsps.length === 0 ? <Loader2 className="animate-spin mx-auto" /> : (
                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                             {availableDsps.filter(d => d.isEnabled).map((dsp) => {
                                                 const isSelected = selectedStores.includes(dsp.code);
                                                 return (
-                                                    <div key={dsp.id} onClick={() => toggleStore(dsp.code)} className={`p-4 rounded-xl border cursor-pointer transition flex items-center gap-3 ${isSelected ? 'bg-brand-primary/10 border-brand-primary/50' : 'bg-black border-white/10 text-gray-500'}`}>
+                                                    <div key={dsp.id} onClick={() => toggleStore(dsp.code)} className={`p-4 rounded-xl border cursor-pointer transition flex items-center gap-3 ${isSelected ? 'bg-blue-600/10 border-blue-500/50' : 'bg-black border-white/10 text-gray-500'}`}>
                                                         <div className="bg-white/5 p-1.5 rounded-lg"><DSPLogo code={dsp.code} url={dsp.logoUrl} name={dsp.name} size={20} /></div>
                                                         <span className="font-bold text-xs uppercase truncate">{dsp.name}</span>
-                                                        {isSelected && <CheckCircle2 size={16} className="text-brand-primary ml-auto" />}
+                                                        {isSelected && <CheckCircle2 size={16} className="text-blue-400 ml-auto" />}
                                                     </div>
                                                 );
                                             })}
@@ -556,9 +556,9 @@ const ReleaseForm: React.FC = () => {
             {/* Bottom Nav */}
             <div className="z-40 bg-[#0A0A0A] border-t border-white/10 px-6 lg:px-8 py-4 w-full">
                 <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
-                    <div className="w-1/3 flex justify-start">{currentStep > 1 && (<button onClick={goBack} className="flex items-center gap-2 group hover:opacity-80 transition"><ArrowLeft className="w-5 h-5 text-brand-primary" /><span className="text-xs font-bold uppercase text-gray-300 group-hover:text-white transition-colors tracking-widest">Back</span></button>)}</div>
+                    <div className="w-1/3 flex justify-start">{currentStep > 1 && (<button onClick={goBack} className="flex items-center gap-2 group hover:opacity-80 transition"><ArrowLeft className="w-5 h-5 text-blue-500" /><span className="text-xs font-bold uppercase text-gray-300 group-hover:text-white transition-colors tracking-widest">Back</span></button>)}</div>
                     <div className="w-1/3 flex justify-center"><div className="text-xs font-mono font-bold text-gray-400 uppercase tracking-widest border border-white/10 px-3 py-1 rounded bg-black">Step {currentStep} / 3</div></div>
-                    <div className="w-1/3 flex justify-end">{currentStep < 3 && (<button onClick={goNext} className="flex items-center gap-2 group hover:opacity-80 transition"><span className="text-xs font-bold uppercase text-gray-300 group-hover:text-white transition-colors tracking-widest">Next</span><ArrowRight className="w-5 h-5 text-brand-primary" /></button>)}</div>
+                    <div className="w-1/3 flex justify-end">{currentStep < 3 && (<button onClick={goNext} className="flex items-center gap-2 group hover:opacity-80 transition"><span className="text-xs font-bold uppercase text-gray-300 group-hover:text-white transition-colors tracking-widest">Next</span><ArrowRight className="w-5 h-5 text-blue-500" /></button>)}</div>
                 </div>
             </div>
 
@@ -569,7 +569,7 @@ const ReleaseForm: React.FC = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
                     <div className="bg-surface border border-white/10 rounded-xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
                         <div className="p-5 border-b border-white/10 flex justify-between items-center bg-black/40">
-                            <div><h3 className="font-bold uppercase text-lg text-brand-primary">{modalView === 'BROWSE' ? 'Select from Catalog' : 'Track Metadata'}</h3><p className="text-xs text-gray-400 font-mono mt-1">{modalView === 'BROWSE' ? 'Reuse existing masters' : 'Edit details & credits'}</p></div>
+                            <div><h3 className="font-bold uppercase text-lg text-blue-500">{modalView === 'BROWSE' ? 'Select from Catalog' : 'Track Metadata'}</h3><p className="text-xs text-gray-400 font-mono mt-1">{modalView === 'BROWSE' ? 'Reuse existing masters' : 'Edit details & credits'}</p></div>
                             <button onClick={() => setShowTrackModal(false)}><X size={20} className="text-gray-500 hover:text-white" /></button>
                         </div>
                         {modalView === 'EDIT' && Object.keys(trackErrors).length > 0 && (<div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2 flex items-center gap-2"><AlertCircle size={14} className="text-red-500" /><span className="text-xs text-red-400 font-mono font-bold">Please fix errors in highlighted tabs.</span></div>)}
@@ -577,9 +577,9 @@ const ReleaseForm: React.FC = () => {
                         {/* Tabs (Edit Mode) */}
                         {modalView === 'EDIT' && (
                             <div className="flex border-b border-white/5 bg-black/60">
-                                <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'GENERAL' ? 'border-brand-primary text-brand-primary bg-brand-primary/5' : 'border-transparent text-gray-400'} ${trackErrors.name ? 'text-red-400' : ''}`}>1. General</button>
-                                <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'CREDITS' ? 'border-brand-primary text-brand-primary bg-brand-primary/5' : 'border-transparent text-gray-400'} ${(trackErrors.artists || trackErrors.contributors) ? 'text-red-400' : ''}`}>2. Credits</button>
-                                <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'LYRICS' ? 'border-brand-primary text-brand-primary bg-brand-primary/5' : 'border-transparent text-gray-400'}`}>3. Content</button>
+                                <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'GENERAL' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${trackErrors.name ? 'text-red-400' : ''}`}>1. General</button>
+                                <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'CREDITS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${(trackErrors.artists || trackErrors.contributors) ? 'text-red-400' : ''}`}>2. Credits</button>
+                                <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'LYRICS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'}`}>3. Content</button>
                             </div>
                         )}
 
@@ -591,7 +591,7 @@ const ReleaseForm: React.FC = () => {
                                             const isAdded = releaseTracks.some(t => t.id === track.id);
                                             return (
                                                 <div key={track.id} onClick={() => !isAdded && handleAddTrackToRelease(track)} className={`p-3 flex items-center justify-between border border-transparent rounded-lg hover:bg-white/5 transition cursor-pointer group ${isAdded ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                                    <div className="flex items-center gap-3"><div className="w-10 h-10 bg-white/5 rounded flex items-center justify-center text-gray-500 font-mono text-xs border border-white/5"><FileAudio size={16} /></div><div><div className="font-bold text-sm text-white group-hover:text-brand-primary transition">{track.name}</div><div className="text-xs text-gray-500 font-mono flex gap-2"><span>{track.isrc || 'NO ISRC'}</span><span>•</span><span>{track.artists[0]?.name}</span></div></div></div>
+                                                    <div className="flex items-center gap-3"><div className="w-10 h-10 bg-white/5 rounded flex items-center justify-center text-gray-500 font-mono text-xs border border-white/5"><FileAudio size={16} /></div><div><div className="font-bold text-sm text-white group-hover:text-blue-400 transition">{track.name}</div><div className="text-xs text-gray-500 font-mono flex gap-2"><span>{track.isrc || 'NO ISRC'}</span><span>•</span><span>{track.artists[0]?.name}</span></div></div></div>
                                                     {isAdded ? <CheckCircle2 size={16} className="text-green-500" /> : <Plus size={16} className="text-gray-600 group-hover:text-white" />}
                                                 </div>
                                             )
@@ -603,20 +603,20 @@ const ReleaseForm: React.FC = () => {
                                         <div className="space-y-6">
                                             <div className="bg-black/20 p-4 rounded-xl border border-white/5"><FileUploader type="audio" accept="audio/wav,audio/flac,audio/mp3" label="Master File *" currentUrl={currentTrack.audioUrl} onUploadComplete={async (url, file) => setCurrentTrack({ ...currentTrack, audioUrl: url, duration: await getAudioDuration(file) })} /></div>
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-1 col-span-2"><label className="text-xs uppercase font-bold text-gray-500">Track Title <span className="text-red-500">*</span></label><input type="text" value={currentTrack.name || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, name: e.target.value })} className={`w-full bg-black border ${trackErrors.name ? 'border-red-500' : 'border-white/10'} rounded-lg px-4 py-3 text-sm font-bold focus:border-brand-primary outline-none`} placeholder="Song Name" /></div>
-                                                <div className="space-y-1"><label className="text-xs uppercase font-bold text-gray-500">ISRC Code</label><input type="text" value={currentTrack.isrc || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, isrc: e.target.value.toUpperCase() })} className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-brand-primary outline-none uppercase" placeholder="US-XXX-24..." /></div>
-                                                <div className="space-y-1"><label className="text-xs uppercase font-bold text-gray-500">Duration</label><input type="text" value={currentTrack.duration || ''} readOnly className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-brand-primary outline-none" placeholder="03:45" /></div>
+                                                <div className="space-y-1 col-span-2"><label className="text-xs uppercase font-bold text-gray-500">Track Title <span className="text-red-500">*</span></label><input type="text" value={currentTrack.name || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, name: e.target.value })} className={`w-full bg-black border ${trackErrors.name ? 'border-red-500' : 'border-white/10'} rounded-lg px-4 py-3 text-sm font-bold focus:border-blue-500 outline-none`} placeholder="Song Name" /></div>
+                                                <div className="space-y-1"><label className="text-xs uppercase font-bold text-gray-500">ISRC Code</label><input type="text" value={currentTrack.isrc || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, isrc: e.target.value.toUpperCase() })} className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none uppercase" placeholder="US-XXX-24..." /></div>
+                                                <div className="space-y-1"><label className="text-xs uppercase font-bold text-gray-500">Duration</label><input type="text" value={currentTrack.duration || ''} readOnly className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none" placeholder="03:45" /></div>
                                             </div>
-                                            <div className="bg-blue-900/10 border border-brand-primary/30 p-4 rounded-xl flex items-center justify-between">
+                                            <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl flex items-center justify-between">
                                                 <div><p className="text-sm font-bold text-white flex items-center gap-2"><Clock size={16} /> TikTok Clip Start</p><p className="text-xs text-gray-400 mt-1">Defaults to 00:00 if empty.</p></div>
-                                                <input type="text" value={currentTrack.tiktokClipStartTime || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, tiktokClipStartTime: e.target.value })} placeholder="00:00" className="w-24 bg-black border border-white/20 rounded-lg px-3 py-2 text-center font-mono font-bold text-white focus:border-brand-primary outline-none" />
+                                                <input type="text" value={currentTrack.tiktokClipStartTime || ''} onChange={(e) => setCurrentTrack({ ...currentTrack, tiktokClipStartTime: e.target.value })} placeholder="00:00" className="w-24 bg-black border border-white/20 rounded-lg px-3 py-2 text-center font-mono font-bold text-white focus:border-blue-500 outline-none" />
                                             </div>
                                         </div>
                                     )}
                                     {trackTab === 'CREDITS' && (
                                         <div className="space-y-8">
                                             <div className={trackErrors.artists ? "p-3 border border-red-500/30 bg-red-500/5 rounded-xl" : ""}>
-                                                <div className="flex justify-between items-center mb-2"><label className="text-xs uppercase font-bold text-brand-primary">Performing Artists <span className="text-red-500">*</span></label><button onClick={() => { const isFirst = (currentTrack.artists || []).length === 0; setCurrentTrack({ ...currentTrack, artists: [...(currentTrack.artists || []), { name: '', role: isFirst ? 'Primary' : 'Featured' }] }); }} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button></div>
+                                                <div className="flex justify-between items-center mb-2"><label className="text-xs uppercase font-bold text-blue-500">Performing Artists <span className="text-red-500">*</span></label><button onClick={() => { const isFirst = (currentTrack.artists || []).length === 0; setCurrentTrack({ ...currentTrack, artists: [...(currentTrack.artists || []), { name: '', role: isFirst ? 'Primary' : 'Featured' }] }); }} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button></div>
                                                 <div className="space-y-2">
                                                     {currentTrack.artists?.map((a, i) => (
                                                         <div key={i} className="flex gap-2"><select value={a.role} onChange={e => updateArtist(i, 'role', e.target.value)} className="w-24 bg-black border border-white/10 rounded px-2 py-2 text-xs outline-none"><option value="Primary">Primary</option><option value="Featured">Featured</option><option value="Remixer">Remixer</option></select><div className="flex-1 relative"><input list={`artist-suggestions-${i}`} value={a.name} onChange={e => updateArtist(i, 'name', e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none" placeholder="Artist Name" /><datalist id={`artist-suggestions-${i}`}>{availableArtists.map(artist => <option key={artist.id} value={artist.name} />)}</datalist></div><button onClick={() => { const copy = currentTrack.artists!.filter((_, idx) => idx !== i); setCurrentTrack({ ...currentTrack, artists: copy }); }} className="p-2 text-gray-500 hover:text-red-500"><X size={14} /></button></div>
@@ -624,7 +624,7 @@ const ReleaseForm: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className={trackErrors.contributors ? "p-3 border border-red-500/30 bg-red-500/5 rounded-xl" : ""}>
-                                                <div className="flex justify-between items-center mb-2"><label className="text-xs uppercase font-bold text-brand-primary">Credits (Composer/Producer) <span className="text-red-500">*</span></label><button onClick={() => setCurrentTrack({ ...currentTrack, contributors: [...(currentTrack.contributors || []), { name: '', role: 'Composer' }] })} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button></div>
+                                                <div className="flex justify-between items-center mb-2"><label className="text-xs uppercase font-bold text-blue-500">Credits (Composer/Producer) <span className="text-red-500">*</span></label><button onClick={() => setCurrentTrack({ ...currentTrack, contributors: [...(currentTrack.contributors || []), { name: '', role: 'Composer' }] })} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button></div>
                                                 <div className="space-y-2">
                                                     {currentTrack.contributors?.map((c, i) => (
                                                         <div key={i} className="flex gap-2"><div className="w-1/3 flex flex-col gap-1"><select value={c.role} onChange={e => updateContributor(i, 'role', e.target.value)} className="w-full bg-black border border-white/10 rounded px-2 py-2 text-xs outline-none"><option value="Composer">Composer</option><option value="Producer">Producer</option><option value="Lyricist">Lyricist</option><option value="Performer">Performer</option></select></div><input value={c.name} onChange={e => updateContributor(i, 'name', e.target.value)} className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none" placeholder="Full Name" /><button onClick={() => removeContributor(i)} className="p-2 text-gray-500 hover:text-red-500"><X size={14} /></button></div>
@@ -637,9 +637,9 @@ const ReleaseForm: React.FC = () => {
                                         <div className="space-y-6">
                                             <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-4">
                                                 <div className="flex items-center justify-between"><span className="text-sm font-bold">Explicit Content?</span><input type="checkbox" checked={currentTrack.isExplicit} onChange={e => setCurrentTrack({ ...currentTrack, isExplicit: e.target.checked })} className="w-5 h-5 accent-red-500" /></div>
-                                                <div className="flex items-center justify-between pt-4 border-t border-white/5"><span className="text-sm font-bold">Instrumental? (No Lyrics)</span><input type="checkbox" checked={!currentTrack.hasLyrics} onChange={e => setCurrentTrack({ ...currentTrack, hasLyrics: !e.target.checked })} className="w-5 h-5 accent-brand-primary" /></div>
+                                                <div className="flex items-center justify-between pt-4 border-t border-white/5"><span className="text-sm font-bold">Instrumental? (No Lyrics)</span><input type="checkbox" checked={!currentTrack.hasLyrics} onChange={e => setCurrentTrack({ ...currentTrack, hasLyrics: !e.target.checked })} className="w-5 h-5 accent-blue-500" /></div>
                                             </div>
-                                            {currentTrack.hasLyrics && <div className="space-y-3 animate-fade-in"><label className="text-xs uppercase font-bold text-gray-500">Lyrics Text</label><textarea value={currentTrack.lyricsText || ''} onChange={e => setCurrentTrack({ ...currentTrack, lyricsText: e.target.value })} className="w-full h-40 bg-black border border-white/10 rounded-xl p-4 text-xs font-mono focus:border-brand-primary outline-none" placeholder="Paste lyrics here..." /></div>}
+                                            {currentTrack.hasLyrics && <div className="space-y-3 animate-fade-in"><label className="text-xs uppercase font-bold text-gray-500">Lyrics Text</label><textarea value={currentTrack.lyricsText || ''} onChange={e => setCurrentTrack({ ...currentTrack, lyricsText: e.target.value })} className="w-full h-40 bg-black border border-white/10 rounded-xl p-4 text-xs font-mono focus:border-blue-500 outline-none" placeholder="Paste lyrics here..." /></div>}
                                         </div>
                                     )}
                                 </div>
@@ -649,12 +649,12 @@ const ReleaseForm: React.FC = () => {
                         <div className="p-4 border-t border-white/10 bg-black/40 flex justify-end gap-2">
                             <button onClick={() => { setShowTrackModal(false); setIsTracksDialogOpen(false); }} className="px-4 py-2 border border-white/10 rounded text-xs text-white hover:bg-white/5 transition">Close</button>
                             {modalView === 'BROWSE' && (
-                                <button onClick={() => { setIsTracksDialogOpen(true); setCurrentTrack({ name: '', isrc: '', artists: [{ name: '', role: 'Primary' }], contributors: [{ name: '', role: 'Composer' }, { name: '', role: 'Producer' }], hasLyrics: false, isExplicit: false, status: 'READY' }); setModalView('EDIT'); setTrackTab('GENERAL'); }} className="px-6 py-2 bg-brand-primary hover:bg-brand-primary text-white font-bold uppercase rounded text-xs shadow-lg flex items-center gap-2">
+                                <button onClick={() => { setIsTracksDialogOpen(true); setCurrentTrack({ name: '', isrc: '', artists: [{ name: '', role: 'Primary' }], contributors: [{ name: '', role: 'Composer' }, { name: '', role: 'Producer' }], hasLyrics: false, isExplicit: false, status: 'READY' }); setModalView('EDIT'); setTrackTab('GENERAL'); }} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs shadow-lg flex items-center gap-2">
                                     <Plus size={14} /> Add New Track
                                 </button>
                             )}
                             {modalView === 'EDIT' && (
-                                <button onClick={() => handleSaveTrackAdvanced()} className="px-6 py-2 bg-brand-primary hover:bg-brand-primary text-white font-bold uppercase rounded text-xs shadow-lg flex items-center gap-2">
+                                <button onClick={() => handleSaveTrackAdvanced()} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs shadow-lg flex items-center gap-2">
                                     <Save size={14} /> Confirm & Add
                                 </button>
                             )}

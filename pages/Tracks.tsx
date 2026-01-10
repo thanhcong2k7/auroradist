@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Track, TrackArtist, TrackContributor, Artist } from '../types';
 import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2, ListPlus, Check, Clock } from 'lucide-react';
@@ -234,18 +234,18 @@ const Tracks: React.FC = () => {
             <h1 className="text-3xl font-black uppercase tracking-tight">Master Recordings</h1>
             <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Global Audio Catalog</p>
           </div>
-          <button onClick={() => openEditor()} className="px-5 py-2.5 bg-brand-primary text-white font-bold uppercase hover:bg-brand-primary transition-all shadow-lg flex items-center gap-2 text-xs rounded-xl">
+          <button onClick={() => openEditor()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-lg flex items-center gap-2 text-xs rounded-xl">
             <Plus size={16} /> Ingest Master
           </button>
         </div>
 
         <div className="relative max-w-xl group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-primary transition-colors" size={18} />
-          <input type="text" placeholder="FILTER BY TITLE OR ISRC..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-surface border border-white/5 rounded-xl py-3.5 pl-12 pr-6 text-xs font-mono focus:border-brand-primary transition-all outline-none uppercase placeholder:text-gray-800" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+          <input type="text" placeholder="FILTER BY TITLE OR ISRC..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-surface border border-white/5 rounded-xl py-3.5 pl-12 pr-6 text-xs font-mono focus:border-blue-500 transition-all outline-none uppercase placeholder:text-gray-800" />
         </div>
 
         {loading && tracks.length === 0 ? (
-          <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-brand-primary" /></div>
+          <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
         ) : (
           <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-xl">
             <table className="w-full text-left text-sm">
@@ -264,17 +264,17 @@ const Tracks: React.FC = () => {
                   const isActive = isCurrent && isPlaying;
                   const isInQueue = playlist.some(t => t.id === track.id);
                   return (
-                    <tr key={track.id} className={`transition-colors group ${isCurrent ? 'bg-brand-primary/10' : 'hover:bg-white/[0.02]'}`}>
+                    <tr key={track.id} className={`transition-colors group ${isCurrent ? 'bg-blue-600/10' : 'hover:bg-white/[0.02]'}`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <button
                             onClick={() => handleAddToQueue(track)}
                             disabled={!track.audioUrl}
                             className={`p-2 rounded-lg transition ${isActive
-                              ? 'bg-brand-primary text-white'
+                              ? 'bg-blue-600 text-white'
                               : isInQueue
                                 ? 'bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white' // Style khi đã có trong queue
-                                : 'bg-white/5 text-gray-500 hover:bg-brand-primary hover:text-white'
+                                : 'bg-white/5 text-gray-500 hover:bg-blue-600 hover:text-white'
                               }`}
                             title={isActive ? "Now Playing" : isInQueue ? "In Queue" : "Add to Playlist"}
                           >
@@ -306,7 +306,7 @@ const Tracks: React.FC = () => {
                       <td className="px-6 py-4 text-gray-500 font-mono text-xs">{track.isrc || 'PENDING'}</td>
                       <td className="px-6 py-4 text-right text-gray-500 font-mono">{track.duration}</td>
                       <td className="px-6 py-4 text-right">
-                        <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-brand-primary transition opacity-0 group-hover:opacity-100"><Plus size={16} /></button>
+                        <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-0 group-hover:opacity-100"><Plus size={16} /></button>
                       </td>
                     </tr>
                   );
@@ -321,7 +321,7 @@ const Tracks: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
           <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-3xl h-[75vh] flex flex-col shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
-              <h3 className="font-bold uppercase tracking-widest text-xs text-brand-primary">Asset Synchronizer</h3>
+              <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Asset Synchronizer</h3>
               <button onClick={() => setShowModal(false)}><X size={20} className="text-gray-500 hover:text-white" /></button>
             </div>
 
@@ -338,9 +338,9 @@ const Tracks: React.FC = () => {
             )}
 
             <div className="flex border-b border-white/5 bg-black/60">
-              <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'GENERAL' ? 'border-brand-primary text-brand-primary bg-brand-primary/5' : 'border-transparent text-gray-400'} ${(errors.name || errors.audioUrl || errors.isrc) && trackTab !== 'GENERAL' ? 'text-red-400' : ''}`}>1. Audio</button>
-              <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'CREDITS' ? 'border-brand-primary text-brand-primary bg-brand-primary/5' : 'border-transparent text-gray-400'} ${(errors.artists || errors.contributors) && trackTab !== 'CREDITS' ? 'text-red-400' : ''}`}>2. Credits</button>
-              <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'LYRICS' ? 'border-brand-primary text-brand-primary bg-brand-primary/5' : 'border-transparent text-gray-400'}`}>3. Content</button>
+              <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'GENERAL' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${(errors.name || errors.audioUrl || errors.isrc) && trackTab !== 'GENERAL' ? 'text-red-400' : ''}`}>1. Audio</button>
+              <button onClick={() => setTrackTab('CREDITS')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'CREDITS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${(errors.artists || errors.contributors) && trackTab !== 'CREDITS' ? 'text-red-400' : ''}`}>2. Credits</button>
+              <button onClick={() => setTrackTab('LYRICS')} className={`flex-1 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'LYRICS' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'}`}>3. Content</button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-10 bg-[#080808]">
@@ -357,7 +357,7 @@ const Tracks: React.FC = () => {
                         type="text"
                         value={currentTrack.name}
                         onChange={e => setCurrentTrack({ ...currentTrack, name: e.target.value })}
-                        className={`w-full bg-black border ${errors.name ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none transition`}
+                        className={`w-full bg-black border ${errors.name ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition`}
                         placeholder="Recording Name"
                       />
                     </div>
@@ -367,7 +367,7 @@ const Tracks: React.FC = () => {
                         type="text"
                         value={currentTrack.isrc}
                         onChange={e => setCurrentTrack({ ...currentTrack, isrc: e.target.value.toUpperCase() })}
-                        className={`w-full bg-black border ${errors.isrc ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-sm font-mono focus:border-brand-primary outline-none uppercase`}
+                        className={`w-full bg-black border ${errors.isrc ? 'border-red-500' : 'border-white/10'} rounded-xl px-4 py-3 text-sm font-mono focus:border-blue-500 outline-none uppercase`}
                         placeholder="US-LMG-24-00001"
                       />
                     </div>
@@ -383,7 +383,7 @@ const Tracks: React.FC = () => {
                       />
                     </div>
                   </div>
-                  <div className="bg-blue-900/10 border border-brand-primary/30 p-4 rounded-xl flex items-center justify-between mt-4">
+                  <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl flex items-center justify-between mt-4">
                     <div>
                       <p className="text-sm font-bold text-white flex items-center gap-2"><Clock size={16} /> TikTok Clip Start</p>
                       <p className="text-xs text-gray-400 mt-1">Format: MM:SS (Default: 00:00)</p>
@@ -401,7 +401,7 @@ const Tracks: React.FC = () => {
                       }}
                       placeholder="00:00"
                       maxLength={5}
-                      className="w-24 bg-black border border-white/20 rounded-lg px-3 py-2 text-center font-mono font-bold text-white focus:border-brand-primary outline-none"
+                      className="w-24 bg-black border border-white/20 rounded-lg px-3 py-2 text-center font-mono font-bold text-white focus:border-blue-500 outline-none"
                     />
                   </div>
                 </div>
@@ -412,7 +412,7 @@ const Tracks: React.FC = () => {
                   {/* Artists Section */}
                   <div className={errors.artists ? "p-4 border border-red-500/20 bg-red-500/5 rounded-xl" : ""}>
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-xs font-black text-brand-primary uppercase tracking-widest">Performing Artists <span className="text-red-500">*</span></h4>
+                      <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest">Performing Artists <span className="text-red-500">*</span></h4>
                       <button
                         onClick={() => {
                           const isFirst = (currentTrack.artists || []).length === 0;
@@ -471,10 +471,10 @@ const Tracks: React.FC = () => {
                   {/* Contributors Section */}
                   <div className={errors.contributors ? "p-4 border border-red-500/20 bg-red-500/5 rounded-xl" : ""}>
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-xs font-black text-brand-primary uppercase tracking-widest">Contributors <span className="text-red-500">*</span></h4>
+                      <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest">Contributors <span className="text-red-500">*</span></h4>
                       <button
                         onClick={addContributor}
-                        className="text-xs text-gray-400 hover:text-brand-primary transition uppercase font-bold"
+                        className="text-xs text-gray-400 hover:text-blue-400 transition uppercase font-bold"
                       >
                         + Add Credit
                       </button>
@@ -513,8 +513,8 @@ const Tracks: React.FC = () => {
                       <div className="flex items-center justify-between bg-black/40 p-4 rounded-xl border border-white/5">
                         <p className="text-sm font-bold">Does this track have lyrics?</p>
                         <div className="flex gap-4">
-                          <label className="flex items-center gap-2 cursor-pointer text-xs"><input type="radio" checked={!currentTrack.hasLyrics} onChange={() => setCurrentTrack({ ...currentTrack, hasLyrics: false })} className="accent-brand-primary" /> No (Instrumental)</label>
-                          <label className="flex items-center gap-2 cursor-pointer text-xs"><input type="radio" checked={!!currentTrack.hasLyrics} onChange={() => setCurrentTrack({ ...currentTrack, hasLyrics: true })} className="accent-brand-primary" /> Yes</label>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs"><input type="radio" checked={!currentTrack.hasLyrics} onChange={() => setCurrentTrack({ ...currentTrack, hasLyrics: false })} className="accent-blue-500" /> No (Instrumental)</label>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs"><input type="radio" checked={!!currentTrack.hasLyrics} onChange={() => setCurrentTrack({ ...currentTrack, hasLyrics: true })} className="accent-blue-500" /> Yes</label>
                         </div>
                       </div>
 
@@ -525,7 +525,7 @@ const Tracks: React.FC = () => {
                             <select
                               value={currentTrack.lyricsLanguage || 'English'}
                               onChange={(e) => setCurrentTrack({ ...currentTrack, lyricsLanguage: e.target.value })}
-                              className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-brand-primary outline-none"
+                              className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none"
                             >
                               <option value="English">English</option>
                               <option value="Spanish">Spanish</option>
@@ -539,7 +539,7 @@ const Tracks: React.FC = () => {
                             <textarea
                               value={currentTrack.lyricsText || ''}
                               onChange={(e) => setCurrentTrack({ ...currentTrack, lyricsText: e.target.value })}
-                              className="w-full h-32 bg-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-brand-primary outline-none placeholder:text-gray-800"
+                              className="w-full h-32 bg-black border border-white/10 rounded-xl px-4 py-3 text-xs font-mono focus:border-blue-500 outline-none placeholder:text-gray-800"
                               placeholder="Verse 1..."
                             />
                           </div>
@@ -556,7 +556,7 @@ const Tracks: React.FC = () => {
                         <p className="font-bold text-sm uppercase">Explicit Content</p>
                         <p className="text-xs text-gray-400 font-mono uppercase">Sensitive vocabulary detected?</p>
                       </div>
-                      <input type="checkbox" checked={currentTrack.isExplicit} onChange={e => setCurrentTrack({ ...currentTrack, isExplicit: e.target.checked })} className="w-5 h-5 accent-brand-primary" />
+                      <input type="checkbox" checked={currentTrack.isExplicit} onChange={e => setCurrentTrack({ ...currentTrack, isExplicit: e.target.checked })} className="w-5 h-5 accent-blue-600" />
                     </div>
                   </div>
                 </div>
@@ -565,7 +565,7 @@ const Tracks: React.FC = () => {
 
             <div className="p-6 border-t border-white/5 bg-black/60 flex justify-end gap-3">
               <button onClick={() => setShowModal(false)} className="px-6 py-3 text-xs font-black uppercase text-gray-500 hover:text-white transition">Cancel</button>
-              <button onClick={handleSaveTrack} disabled={isSubmitting} className="px-10 py-3 bg-brand-primary text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-lg flex items-center justify-center gap-2">
+              <button onClick={handleSaveTrack} disabled={isSubmitting} className="px-10 py-3 bg-blue-600 text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-lg flex items-center justify-center gap-2">
                 {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Synchronize</>}
               </button>
             </div>

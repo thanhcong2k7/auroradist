@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Key, ArrowRight, Loader2, ShieldCheck, Lock } from 'lucide-react';
@@ -43,7 +43,7 @@ const UpdatePassword: React.FC = () => {
             <div className="w-full max-w-md relative z-10 animate-fade-in">
                 <div className="mb-8 text-center">
                     <div className="text-3xl font-black tracking-tighter uppercase mb-2">
-                        Security <span className="text-brand-primary">Update</span>
+                        Security <span className="text-blue-500">Update</span>
                     </div>
                     <p className="text-gray-400 font-mono text-xs tracking-[0.2em] uppercase opacity-70">
                         Set your secure access key
@@ -69,7 +69,7 @@ const UpdatePassword: React.FC = () => {
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-brand-primary/50 transition-all shadow-inner placeholder:text-gray-600"
+                                    className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
                                     placeholder="••••••••"
                                     required
                                     autoFocus
@@ -85,7 +85,7 @@ const UpdatePassword: React.FC = () => {
                                     type="password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-brand-primary/50 transition-all shadow-inner placeholder:text-gray-600"
+                                    className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
                                     placeholder="••••••••"
                                     required
                                 />
@@ -102,7 +102,7 @@ const UpdatePassword: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-5 bg-brand-primary hover:bg-brand-primary text-white font-bold uppercase tracking-wide rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
+                            className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-wide rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98]"
                         >
                             {loading ? (
                                 <>Encrypting <Loader2 className="animate-spin" size={18} /></>

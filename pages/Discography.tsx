@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Plus, Edit2, Trash2, Search, AlertCircle, Loader2, Info, Eye, Filter, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -132,7 +132,7 @@ const Discography: React.FC = () => {
         <button
           onClick={handleCreateDraft}
           disabled={creating}
-          className="px-6 py-2 bg-brand-primary text-white font-bold uppercase hover:bg-brand-primary transition shadow-[0_0_15px_rgba(37,99,235,0.4)] flex items-center gap-2 text-sm disabled:opacity-50"
+          className="px-6 py-2 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition shadow-[0_0_15px_rgba(37,99,235,0.4)] flex items-center gap-2 text-sm disabled:opacity-50"
         >
           {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
           New Release
@@ -147,7 +147,7 @@ const Discography: React.FC = () => {
             placeholder="SEARCH ARCHIVES..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-primary transition font-mono placeholder-gray-700"
+            className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition font-mono placeholder-gray-700"
           />
         </div>
       </div>
@@ -163,7 +163,7 @@ const Discography: React.FC = () => {
               key={status}
               onClick={() => toggleStatusFilter(status)}
               className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase transition border ${isActive
-                ? 'bg-brand-primary text-white border-brand-primary'
+                ? 'bg-blue-600 text-white border-blue-500'
                 : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'
                 }`}
             >
@@ -183,13 +183,13 @@ const Discography: React.FC = () => {
 
       {loading ? (
         <div className="h-64 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="animate-spin text-brand-primary" size={40} />
+          <Loader2 className="animate-spin text-blue-500" size={40} />
           <p className="text-xs font-mono text-gray-500 uppercase tracking-widest">Accessing Vault...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredReleases.map((release) => (
-            <div key={release.id} className="group bg-surface border border-white/10 hover:border-brand-primary/50 rounded-xl overflow-hidden transition-all duration-300">
+            <div key={release.id} className="group bg-surface border border-white/10 hover:border-blue-500/50 rounded-xl overflow-hidden transition-all duration-300">
               <div className="aspect-square relative overflow-hidden bg-black">
                 {release.coverArt ? (
                   <img src={release.coverArt} alt={release.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition duration-500" />
@@ -201,7 +201,7 @@ const Discography: React.FC = () => {
                   {/* Preview Button - Always Visible */}
                   <button
                     onClick={() => handlePreview(release)}
-                    className="p-1.5 bg-black/80 text-white hover:text-brand-primary rounded backdrop-blur-sm border border-white/10"
+                    className="p-1.5 bg-black/80 text-white hover:text-blue-400 rounded backdrop-blur-sm border border-white/10"
                     title="Preview Release"
                   >
                     <Eye size={14} />

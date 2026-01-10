@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { X, Plus, Trash2, PieChart, AlertCircle, User } from 'lucide-react';
 
@@ -55,7 +55,7 @@ const RevenueSplitModal: React.FC<Props> = ({ isOpen, onClose, releaseId, releas
             <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                     <div>
-                        <h3 className="font-bold uppercase tracking-widest text-xs text-brand-primary">Revenue Splits</h3>
+                        <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Revenue Splits</h3>
                         <p className="text-gray-400 font-mono text-xs">{releaseTitle}</p>
                     </div>
                     <button onClick={onClose}><X size={18} className="text-gray-500 hover:text-white" /></button>
@@ -64,13 +64,13 @@ const RevenueSplitModal: React.FC<Props> = ({ isOpen, onClose, releaseId, releas
                 <div className="p-6 space-y-6">
                     {/* Visual Chart */}
                     <div className="h-4 bg-white/10 rounded-full overflow-hidden flex">
-                        <div className="h-full bg-brand-primary" style={{ width: `${ownerShare}%` }} title={`Owner: ${ownerShare}%`}></div>
+                        <div className="h-full bg-blue-600" style={{ width: `${ownerShare}%` }} title={`Owner: ${ownerShare}%`}></div>
                         {splits.map((s, i) => (
                             <div key={s.id} className={`h-full ${i % 2 === 0 ? 'bg-purple-500' : 'bg-pink-500'}`} style={{ width: `${s.percentage}%` }} title={`${s.profiles.email}: ${s.percentage}%`}></div>
                         ))}
                     </div>
                     <div className="flex justify-between text-[10px] font-mono uppercase text-gray-500">
-                        <span>Owner Share: <span className="text-brand-primary font-bold">{ownerShare.toFixed(1)}%</span></span>
+                        <span>Owner Share: <span className="text-blue-400 font-bold">{ownerShare.toFixed(1)}%</span></span>
                         <span>Collaborators: <span className="text-purple-400 font-bold">{totalSplit.toFixed(1)}%</span></span>
                     </div>
 

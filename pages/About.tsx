@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Activity,
     CheckCircle2,
@@ -40,7 +40,7 @@ const About: React.FC = () => {
             {/* Header Section */}
             <div className="mb-8">
                 <h1 className="text-3xl font-black tracking-tighter uppercase text-white">
-                    System <span className="text-brand-primary">Status</span>
+                    System <span className="text-blue-500">Status</span>
                 </h1>
                 <p className="text-gray-400 text-sm font-medium tracking-wide mt-2">
                     Distribution Node Configuration & Versioning
@@ -50,14 +50,14 @@ const About: React.FC = () => {
             {/* Main Content Card */}
             <div className="bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative">
                 {/* Decorative Top Line */}
-                <div className="h-1 w-full bg-gradient-to-r from-brand-primary via-purple-600 to-brand-primary"></div>
+                <div className="h-1 w-full bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600"></div>
 
                 <div className="p-10 grid grid-cols-1 md:grid-cols-12 gap-10">
 
                     {/* Left Column: Logo & Branding */}
                     <div className="md:col-span-4 flex flex-col items-center text-center border-b md:border-b-0 md:border-r border-white/5 pb-8 md:pb-0 md:pr-8">
                         <div className="relative flex items-center justify-center mb-8">
-                            <div className="absolute w-20 h-20 bg-brand-primary/60 rounded-full blur-[40px] animate-pulse"></div>
+                            <div className="absolute w-20 h-20 bg-blue-600/60 rounded-full blur-[40px] animate-pulse"></div>
                             <div className="absolute w-16 h-16 bg-purple-600/40 rounded-full blur-[30px]"></div>
                             <img
                                 src="https://auroramusicvietnam.net/amvn.png"
@@ -65,7 +65,7 @@ const About: React.FC = () => {
                                 alt="Aurora Brand Logo"
                             />
                         </div>
-                        <h2 className="text-2xl font-black uppercase tracking-tight text-white">Aurora<span className="text-brand-primary">.</span></h2>
+                        <h2 className="text-2xl font-black uppercase tracking-tight text-white">Aurora<span className="text-blue-500">.</span></h2>
                         <span className="text-xs font-mono text-gray-500 uppercase tracking-widest mt-2">Distribution Client</span>
                         <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-orange-400 mt-4 border border-orange-500/20">
                             {buildProd.toUpperCase()} BUILD
@@ -81,8 +81,8 @@ const About: React.FC = () => {
                             <div className="flex items-center gap-3 text-sm">
                                 {isChecking ? (
                                     <>
-                                        <RefreshCcw size={18} className="text-brand-primary animate-spin" />
-                                        <span className="text-brand-primary font-medium">Checking for updates...</span>
+                                        <RefreshCcw size={18} className="text-blue-500 animate-spin" />
+                                        <span className="text-blue-400 font-medium">Checking for updates...</span>
                                     </>
                                 ) : upToDate ? (
                                     <>
@@ -103,10 +103,10 @@ const About: React.FC = () => {
                         {/* Technical Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* Build Hash */}
-                            <div className="bg-black/40 border border-white/5 p-4 rounded-xl group hover:border-brand-primary/30 transition-colors">
+                            <div className="bg-black/40 border border-white/5 p-4 rounded-xl group hover:border-blue-500/30 transition-colors">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Build Hash</span>
-                                    <GitCommit size={14} className="text-brand-primary" />
+                                    <GitCommit size={14} className="text-blue-500" />
                                 </div>
                                 <div
                                     onClick={handleCopyHash}
@@ -118,7 +118,7 @@ const About: React.FC = () => {
                             </div>
 
                             {/* Engine */}
-                            <div className="bg-black/40 border border-white/5 p-4 rounded-xl hover:border-brand-primary/30 transition-colors">
+                            <div className="bg-black/40 border border-white/5 p-4 rounded-xl hover:border-blue-500/30 transition-colors">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Engine</span>
                                     <Cpu size={14} className="text-purple-500" />
@@ -129,7 +129,7 @@ const About: React.FC = () => {
                             </div>
 
                             {/* User Agent */}
-                            <div className="bg-black/40 border border-white/5 p-4 rounded-xl hover:border-brand-primary/30 transition-colors sm:col-span-2">
+                            <div className="bg-black/40 border border-white/5 p-4 rounded-xl hover:border-blue-500/30 transition-colors sm:col-span-2">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Client User Agent</span>
                                     <Globe size={14} className="text-green-500" />
@@ -146,14 +146,14 @@ const About: React.FC = () => {
                                 Copyright © 2025 Aurora Music Vietnam. All rights reserved.
                             </p>
                             <p className="mt-2">
-                                Aurora and the Aurora logo are trademarks of Aurora Music. Using this system implies agreement to the <span className="text-brand-primary underline cursor-pointer">Terms of Service</span> and <span className="text-brand-primary underline cursor-pointer">Privacy Policy</span>. This software is powered by <span className="text-white">Supabase</span> and secured by Google OAuth protocols.
+                                Aurora and the Aurora logo are trademarks of Aurora Music. Using this system implies agreement to the <span className="text-blue-500 underline cursor-pointer">Terms of Service</span> and <span className="text-blue-500 underline cursor-pointer">Privacy Policy</span>. This software is powered by <span className="text-white">Supabase</span> and secured by Google OAuth protocols.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Security Badge */}
-                <div className="bg-blue-900/10 border-t border-brand-primary/10 p-3 flex justify-center items-center gap-2 text-[10px] uppercase tracking-widest text-brand-primary font-bold">
+                <div className="bg-blue-900/10 border-t border-blue-500/10 p-3 flex justify-center items-center gap-2 text-[10px] uppercase tracking-widest text-blue-400 font-bold">
                     <ShieldCheck size={12} />
                     End-to-End Encrypted Session Active
                 </div>

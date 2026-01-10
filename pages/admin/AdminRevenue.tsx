@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx'; // CHANGED: Import SheetJS
 import { api, supabase } from '@/services/api';
 import {
@@ -202,7 +202,7 @@ const AdminRevenue: React.FC = () => {
 
             {/* Tabs */}
             <div className="flex gap-4">
-                <button onClick={() => setActiveTab('WITHDRAWALS')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition ${activeTab === 'WITHDRAWALS' ? 'bg-brand-primary text-white' : 'bg-[#111] text-gray-500 hover:text-white'}`}>
+                <button onClick={() => setActiveTab('WITHDRAWALS')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition ${activeTab === 'WITHDRAWALS' ? 'bg-blue-600 text-white' : 'bg-[#111] text-gray-500 hover:text-white'}`}>
                     Withdrawal Requests ({withdrawals.length})
                 </button>
                 <button onClick={() => setActiveTab('INGEST')} className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition ${activeTab === 'INGEST' ? 'bg-green-600 text-white' : 'bg-[#111] text-gray-500 hover:text-white'}`}>
@@ -214,7 +214,7 @@ const AdminRevenue: React.FC = () => {
             {activeTab === 'WITHDRAWALS' && (
                 <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden min-h-[400px]">
                     {loadingW ? (
-                        <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-brand-primary" /></div>
+                        <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
                     ) : withdrawals.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-64 text-gray-600 gap-2">
                             <CheckCircle2 size={32} className="opacity-50" />

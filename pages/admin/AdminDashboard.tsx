@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api, supabase } from '@/services/api';
 import { Users, Music, DollarSign, Activity, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -54,7 +54,7 @@ const AdminDashboard: React.FC = () => {
                 <h3 className="text-gray-500 text-xs font-mono uppercase tracking-widest mb-1">{title}</h3>
                 <div className="text-3xl font-black text-white tracking-tight">{loading ? '...' : value}</div>
                 {subLink && (
-                    <Link to={subLink} className="mt-4 inline-flex items-center gap-1 text-[10px] uppercase font-bold text-brand-primary hover:text-white transition">
+                    <Link to={subLink} className="mt-4 inline-flex items-center gap-1 text-[10px] uppercase font-bold text-blue-500 hover:text-white transition">
                         Manage <ArrowUpRight size={10} />
                     </Link>
                 )}
@@ -90,7 +90,7 @@ const AdminDashboard: React.FC = () => {
                     </Link>
                 </div>
 
-                <Card title="Total Users" value={stats.totalUsers} icon={Users} color="text-brand-primary" subLink="/admin/users" />
+                <Card title="Total Users" value={stats.totalUsers} icon={Users} color="text-blue-500" subLink="/admin/users" />
                 <Card title="Total Assets (Tracks)" value={stats.activeTracks} icon={Music} color="text-purple-500" />
                 <Card title="Gross System Revenue" value={`$${stats.totalRevenue.toLocaleString()}`} icon={DollarSign} color="text-green-500" subLink="/admin/revenue" />
             </div>
@@ -100,11 +100,11 @@ const AdminDashboard: React.FC = () => {
                 <div className="bg-[#111] p-6 rounded-xl border border-white/5">
                     <h3 className="font-bold text-white mb-4">Quick Actions</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <Link to="/admin/analytics" className="p-4 bg-black border border-white/10 rounded-lg hover:border-brand-primary/50 transition text-center group">
-                            <div className="text-brand-primary mb-2 group-hover:scale-110 transition-transform mx-auto w-fit"><Activity /></div>
+                        <Link to="/admin/analytics" className="p-4 bg-black border border-white/10 rounded-lg hover:border-blue-500/50 transition text-center group">
+                            <div className="text-blue-500 mb-2 group-hover:scale-110 transition-transform mx-auto w-fit"><Activity /></div>
                             <div className="text-xs font-bold uppercase">Import Analytics</div>
                         </Link>
-                        <Link to="/admin/users" className="p-4 bg-black border border-white/10 rounded-lg hover:border-brand-primary/50 transition text-center group">
+                        <Link to="/admin/users" className="p-4 bg-black border border-white/10 rounded-lg hover:border-blue-500/50 transition text-center group">
                             <div className="text-purple-500 mb-2 group-hover:scale-110 transition-transform mx-auto w-fit"><Users /></div>
                             <div className="text-xs font-bold uppercase">Invite User</div>
                         </Link>

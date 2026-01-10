@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
@@ -46,8 +46,8 @@ const Analytics: React.FC = () => {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <div className="bg-brand-primary/10 border border-brand-primary/20 px-4 py-2 rounded-xl text-center">
-                        <div className="text-[10px] font-mono uppercase text-brand-primary">7-Day Volume</div>
+                    <div className="bg-blue-600/10 border border-blue-500/20 px-4 py-2 rounded-xl text-center">
+                        <div className="text-[10px] font-mono uppercase text-blue-400">7-Day Volume</div>
                         <div className="text-lg font-black text-white">{totalStreamsPeriod.toLocaleString()}</div>
                     </div>
                 </div>
@@ -59,7 +59,7 @@ const Analytics: React.FC = () => {
                 <div className="lg:col-span-2 bg-surface border border-white/5 rounded-2xl p-6 shadow-sm">
                     <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h3 className="font-bold uppercase text-[12px] tracking-widest text-brand-primary mb-1">Stream Frequency</h3>
+                            <h3 className="font-bold uppercase text-[12px] tracking-widest text-blue-500 mb-1">Stream Frequency</h3>
                             <p className="text-gray-400 text-[10px] font-sans uppercase tracking-widest">Last 7 Days Activity</p>
                         </div>
                     </div>

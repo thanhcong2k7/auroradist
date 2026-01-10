@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '@/services/api';
 import {
@@ -67,12 +67,12 @@ const AdminUserDetail: React.FC = () => {
                 {/* Left Column: Identity */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-[#111] p-6 rounded-xl border border-white/5 flex flex-col items-center text-center">
-                        <div className={`w-24 h-24 rounded-full flex items-center justify-center font-black text-4xl mb-4 ${user.role === 'ADMIN' ? 'bg-red-600' : 'bg-brand-primary'}`}>
+                        <div className={`w-24 h-24 rounded-full flex items-center justify-center font-black text-4xl mb-4 ${user.role === 'ADMIN' ? 'bg-red-600' : 'bg-blue-600'}`}>
                             {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : user.name?.charAt(0).toUpperCase()}
                         </div>
                         <h2 className="text-xl font-black text-white uppercase tracking-tight">{user.name}</h2>
                         <div className="flex items-center gap-2 mt-2">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${user.role === 'ADMIN' ? 'border-red-500 text-red-500' : 'border-brand-primary/50 text-brand-primary'}`}>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${user.role === 'ADMIN' ? 'border-red-500 text-red-500' : 'border-blue-500/50 text-blue-500'}`}>
                                 {user.role}
                             </span>
                             <span className="text-xs text-gray-500 font-mono">{user.id.slice(0, 8)}...</span>
@@ -86,7 +86,7 @@ const AdminUserDetail: React.FC = () => {
                         <div className="space-y-3 text-sm">
                             <div>
                                 <label className="block text-[10px] text-gray-500 font-mono uppercase">Email Endpoint</label>
-                                <div className="flex items-center gap-2 text-white font-medium"><Mail size={14} className="text-brand-primary" /> {user.email}</div>
+                                <div className="flex items-center gap-2 text-white font-medium"><Mail size={14} className="text-blue-500" /> {user.email}</div>
                             </div>
                             <div>
                                 <label className="block text-[10px] text-gray-500 font-mono uppercase">Legal Name</label>
@@ -161,7 +161,7 @@ const AdminUserDetail: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-right">
-                                                <Link to={`/admin/releases/${r.id}`} className="text-brand-primary hover:text-white transition">
+                                                <Link to={`/admin/releases/${r.id}`} className="text-blue-500 hover:text-white transition">
                                                     <Eye size={16} />
                                                 </Link>
                                             </td>

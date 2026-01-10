@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Label as LabelType, Release } from '../types';
 import { Tags, Plus, Mail, Edit2, Trash2, X, Save, Loader2, AlertCircle } from 'lucide-react';
@@ -80,13 +80,13 @@ const Labels: React.FC = () => {
           <h1 className="text-3xl font-black uppercase tracking-tight">Record Imprints</h1>
           <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Distribution Entity Management</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-brand-primary text-white font-bold uppercase hover:bg-brand-primary transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)] flex items-center gap-2 text-xs rounded-xl">
+        <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)] flex items-center gap-2 text-xs rounded-xl">
           <Plus size={16} /> New Label
         </button>
       </div>
 
       {loading && !labels.length ? (
-        <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-brand-primary" /></div>
+        <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {labels.map(label => {
@@ -94,7 +94,7 @@ const Labels: React.FC = () => {
             return (
               <div key={label.id} className="bg-surface border border-white/5 p-6 rounded-2xl hover:border-white/10 transition group relative">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 bg-brand-primary/10 rounded-xl text-brand-primary"><Tags size={24} /></div>
+                  <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><Tags size={24} /></div>
 
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
                     <button
@@ -127,7 +127,7 @@ const Labels: React.FC = () => {
 
                 <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-xs font-mono font-bold uppercase tracking-widest">
                   <span className="text-gray-400">State</span>
-                  <span className={used ? 'text-brand-primary' : 'text-gray-700'}>
+                  <span className={used ? 'text-blue-500' : 'text-gray-700'}>
                     {used ? 'ACTIVE' : 'IDLE'}
                   </span>
                 </div>
@@ -148,16 +148,16 @@ const Labels: React.FC = () => {
             <div className="p-8 space-y-6">
               <div className="space-y-1">
                 <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Label Name</label>
-                <input type="text" value={editingLabel?.name} onChange={e => setEditingLabel({ ...editingLabel!, name: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none transition" placeholder="e.g. Aurora Neon" />
+                <input type="text" value={editingLabel?.name} onChange={e => setEditingLabel({ ...editingLabel!, name: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition" placeholder="e.g. Aurora Neon" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Contact Email</label>
-                <input type="email" value={editingLabel?.email} onChange={e => setEditingLabel({ ...editingLabel!, email: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none transition" placeholder="contact@label.com" />
+                <input type="email" value={editingLabel?.email} onChange={e => setEditingLabel({ ...editingLabel!, email: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500 outline-none transition" placeholder="contact@label.com" />
               </div>
             </div>
             <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
               <button onClick={() => setShowModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-gray-500 hover:text-white transition">Cancel</button>
-              <button onClick={handleSave} disabled={isSubmitting} className="flex-1 py-3 bg-brand-primary text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2">
+              <button onClick={handleSave} disabled={isSubmitting} className="flex-1 py-3 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2">
                 {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Commit</>}
               </button>
             </div>

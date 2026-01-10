@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
 import { DspChannel, Release, Track } from '@/types';
@@ -191,7 +191,7 @@ const AdminReleaseDetail: React.FC = () => {
                     <button
                         onClick={handleSaveDraft}
                         disabled={submitting}
-                        className="px-4 py-2 bg-brand-primary/10 text-brand-primary border border-brand-primary/20 hover:bg-brand-primary/20 rounded-lg font-bold uppercase text-xs flex items-center gap-2 transition"
+                        className="px-4 py-2 bg-blue-600/10 text-blue-500 border border-blue-600/20 hover:bg-blue-600/20 rounded-lg font-bold uppercase text-xs flex items-center gap-2 transition"
                     >
                         {submitting ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
                         Save Draft
@@ -231,7 +231,7 @@ const AdminReleaseDetail: React.FC = () => {
 
                     {/* Metadata Card */}
                     <div className="bg-[#111] p-5 rounded-xl border border-white/5 space-y-5">
-                        <h3 className="text-xs font-black uppercase text-brand-primary tracking-widest flex items-center gap-2 border-b border-white/5 pb-3">
+                        <h3 className="text-xs font-black uppercase text-blue-500 tracking-widest flex items-center gap-2 border-b border-white/5 pb-3">
                             <Disc size={14} /> Release Metadata
                         </h3>
 
@@ -243,7 +243,7 @@ const AdminReleaseDetail: React.FC = () => {
                                 value={upcInput}
                                 onChange={e => setUpcInput(e.target.value)}
                                 disabled={!isModerationMode && !!release.upc}
-                                className={`w-full bg-black border rounded px-3 py-2 text-sm font-mono focus:border-brand-primary outline-none transition ${isModerationMode && !release.upc ? 'border-red-500/50 text-white placeholder-red-700' : 'border-white/10 text-gray-300'}`}
+                                className={`w-full bg-black border rounded px-3 py-2 text-sm font-mono focus:border-blue-500 outline-none transition ${isModerationMode && !release.upc ? 'border-red-500/50 text-white placeholder-red-700' : 'border-white/10 text-gray-300'}`}
                                 placeholder="REQUIRED FOR APPROVAL"
                             />
                         </div>
@@ -274,7 +274,7 @@ const AdminReleaseDetail: React.FC = () => {
                     <div className="bg-[#111] p-5 rounded-xl border border-white/5 space-y-3">
                         <h3 className="text-xs font-black uppercase text-gray-500 tracking-widest border-b border-white/5 pb-2">Uploader Profile</h3>
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-xs font-bold">
+                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold">
                                 {release.profiles?.name?.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -312,7 +312,7 @@ const AdminReleaseDetail: React.FC = () => {
                     {/* Tracklist Block */}
                     <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden">
                         <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
-                            <span className="text-xs font-black uppercase tracking-widest text-brand-primary flex items-center gap-2"><Music2 size={14} /> Assets & Metadata</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-blue-500 flex items-center gap-2"><Music2 size={14} /> Assets & Metadata</span>
                             <span className="text-[10px] font-mono text-gray-500">{tracks.length} Tracks • Audio Check</span>
                         </div>
 
@@ -327,7 +327,7 @@ const AdminReleaseDetail: React.FC = () => {
                                                     <div className="font-bold text-sm text-white truncate">{track.name}</div>
                                                     {/* Badges */}
                                                     {track.is_explicit && <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-500 text-[8px] font-black border border-red-500/30" title="Explicit Content">E</span>}
-                                                    {track.has_lyrics && <span className="px-1.5 py-0.5 rounded bg-brand-primary/20 text-brand-primary text-[8px] font-black border border-brand-primary/30" title="Has Lyrics">L</span>}
+                                                    {track.has_lyrics && <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-500 text-[8px] font-black border border-blue-500/30" title="Has Lyrics">L</span>}
                                                 </div>
                                                 <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-1">
                                                     <span className="font-bold text-white">{track.artists?.map((a: any) => a.name).join(', ')}</span>
@@ -369,7 +369,7 @@ const AdminReleaseDetail: React.FC = () => {
                                         </div>
                                         <div className="md:col-span-3 space-y-1">
                                             <label className="text-[9px] text-gray-500 font-mono uppercase">TikTok Start</label>
-                                            <div className="text-xs text-brand-primary font-mono bg-blue-900/10 px-2 py-1.5 rounded border border-brand-primary/20 flex items-center gap-2">
+                                            <div className="text-xs text-blue-400 font-mono bg-blue-900/10 px-2 py-1.5 rounded border border-blue-500/20 flex items-center gap-2">
                                                 <Clock size={10} /> {track.tiktok_clip_start_time || '00:00'}
                                             </div>
                                         </div>

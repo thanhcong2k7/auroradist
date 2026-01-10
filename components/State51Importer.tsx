@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { api, supabase } from '@/services/api';
 import { Upload, Loader2, CheckCircle2, AlertTriangle, FileText, DollarSign } from 'lucide-react';
@@ -190,7 +190,7 @@ export default function State51Importer() {
                 </div>
             ) : (
                 <div className="p-8 text-center border border-white/10 rounded-xl bg-black/50">
-                    {step === 'PARSING' && <Loader2 className="animate-spin mx-auto text-brand-primary mb-2" />}
+                    {step === 'PARSING' && <Loader2 className="animate-spin mx-auto text-blue-500 mb-2" />}
                     {step === 'PROCESSING' && <DollarSign className="animate-bounce mx-auto text-green-500 mb-2" />}
                     <p className="text-sm font-mono text-white animate-pulse">{step}...</p>
                 </div>

@@ -1,4 +1,4 @@
-﻿// src/components/AvatarUploadModal.tsx
+// src/components/AvatarUploadModal.tsx
 import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { X, Save, Upload, Loader2, ZoomIn } from 'lucide-react';
@@ -69,7 +69,7 @@ const AvatarUploadModal: React.FC<Props> = ({ isOpen, onClose, onUploadSuccess }
         
         {/* Header */}
         <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-          <h3 className="font-bold uppercase tracking-widest text-xs text-brand-primary">Update Profile Picture</h3>
+          <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Update Profile Picture</h3>
           <button onClick={onClose}><X size={18} className="text-gray-500 hover:text-white" /></button>
         </div>
 
@@ -80,7 +80,7 @@ const AvatarUploadModal: React.FC<Props> = ({ isOpen, onClose, onUploadSuccess }
               <div className="p-4 bg-white/5 rounded-full">
                 <Upload size={32} />
               </div>
-              <label className="px-6 py-2 bg-brand-primary hover:bg-brand-primary text-white font-bold uppercase text-xs rounded-xl cursor-pointer transition">
+              <label className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-xs rounded-xl cursor-pointer transition">
                 Select Image
                 <input type="file" accept="image/*" onChange={onFileChange} className="hidden" />
               </label>
@@ -116,14 +116,14 @@ const AvatarUploadModal: React.FC<Props> = ({ isOpen, onClose, onUploadSuccess }
                 step={0.1}
                 aria-labelledby="Zoom"
                 onChange={(e) => setZoom(Number(e.target.value))}
-                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand-primary"
+                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
             </div>
             <div className="flex gap-3">
               <button onClick={() => setImageSrc(null)} className="flex-1 py-3 border border-white/10 text-gray-400 font-bold uppercase text-xs rounded-xl hover:bg-white/5">
                 Change Image
               </button>
-              <button onClick={handleSave} disabled={uploading} className="flex-1 py-3 bg-brand-primary text-white font-bold uppercase text-xs rounded-xl flex items-center justify-center gap-2 hover:bg-brand-primary">
+              <button onClick={handleSave} disabled={uploading} className="flex-1 py-3 bg-blue-600 text-white font-bold uppercase text-xs rounded-xl flex items-center justify-center gap-2 hover:bg-blue-500">
                 {uploading ? <Loader2 size={16} className="animate-spin" /> : <><Save size={16} /> Save Avatar</>}
               </button>
             </div>

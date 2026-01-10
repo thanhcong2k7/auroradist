@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -65,7 +65,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-white font-sans selection:bg-brand-primary selection:text-white">
+    <div className="flex h-screen overflow-hidden bg-background text-white font-sans selection:bg-blue-500 selection:text-white">
       {/* Sidebar Overlay */}
       <div
         className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden transition-opacity ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
@@ -100,7 +100,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
                 to={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                  ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20'
+                  ? 'bg-brand-primary/10 text-brand-primary border border-blue-600/20'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
               >
@@ -186,4 +186,3 @@ const Layout: React.FC<LayoutProps> = (props) => {
 };
 
 export default Layout;
-
