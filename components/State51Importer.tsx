@@ -10,15 +10,13 @@ export default function State51Importer() {
     const [summary, setSummary] = useState<{ totalRows: number, totalRevenue: number, month: string } | null>(null);
     const [parsedData, setParsedData] = useState<any[]>([]);
 
-    // Helper to safely convert UPC/ISRC to string
     const cleanString = (val: any) => {
-        if (!val) return '';
-        // If it's a number (e.g. from Excel raw), convert to string
+        if (val === null || val === undefined) return '';
         if (typeof val === 'number') {
-            // .toLocaleString('fullwide', { useGrouping: false }) prevents 1.23E+12 notation
+            // Prevent scientific notation (e.g. 5.06E+12 -> 506...)
             return val.toLocaleString('fullwide', { useGrouping: false });
         }
-        return val.toString().trim();
+        return String(val).trim();
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,13 +33,9 @@ export default function State51Importer() {
             reader.onload = (evt) => {
                 try {
                     const data = new Uint8Array(evt.target?.result as ArrayBuffer);
-                    
-                    // cellDates: true converts Excel serial dates to JS Dates
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    // [FIX] raw: true ensures we get the real number (5057...) not the display string (5.05E+12)
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: true });
                     analyzeData(jsonData);
                 } catch (err: any) {
@@ -69,7 +63,7 @@ export default function State51Importer() {
         let revenueSum = 0;
         let reportMonth = '';
 
-        // [FIX] Clean UPC and ISRC before filtering
+        // Filter valid rows (Require ISRC and UPC)
         const validRows = rows.map(r => ({
             ...r,
             UPC: cleanString(r['UPC']),
@@ -77,42 +71,39 @@ export default function State51Importer() {
         })).filter(r => r['ISRC'] && r['UPC']);
 
         if (validRows.length === 0) {
-            setLogs(prev => ["No valid rows found. Check CSV headers (ISRC, UPC required)."]);
+            setLogs(prev => ["No valid rows found. Check headers (ISRC, UPC required)."]);
             setStep('IDLE');
             return;
         }
 
         validRows.forEach(row => {
-            const amount = parseFloat(row['Royalty GBP'] || '0');
+            // Flexible Revenue Column Check
+            const amount = parseFloat(row['Royalty GBP'] || row['Net Revenue'] || row['Revenue'] || '0');
             if (!isNaN(amount)) {
                 revenueSum += amount;
             }
         });
 
-        // Date Parsing (Handles both Excel Object and CSV String)
-        if (validRows.length > 0 && validRows[0]['Start']) {
-            try {
-                const startVal = validRows[0]['Start'];
-
-                if (startVal instanceof Date) {
-                    // Excel Date Object (from cellDates: true)
-                    // Format to YYYY-MM-DD
-                    const year = startVal.getFullYear();
-                    const month = String(startVal.getMonth() + 1).padStart(2, '0');
-                    // Always set to 01 for monthly reporting
-                    reportMonth = `${year}-${month}-01`; 
-                } else {
-                    // CSV String (e.g., "01-06-22" or "01/06/22")
-                    const dateStr = String(startVal).replace(/\//g, '-');
-                    const dateParts = dateStr.split('-');
-                    if (dateParts.length === 3) {
-                        let year = dateParts[2];
-                        if (year.length === 2) year = `20${year}`;
-                        reportMonth = `${year}-${dateParts[1]}-01`;
+        // Flexible Date Column Check
+        if (validRows.length > 0) {
+            const dateVal = validRows[0]['Start'] || validRows[0]['Date'] || validRows[0]['Period'];
+            if (dateVal) {
+                try {
+                    if (dateVal instanceof Date) {
+                        const year = dateVal.getFullYear();
+                        const month = String(dateVal.getMonth() + 1).padStart(2, '0');
+                        reportMonth = `${year}-${month}-01`;
+                    } else {
+                        // Handle CSV String dates
+                        const dateStr = String(dateVal).replace(/\//g, '-');
+                        const dateParts = dateStr.split('-');
+                        if (dateParts.length === 3) {
+                            let year = dateParts[2];
+                            if (year.length === 2) year = `20${year}`;
+                            reportMonth = `${year}-${dateParts[1]}-01`;
+                        }
                     }
-                }
-            } catch (e) {
-                console.error("Date parsing error", e);
+                } catch (e) { console.error(e); }
             }
         }
 
@@ -154,60 +145,69 @@ export default function State51Importer() {
             const analyticsPayload: any[] = [];
 
             for (const row of parsedData) {
-                // Ensure strings
                 const upc = cleanString(row['UPC']);
                 const isrc = cleanString(row['ISRC']).toUpperCase();
                 
-                const amount = parseFloat(row['Royalty GBP'] || '0');
-                const streams = parseInt(row['Total Units'] || '0');
+                const amount = parseFloat(row['Royalty GBP'] || row['Net Revenue'] || '0');
+                const streams = parseInt(row['Total Units'] || row['Quantity'] || '0');
                 
-                const platformRaw = row['Music Service'] || 'Unknown';
-                const platform = platformRaw.split(' - ')[0].toUpperCase().trim();
-                const country = row['Country of Sale'] || 'GLOBAL';
+                // [FIX] Flexible Platform Mapping (Checks "Music Service" OR "Source")
+                const platformRaw = row['Music Service'] || row['Source'] || 'Unknown';
+                const platform = String(platformRaw).split(' - ')[0].toUpperCase().trim() || 'OTHER';
 
-                // 1. Prepare Revenue
+                const country = row['Country of Sale'] || row['Country'] || 'GLOBAL';
+
+                // 1. Revenue
                 if (amount > 0 && upc) {
                     revenuePayload[upc] = (revenuePayload[upc] || 0) + amount;
                 }
 
-                // 2. Prepare Analytics
+                // 2. Analytics
                 if (isrcMap.has(isrc)) {
                     const trackInfo = isrcMap.get(isrc);
-                    analyticsPayload.push({
+                    
+                    const entry = {
                         date: summary.month,
                         track_id: trackInfo.id,
                         uid: trackInfo.uid,
-                        platform: platform === 'UNKNOWN' ? 'OTHER' : platform,
+                        platform: platform, // Now guaranteed to be a string
                         country: country,
                         count: streams,
                         type: 'STREAM',
                         revenue: amount
-                    });
+                    };
+
+                    // Prevent pushing invalid entries
+                    if (entry.track_id && entry.platform) {
+                        analyticsPayload.push(entry);
+                    }
                 }
             }
 
-            // --- EXECUTE INSERTS ---
+            // --- INSERT ANALYTICS ---
             if (analyticsPayload.length > 0) {
                 setLogs(prev => [`Inserting ${analyticsPayload.length} analytics records...`, ...prev]);
+                
+                // Use 'analytics_daily' as per previous success context, or change to 'analytics_detailed' if schema matches
+                const targetTable = 'analytics_daily'; 
+
                 const batchSize = 1000;
                 for (let i = 0; i < analyticsPayload.length; i += batchSize) {
                     const batch = analyticsPayload.slice(i, i + batchSize);
-                    const { error: anaError } = await supabase.from('analytics_daily').insert(batch);
+                    const { error: anaError } = await supabase.from(targetTable).insert(batch);
                     if (anaError) {
-                        setLogs(prev => [`⚠️ Analytics Batch Error: ${anaError.message}`, ...prev]);
+                        console.error("Insert Error", anaError);
+                        setLogs(prev => [`⚠️ Batch Error: ${anaError.message} (Code: ${anaError.code})`, ...prev]);
                     }
                 }
                 setLogs(prev => ["✅ Analytics Data Ingested", ...prev]);
             }
 
-            // --- EXECUTE DISTRIBUTION ---
-            const distItems = Object.entries(revenuePayload).map(([upc, amount]) => ({
-                upc,
-                amount
-            }));
+            // --- DISTRIBUTE REVENUE ---
+            const distItems = Object.entries(revenuePayload).map(([upc, amount]) => ({ upc, amount }));
 
             if (distItems.length > 0) {
-                setLogs(prev => [`Distributing £${summary.totalRevenue.toFixed(2)} via RPC...`, ...prev]);
+                setLogs(prev => [`Distributing £${summary.totalRevenue.toFixed(2)}...`, ...prev]);
 
                 const { data: rpcData, error: rpcError } = await supabase.rpc('admin_distribute_revenue_bulk', {
                     p_month: summary.month,
@@ -216,38 +216,35 @@ export default function State51Importer() {
 
                 if (rpcError) throw rpcError;
 
-                const successCount = rpcData.success_count ?? 0;
-                const errorCount = rpcData.error_count ?? 0;
-                const errors = rpcData.errors || [];
-
                 setLogs(prev => [
                     `✅ Revenue Distribution Complete`,
-                    `Success: ${successCount}`, 
-                    `Errors: ${errorCount}`,
-                    ...errors.map((e: string) => `❌ ${e}`),
+                    `Success: ${rpcData.success_count ?? 0}`,
+                    `Errors: ${rpcData.error_count ?? 0}`,
+                    ...(rpcData.errors || []).map((e: string) => `❌ ${e}`),
                     ...prev
                 ]);
             } else {
-                setLogs(prev => ["⚠️ No revenue data found to distribute.", ...prev]);
+                setLogs(prev => ["⚠️ No revenue data to distribute.", ...prev]);
             }
 
             setStep('COMPLETE');
 
         } catch (err: any) {
             console.error(err);
-            setLogs(prev => [`❌ CRITICAL ERROR: ${err.message}`, ...prev]);
+            setLogs(prev => [`❌ SYSTEM ERROR: ${err.message}`, ...prev]);
             setStep('IDLE');
         }
     };
 
     return (
         <div className="bg-[#111] border border-white/10 rounded-xl p-6 space-y-6 animate-fade-in">
+            {/* UI Header */}
             <div className="flex justify-between items-start">
                 <div>
                     <h3 className="font-bold text-white text-lg flex items-center gap-2">
                         <CloudLightning className="text-blue-500" /> State51 Import Node
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">Processor for State51 Conspiracy CSV/XLSX Format</p>
+                    <p className="text-xs text-gray-500 mt-1">Processor for State51 Conspiracy CSV/XLSX</p>
                 </div>
                 {summary && (
                     <div className="text-right">
@@ -258,6 +255,7 @@ export default function State51Importer() {
                 )}
             </div>
 
+            {/* UI Dropzone */}
             {step === 'IDLE' || step === 'COMPLETE' ? (
                 <div className="border-2 border-dashed border-white/10 rounded-xl p-8 hover:bg-white/5 transition text-center cursor-pointer relative group">
                     <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
@@ -273,6 +271,7 @@ export default function State51Importer() {
                 </div>
             )}
 
+            {/* UI Confirmation */}
             {summary && step !== 'PROCESSING' && step !== 'COMPLETE' && (
                 <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-lg">
                     <div className="flex gap-3 items-start">
@@ -280,12 +279,9 @@ export default function State51Importer() {
                         <div>
                             <p className="text-xs font-bold text-blue-400 uppercase mb-1">Ready to Synchronize</p>
                             <p className="text-xs text-gray-400 mb-3">
-                                System will ingest <b>{summary.totalRows}</b> rows. Revenue (<b>£{summary.totalRevenue.toFixed(2)}</b>) will be distributed to wallets based on UPC ownership.
+                                System will ingest <b>{summary.totalRows}</b> rows. Revenue (<b>£{summary.totalRevenue.toFixed(2)}</b>) will be distributed.
                             </p>
-                            <button
-                                onClick={processIngestion}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-xs rounded-lg transition shadow-lg"
-                            >
+                            <button onClick={processIngestion} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-xs rounded-lg transition shadow-lg">
                                 Execute Ingestion
                             </button>
                         </div>
@@ -293,10 +289,11 @@ export default function State51Importer() {
                 </div>
             )}
 
+            {/* Logs Window */}
             <div className="h-48 bg-black rounded-lg border border-white/10 p-4 overflow-y-auto font-mono text-[10px] space-y-1 custom-scrollbar">
                 {logs.length === 0 && <span className="text-gray-700">Waiting for input stream...</span>}
                 {logs.map((log, i) => (
-                    <div key={i} className={log.includes('ERROR') || log.includes('❌') ? 'text-red-500' : log.includes('✅') ? 'text-green-500' : 'text-gray-400'}>
+                    <div key={i} className={log.includes('Error') || log.includes('❌') ? 'text-red-500' : log.includes('✅') ? 'text-green-500' : 'text-gray-400'}>
                         <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString()}]</span>
                         {log}
                     </div>
