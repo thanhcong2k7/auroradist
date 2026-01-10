@@ -10,6 +10,17 @@ export default function State51Importer() {
     const [summary, setSummary] = useState<{ totalRows: number, totalRevenue: number, month: string } | null>(null);
     const [parsedData, setParsedData] = useState<any[]>([]);
 
+    // Helper to safely convert UPC/ISRC to string
+    const cleanString = (val: any) => {
+        if (!val) return '';
+        // If it's a number (e.g. from Excel raw), convert to string
+        if (typeof val === 'number') {
+            // .toLocaleString('fullwide', { useGrouping: false }) prevents 1.23E+12 notation
+            return val.toLocaleString('fullwide', { useGrouping: false });
+        }
+        return val.toString().trim();
+    };
+
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -24,10 +35,14 @@ export default function State51Importer() {
             reader.onload = (evt) => {
                 try {
                     const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+                    
+                    // cellDates: true converts Excel serial dates to JS Dates
                     const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'dd-mm-yy' });
+                    
+                    // [FIX] raw: true ensures we get the real number (5057...) not the display string (5.05E+12)
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: true });
                     analyzeData(jsonData);
                 } catch (err: any) {
                     setLogs(prev => [`Excel Error: ${err.message}`]);
@@ -54,7 +69,12 @@ export default function State51Importer() {
         let revenueSum = 0;
         let reportMonth = '';
 
-        const validRows = rows.filter(r => r['ISRC'] && r['UPC']);
+        // [FIX] Clean UPC and ISRC before filtering
+        const validRows = rows.map(r => ({
+            ...r,
+            UPC: cleanString(r['UPC']),
+            ISRC: cleanString(r['ISRC'])
+        })).filter(r => r['ISRC'] && r['UPC']);
 
         if (validRows.length === 0) {
             setLogs(prev => ["No valid rows found. Check CSV headers (ISRC, UPC required)."]);
@@ -69,14 +89,27 @@ export default function State51Importer() {
             }
         });
 
+        // Date Parsing (Handles both Excel Object and CSV String)
         if (validRows.length > 0 && validRows[0]['Start']) {
             try {
-                const dateStr = validRows[0]['Start'].replace(/\//g, '-');
-                const dateParts = dateStr.split('-');
-                if (dateParts.length === 3) {
-                    let year = dateParts[2];
-                    if (year.length === 2) year = `20${year}`;
-                    reportMonth = `${year}-${dateParts[1]}-01`;
+                const startVal = validRows[0]['Start'];
+
+                if (startVal instanceof Date) {
+                    // Excel Date Object (from cellDates: true)
+                    // Format to YYYY-MM-DD
+                    const year = startVal.getFullYear();
+                    const month = String(startVal.getMonth() + 1).padStart(2, '0');
+                    // Always set to 01 for monthly reporting
+                    reportMonth = `${year}-${month}-01`; 
+                } else {
+                    // CSV String (e.g., "01-06-22" or "01/06/22")
+                    const dateStr = String(startVal).replace(/\//g, '-');
+                    const dateParts = dateStr.split('-');
+                    if (dateParts.length === 3) {
+                        let year = dateParts[2];
+                        if (year.length === 2) year = `20${year}`;
+                        reportMonth = `${year}-${dateParts[1]}-01`;
+                    }
                 }
             } catch (e) {
                 console.error("Date parsing error", e);
@@ -102,7 +135,6 @@ export default function State51Importer() {
         setStep('PROCESSING');
 
         try {
-            // --- PHASE 1: PREPARE DATA MAPPING ---
             setLogs(prev => ["Fetching system track map...", ...prev]);
 
             const { data: dbTracks, error: trackError } = await supabase
@@ -116,25 +148,29 @@ export default function State51Importer() {
                 if (t.isrc) isrcMap.set(t.isrc.trim().toUpperCase(), { id: t.id, uid: t.uid });
             });
 
-            // --- PHASE 2: REVENUE AGGREGATION ---
             setLogs(prev => ["Processing rows...", ...prev]);
 
             const revenuePayload: Record<string, number> = {};
             const analyticsPayload: any[] = [];
 
             for (const row of parsedData) {
-                const upc = row['UPC'];
-                const isrc = row['ISRC']?.trim().toUpperCase();
+                // Ensure strings
+                const upc = cleanString(row['UPC']);
+                const isrc = cleanString(row['ISRC']).toUpperCase();
+                
                 const amount = parseFloat(row['Royalty GBP'] || '0');
                 const streams = parseInt(row['Total Units'] || '0');
+                
                 const platformRaw = row['Music Service'] || 'Unknown';
                 const platform = platformRaw.split(' - ')[0].toUpperCase().trim();
                 const country = row['Country of Sale'] || 'GLOBAL';
 
+                // 1. Prepare Revenue
                 if (amount > 0 && upc) {
                     revenuePayload[upc] = (revenuePayload[upc] || 0) + amount;
                 }
 
+                // 2. Prepare Analytics
                 if (isrcMap.has(isrc)) {
                     const trackInfo = isrcMap.get(isrc);
                     analyticsPayload.push({
@@ -150,7 +186,7 @@ export default function State51Importer() {
                 }
             }
 
-            // --- PHASE 3: EXECUTE ANALYTICS INSERT ---
+            // --- EXECUTE INSERTS ---
             if (analyticsPayload.length > 0) {
                 setLogs(prev => [`Inserting ${analyticsPayload.length} analytics records...`, ...prev]);
                 const batchSize = 1000;
@@ -158,14 +194,13 @@ export default function State51Importer() {
                     const batch = analyticsPayload.slice(i, i + batchSize);
                     const { error: anaError } = await supabase.from('analytics_daily').insert(batch);
                     if (anaError) {
-                        console.error("Analytics Error", anaError);
                         setLogs(prev => [`⚠️ Analytics Batch Error: ${anaError.message}`, ...prev]);
                     }
                 }
                 setLogs(prev => ["✅ Analytics Data Ingested", ...prev]);
             }
 
-            // --- PHASE 4: EXECUTE REVENUE DISTRIBUTION ---
+            // --- EXECUTE DISTRIBUTION ---
             const distItems = Object.entries(revenuePayload).map(([upc, amount]) => ({
                 upc,
                 amount
@@ -181,17 +216,15 @@ export default function State51Importer() {
 
                 if (rpcError) throw rpcError;
 
-                // [FIXED LOGIC HERE]
                 const successCount = rpcData.success_count ?? 0;
                 const errorCount = rpcData.error_count ?? 0;
                 const errors = rpcData.errors || [];
 
-                // Update logs with specific error messages
                 setLogs(prev => [
                     `✅ Revenue Distribution Complete`,
-                    `Success: ${successCount}`,
+                    `Success: ${successCount}`, 
                     `Errors: ${errorCount}`,
-                    ...errors.map((e: string) => `❌ ${e}`), // Add detailed errors to log
+                    ...errors.map((e: string) => `❌ ${e}`),
                     ...prev
                 ]);
             } else {
