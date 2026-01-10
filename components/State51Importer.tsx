@@ -10,6 +10,17 @@ export default function State51Importer() {
     const [summary, setSummary] = useState<{ totalRows: number, totalRevenue: number, month: string } | null>(null);
     const [parsedData, setParsedData] = useState<any[]>([]);
 
+    // Helper to find a key in an object case-insensitively (handles Source vs source vs SOURCE)
+    const findKey = (row: any, candidates: string[]) => {
+        if (!row) return null;
+        const keys = Object.keys(row);
+        for (const candidate of candidates) {
+            const match = keys.find(k => k.trim().toLowerCase() === candidate.toLowerCase());
+            if (match) return row[match];
+        }
+        return null;
+    };
+
     const cleanString = (val: any) => {
         if (val === null || val === undefined) return '';
         if (typeof val === 'number') {
@@ -63,12 +74,12 @@ export default function State51Importer() {
         let revenueSum = 0;
         let reportMonth = '';
 
-        // Filter valid rows (Require ISRC and UPC)
-        const validRows = rows.map(r => ({
-            ...r,
-            UPC: cleanString(r['UPC']),
-            ISRC: cleanString(r['ISRC'])
-        })).filter(r => r['ISRC'] && r['UPC']);
+        // Filter valid rows using flexible key search
+        const validRows = rows.filter(r => {
+            const isrc = findKey(r, ['ISRC']);
+            const upc = findKey(r, ['UPC', 'Barcode']);
+            return isrc && upc;
+        });
 
         if (validRows.length === 0) {
             setLogs(prev => ["No valid rows found. Check headers (ISRC, UPC required)."]);
@@ -77,16 +88,17 @@ export default function State51Importer() {
         }
 
         validRows.forEach(row => {
-            // Flexible Revenue Column Check
-            const amount = parseFloat(row['Royalty GBP'] || row['Net Revenue'] || row['Revenue'] || '0');
+            const amountVal = findKey(row, ['Royalty GBP', 'Net Revenue', 'Revenue', 'Total']);
+            const amount = parseFloat(amountVal || '0');
             if (!isNaN(amount)) {
                 revenueSum += amount;
             }
         });
 
-        // Flexible Date Column Check
+        // Determine Month
         if (validRows.length > 0) {
-            const dateVal = validRows[0]['Start'] || validRows[0]['Date'] || validRows[0]['Period'];
+            const dateVal = findKey(validRows[0], ['Start', 'Date', 'Period', 'Trans Time']);
+
             if (dateVal) {
                 try {
                     if (dateVal instanceof Date) {
@@ -94,20 +106,22 @@ export default function State51Importer() {
                         const month = String(dateVal.getMonth() + 1).padStart(2, '0');
                         reportMonth = `${year}-${month}-01`;
                     } else {
-                        // Handle CSV String dates
-                        const dateStr = String(dateVal).replace(/\//g, '-');
-                        const dateParts = dateStr.split('-');
-                        if (dateParts.length === 3) {
-                            let year = dateParts[2];
+                        // Handle string dates (e.g. 01-06-22)
+                        const dateStr = String(dateVal).replace(/\//g, '-').trim();
+                        const parts = dateStr.split('-');
+                        if (parts.length === 3) {
+                            let year = parts[2];
+                            let month = parts[1];
+
                             if (year.length === 2) year = `20${year}`;
-                            reportMonth = `${year}-${dateParts[1]}-01`;
+                            reportMonth = `${year}-${month}-01`;
                         }
                     }
-                } catch (e) { console.error(e); }
+                } catch (e) { console.error("Date parse error", e); }
             }
         }
 
-        if (!reportMonth) {
+        if (!reportMonth || reportMonth.includes('undefined')) {
             reportMonth = new Date().toISOString().slice(0, 7) + '-01';
         }
 
@@ -118,7 +132,7 @@ export default function State51Importer() {
         });
         setParsedData(validRows);
         setStep('IDLE');
-        setLogs(prev => [`Analysis complete. Found ${validRows.length} rows. Est. Date: ${reportMonth}`]);
+        setLogs(prev => [`Analysis complete. ${validRows.length} records. Period: ${reportMonth}`]);
     };
 
     const processIngestion = async () => {
@@ -126,8 +140,9 @@ export default function State51Importer() {
         setStep('PROCESSING');
 
         try {
-            setLogs(prev => ["Fetching system track map...", ...prev]);
+            setLogs(prev => ["Fetching track map...", ...prev]);
 
+            // 1. Get DB Map
             const { data: dbTracks, error: trackError } = await supabase
                 .from('tracks')
                 .select('id, isrc, uid');
@@ -139,75 +154,82 @@ export default function State51Importer() {
                 if (t.isrc) isrcMap.set(t.isrc.trim().toUpperCase(), { id: t.id, uid: t.uid });
             });
 
-            setLogs(prev => ["Processing rows...", ...prev]);
+            setLogs(prev => ["Processing data...", ...prev]);
 
             const revenuePayload: Record<string, number> = {};
             const analyticsPayload: any[] = [];
 
             for (const row of parsedData) {
-                const upc = cleanString(row['UPC']);
-                const isrc = cleanString(row['ISRC']).toUpperCase();
-                
-                const amount = parseFloat(row['Royalty GBP'] || row['Net Revenue'] || '0');
-                const streams = parseInt(row['Total Units'] || row['Quantity'] || '0');
-                
-                // [FIX] Flexible Platform Mapping (Checks "Music Service" OR "Source")
-                const platformRaw = row['Music Service'] || row['Source'] || 'Unknown';
-                const platform = String(platformRaw).split(' - ')[0].toUpperCase().trim() || 'OTHER';
+                // Get Values safely
+                const upc = cleanString(findKey(row, ['UPC', 'Barcode']));
+                const isrc = cleanString(findKey(row, ['ISRC'])).toUpperCase();
 
-                const country = row['Country of Sale'] || row['Country'] || 'GLOBAL';
+                const amountVal = findKey(row, ['Royalty GBP', 'Net Revenue', 'Revenue']);
+                const amount = parseFloat(amountVal || '0');
 
-                // 1. Revenue
+                const streamsVal = findKey(row, ['Total Units', 'Quantity', 'Units']);
+                const streams = parseInt(streamsVal || '0');
+
+                // [CRITICAL FIX] Platform mapping
+                // Look for 'Source', 'Music Service', or 'DSP'
+                const platformRaw = findKey(row, ['Source', 'Music Service', 'DSP']) || 'Unknown';
+                // Clean up: "Spotify - Stream" -> "SPOTIFY"
+                // Ensure default 'OTHER' if empty to satisfy NOT NULL constraint
+                const platform = String(platformRaw).split(' - ')[0].trim().toUpperCase() || 'OTHER';
+
+                const country = findKey(row, ['Country of Sale', 'Country', 'Territory']) || 'GLOBAL';
+
+                // Accumulate Revenue for Bulk RPC
                 if (amount > 0 && upc) {
                     revenuePayload[upc] = (revenuePayload[upc] || 0) + amount;
                 }
 
-                // 2. Analytics
+                // Prepare Analytics Record
                 if (isrcMap.has(isrc)) {
                     const trackInfo = isrcMap.get(isrc);
-                    
+
+                    // [CRITICAL FIX] Map to correct DB columns for `analytics_detailed`
                     const entry = {
-                        date: summary.month,
+                        user_id: trackInfo.uid,          // was `uid`
                         track_id: trackInfo.id,
-                        uid: trackInfo.uid,
-                        platform: platform, // Now guaranteed to be a string
-                        country: country,
-                        count: streams,
-                        type: 'STREAM',
-                        revenue: amount
+                        platform: platform,              // Verified Not Null
+                        country_code: country,           // was `country`
+                        reporting_month: summary.month,  // was `date`
+                        streams: isNaN(streams) ? 0 : streams, // was `count`
+                        revenue: isNaN(amount) ? 0 : amount
                     };
 
-                    // Prevent pushing invalid entries
-                    if (entry.track_id && entry.platform) {
-                        analyticsPayload.push(entry);
-                    }
+                    analyticsPayload.push(entry);
                 }
             }
 
-            // --- INSERT ANALYTICS ---
+            // --- INSERT ANALYTICS (Detailed) ---
             if (analyticsPayload.length > 0) {
                 setLogs(prev => [`Inserting ${analyticsPayload.length} analytics records...`, ...prev]);
-                
-                // Use 'analytics_daily' as per previous success context, or change to 'analytics_detailed' if schema matches
-                const targetTable = 'analytics_daily'; 
 
-                const batchSize = 1000;
+                const batchSize = 500;
                 for (let i = 0; i < analyticsPayload.length; i += batchSize) {
                     const batch = analyticsPayload.slice(i, i + batchSize);
-                    const { error: anaError } = await supabase.from(targetTable).insert(batch);
+
+                    const { error: anaError } = await supabase
+                        .from('analytics_detailed')
+                        .insert(batch);
+
                     if (anaError) {
-                        console.error("Insert Error", anaError);
-                        setLogs(prev => [`⚠️ Batch Error: ${anaError.message} (Code: ${anaError.code})`, ...prev]);
+                        console.error("DB Insert Error", anaError);
+                        setLogs(prev => [`⚠️ Insert Error: ${anaError.message}`, ...prev]);
                     }
                 }
-                setLogs(prev => ["✅ Analytics Data Ingested", ...prev]);
+                setLogs(prev => ["✅ Analytics history saved.", ...prev]);
+            } else {
+                setLogs(prev => ["⚠️ No matching tracks found in DB to attach analytics.", ...prev]);
             }
 
-            // --- DISTRIBUTE REVENUE ---
+            // --- DISTRIBUTE REVENUE (Wallet) ---
             const distItems = Object.entries(revenuePayload).map(([upc, amount]) => ({ upc, amount }));
 
             if (distItems.length > 0) {
-                setLogs(prev => [`Distributing £${summary.totalRevenue.toFixed(2)}...`, ...prev]);
+                setLogs(prev => [`Distributing £${summary.totalRevenue.toFixed(2)} to wallets...`, ...prev]);
 
                 const { data: rpcData, error: rpcError } = await supabase.rpc('admin_distribute_revenue_bulk', {
                     p_month: summary.month,
@@ -216,35 +238,35 @@ export default function State51Importer() {
 
                 if (rpcError) throw rpcError;
 
+                const success = rpcData.success_count ?? 0;
+                const fail = rpcData.error_count ?? 0;
+
                 setLogs(prev => [
-                    `✅ Revenue Distribution Complete`,
-                    `Success: ${rpcData.success_count ?? 0}`,
-                    `Errors: ${rpcData.error_count ?? 0}`,
+                    `✅ Distribution Complete`,
+                    `Success: ${success} releases paid`,
+                    `Fail: ${fail} UPCs not found`,
                     ...(rpcData.errors || []).map((e: string) => `❌ ${e}`),
                     ...prev
                 ]);
-            } else {
-                setLogs(prev => ["⚠️ No revenue data to distribute.", ...prev]);
             }
 
             setStep('COMPLETE');
 
         } catch (err: any) {
             console.error(err);
-            setLogs(prev => [`❌ SYSTEM ERROR: ${err.message}`, ...prev]);
+            setLogs(prev => [`❌ CRITICAL FAILURE: ${err.message}`, ...prev]);
             setStep('IDLE');
         }
     };
 
     return (
         <div className="bg-[#111] border border-white/10 rounded-xl p-6 space-y-6 animate-fade-in">
-            {/* UI Header */}
             <div className="flex justify-between items-start">
                 <div>
                     <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                        <CloudLightning className="text-blue-500" /> State51 Import Node
+                        <CloudLightning className="text-blue-500" /> State51 / Universal Import
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">Processor for State51 Conspiracy CSV/XLSX</p>
+                    <p className="text-xs text-gray-500 mt-1">Smart-parser for CSV/XLSX (Auto-detects Source/Revenue columns)</p>
                 </div>
                 {summary && (
                     <div className="text-right">
@@ -255,13 +277,12 @@ export default function State51Importer() {
                 )}
             </div>
 
-            {/* UI Dropzone */}
             {step === 'IDLE' || step === 'COMPLETE' ? (
                 <div className="border-2 border-dashed border-white/10 rounded-xl p-8 hover:bg-white/5 transition text-center cursor-pointer relative group">
                     <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
                     <Upload className="mx-auto text-gray-500 mb-2 group-hover:text-blue-500 transition-colors" />
-                    <p className="text-sm font-bold text-white">Upload Report File</p>
-                    <p className="text-xs text-gray-500 mt-1 font-mono">Supports .CSV, .XLSX, .XLS</p>
+                    <p className="text-sm font-bold text-white">Upload Royalty Report</p>
+                    <p className="text-xs text-gray-500 mt-1 font-mono">Supports Excel & CSV</p>
                 </div>
             ) : (
                 <div className="p-8 text-center border border-white/10 rounded-xl bg-black/50">
@@ -271,29 +292,31 @@ export default function State51Importer() {
                 </div>
             )}
 
-            {/* UI Confirmation */}
             {summary && step !== 'PROCESSING' && step !== 'COMPLETE' && (
                 <div className="bg-blue-900/10 border border-blue-500/20 p-4 rounded-lg">
                     <div className="flex gap-3 items-start">
                         <CheckCircle2 className="text-blue-500 shrink-0" size={18} />
                         <div>
-                            <p className="text-xs font-bold text-blue-400 uppercase mb-1">Ready to Synchronize</p>
+                            <p className="text-xs font-bold text-blue-400 uppercase mb-1">Ready to Distribute</p>
                             <p className="text-xs text-gray-400 mb-3">
-                                System will ingest <b>{summary.totalRows}</b> rows. Revenue (<b>£{summary.totalRevenue.toFixed(2)}</b>) will be distributed.
+                                <b>{summary.totalRows}</b> valid rows found.<br />
+                                <span className="opacity-50">Note: Tracks must exist in DB (matching ISRC) to save analytics.</span>
                             </p>
-                            <button onClick={processIngestion} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-xs rounded-lg transition shadow-lg">
-                                Execute Ingestion
+                            <button
+                                onClick={processIngestion}
+                                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-xs rounded-lg transition shadow-lg"
+                            >
+                                Process Data
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Logs Window */}
             <div className="h-48 bg-black rounded-lg border border-white/10 p-4 overflow-y-auto font-mono text-[10px] space-y-1 custom-scrollbar">
-                {logs.length === 0 && <span className="text-gray-700">Waiting for input stream...</span>}
+                {logs.length === 0 && <span className="text-gray-700">Waiting for file...</span>}
                 {logs.map((log, i) => (
-                    <div key={i} className={log.includes('Error') || log.includes('❌') ? 'text-red-500' : log.includes('✅') ? 'text-green-500' : 'text-gray-400'}>
+                    <div key={i} className={log.includes('Error') || log.includes('FAILURE') || log.includes('❌') ? 'text-red-500' : log.includes('✅') ? 'text-green-500' : 'text-gray-400'}>
                         <span className="opacity-30 mr-2">[{new Date().toLocaleTimeString()}]</span>
                         {log}
                     </div>
