@@ -60,7 +60,7 @@ export const BrandProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // Debug: Bật console F12 để xem màu có được set không
         console.log(`[Brand] Applying Theme: Primary=${s.primary_color} -> RGB=${primaryRgb}`);
-
+        root.style.setProperty('--brand-bg', '17 17 17');
         root.style.setProperty('--brand-primary', primaryRgb);
         root.style.setProperty('--brand-secondary', secondaryRgb);
     };
