@@ -20,7 +20,7 @@ import { UserProfile } from '@/types';
 import { api } from '@/services/api';
 import { MusicPlayerProvider } from './MusicPlayerContext';
 import GlobalPlayer from './MusicPlayer/GlobalPlayer';
-
+import { APP_NAME, APP_LOGO_URL } from '@/constants';
 interface LayoutProps {
   children: React.ReactNode;
   onLogout?: () => void;
@@ -75,8 +75,14 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
         className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-surface border-r border-white/10 transform transition-transform duration-300 lg:transform-none flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <div className="text-xl font-black tracking-tighter uppercase text-white">
-            Aurora<span className="text-blue-500">.</span>
+          <div className="flex items-center gap-2">
+            {APP_LOGO_URL ? (
+              <img src={APP_LOGO_URL} alt={APP_NAME} className="h-8 w-auto object-contain" />
+            ) : (
+              <div className="text-xl font-black tracking-tighter uppercase text-white">
+                {APP_NAME}<span className="text-blue-500">.</span>
+              </div>
+            )}
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
             <X size={20} />
@@ -171,11 +177,11 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
 };
 
 const Layout: React.FC<LayoutProps> = (props) => {
-    return (
-        <MusicPlayerProvider>
-            <LayoutContent {...props} />
-        </MusicPlayerProvider>
-    );
+  return (
+    <MusicPlayerProvider>
+      <LayoutContent {...props} />
+    </MusicPlayerProvider>
+  );
 };
 
 export default Layout;
