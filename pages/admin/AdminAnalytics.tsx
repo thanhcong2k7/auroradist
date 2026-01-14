@@ -8,6 +8,7 @@ interface CsvRow {
     Date: string;
     Track: string;
     Count: number;
+    ISRC?: string;
     Platform?: string;
     Country?: string;
 }
@@ -20,6 +21,7 @@ interface ConflictItem {
 
 const AdminAnalytics: React.FC = () => {
     const [step, setStep] = useState<'UPLOAD' | 'RESOLVE' | 'SAVING' | 'DONE'>('UPLOAD');
+    const [importFormat, setImportFormat] = useState<'REVELATOR' | 'STATE51'>('REVELATOR');
     const [parsedData, setParsedData] = useState<CsvRow[]>([]);
     const [dbTracks, setDbTracks] = useState<Track[]>([]);
     const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
@@ -44,7 +46,11 @@ const AdminAnalytics: React.FC = () => {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
-                processCsvData(results.data);
+                if (importFormat === 'REVELATOR') {
+                    processRevelatorData(results.data);
+                } else {
+                    processState51Data(results.data);
+                }
             }
         });
     };
@@ -82,8 +88,96 @@ const AdminAnalytics: React.FC = () => {
         setParsedData(cleanRows);
         analyzeConflicts(uniqueCsvTrackNames);
     };
+    const processRevelatorData = (rows: any[]) => {
+        const cleanRows: CsvRow[] = [];
+        const uniqueIdentities = new Set<string>();
+
+        rows.forEach((row: any) => {
+            const dateKey = Object.keys(row)[0];
+            const dateRaw = row[dateKey];
+            if (!dateRaw || dateRaw.includes('Total') || !dateRaw.includes('-')) return;
+
+            // Format Date Revelator (VD: 2024-01-01)
+            const date = dateRaw.split(' - ')[0].trim().replace(/\//g, '-');
+
+            Object.keys(row).forEach(key => {
+                if (key === dateKey) return;
+                const count = parseInt(row[key].replace(/,/g, ''), 10);
+                if (count > 0) {
+                    cleanRows.push({
+                        Date: date,
+                        Track: key.trim(),
+                        Count: count,
+                        Platform: 'ALL',   // Revelator daily thường gộp platform
+                        Country: 'GLOBAL'  // Revelator daily thường gộp country
+                    });
+                    uniqueIdentities.add(`NAME:${key.trim()}`);
+                }
+            });
+        });
+
+        setParsedData(cleanRows);
+        analyzeConflicts(uniqueIdentities);
+    };
+    const processState51Data = (rows: any[]) => {
+        const cleanRows: CsvRow[] = [];
+        const uniqueIdentities = new Set<string>();
+
+        rows.forEach((row: any) => {
+            // 1. Lấy Total Units
+            const count = parseInt(row['Total Units'] || '0', 10);
+            if (count <= 0) return;
+
+            // 2. Parse ngày (DD-MM-YY -> YYYY-MM-DD)
+            // State51 dùng cột 'Start' hoặc 'Trans Time'
+            const dateRaw = row['Start'] || row['Trans Time'] || '';
+            let dateISO = '';
+
+            if (dateRaw && dateRaw.includes('-')) {
+                const parts = dateRaw.split('-'); // 01-07-22 -> [01, 07, 22]
+                if (parts.length === 3) {
+                    // Giả định năm 20xx
+                    dateISO = `20${parts[2]}-${parts[1]}-${parts[0]}`;
+                }
+            }
+
+            if (!dateISO) return; // Skip nếu lỗi ngày
+
+            // 3. Lấy thông tin Track
+            const trackName = row['Track Title'] || '';
+            const isrc = row['ISRC'] ? row['ISRC'].trim().toUpperCase() : '';
+
+            // 4. Lấy Platform (Music Service)
+            // VD: "Boomplay - Boomplay" -> BOOMPLAY
+            const rawService = row['Music Service'] || 'UNKNOWN';
+            const platform = rawService.split(' - ')[0].toUpperCase();
+
+            // 5. Lấy Country
+            const country = row['Country of Sale'] || 'GLOBAL';
+
+            cleanRows.push({
+                Date: dateISO,
+                Track: trackName,
+                ISRC: isrc,
+                Count: count,
+                Platform: platform,
+                Country: country
+            });
+
+            // Ưu tiên dùng ISRC để định danh, nếu không có thì dùng Tên
+            if (isrc) {
+                uniqueIdentities.add(`ISRC:${isrc}`);
+            } else {
+                uniqueIdentities.add(`NAME:${trackName}`);
+            }
+        });
+
+        setParsedData(cleanRows);
+        analyzeConflicts(uniqueIdentities);
+    };
 
     // Logic: Tìm bài hát trùng tên
+    /*
     const analyzeConflicts = (csvTrackNames: Set<string>) => {
         const foundConflicts: ConflictItem[] = [];
 
@@ -106,7 +200,41 @@ const AdminAnalytics: React.FC = () => {
         setConflicts(foundConflicts);
         setStep(foundConflicts.length > 0 ? 'RESOLVE' : 'SAVING');
     };
+    */
+    const analyzeConflicts = (identities: Set<string>) => {
+        const foundConflicts: ConflictItem[] = [];
 
+        identities.forEach(identity => {
+            let matches: any[] = [];
+            let displayLabel = '';
+
+            if (identity.startsWith('ISRC:')) {
+                // Tìm theo ISRC (Chính xác cao)
+                const isrc = identity.split('ISRC:')[1];
+                displayLabel = `ISRC: ${isrc}`;
+                matches = dbTracks.filter(t => t.isrc === isrc);
+            } else {
+                // Tìm theo Tên (Logic cũ)
+                const name = identity.split('NAME:')[1];
+                displayLabel = name;
+                matches = dbTracks.filter(t => t.name.toLowerCase() === name.toLowerCase());
+            }
+
+            if (matches.length > 1) {
+                // Conflict: 1 ISRC/Tên thuộc về nhiều User (lỗi dữ liệu DB hoặc trùng tên)
+                foundConflicts.push({
+                    csvTrackName: displayLabel,
+                    candidates: matches,
+                    selectedTrackId: null
+                });
+            } else if (matches.length === 0) {
+                setLog(prev => [...prev, `⚠️ Warning: Asset "${displayLabel}" not found in Database. Skipped.`]);
+            }
+        });
+
+        setConflicts(foundConflicts);
+        setStep(foundConflicts.length > 0 ? 'RESOLVE' : 'SAVING');
+    };
     const handleResolve = (csvName: string, trackId: number) => {
         setConflicts(prev => prev.map(c =>
             c.csvTrackName === csvName ? { ...c, selectedTrackId: trackId } : c
@@ -186,11 +314,28 @@ const AdminAnalytics: React.FC = () => {
 
             {/* STEP 1: UPLOAD */}
             {step === 'UPLOAD' && (
-                <div className="border-2 border-dashed border-white/10 rounded-2xl p-12 flex flex-col items-center justify-center gap-4 bg-white/[0.02] hover:bg-white/[0.05] transition">
+                <div className="border-2 border-dashed border-white/10 rounded-2xl p-12 flex flex-col items-center justify-center gap-4 bg-white/[0.02]">
+                    <div className="flex bg-black p-1 rounded-lg border border-white/10 mb-4">
+                        <button
+                            onClick={() => setImportFormat('REVELATOR')}
+                            className={`px-4 py-2 text-xs font-bold uppercase rounded transition ${importFormat === 'REVELATOR' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            Revelator (Daily CSV)
+                        </button>
+                        <button
+                            onClick={() => setImportFormat('STATE51')}
+                            className={`px-4 py-2 text-xs font-bold uppercase rounded transition ${importFormat === 'STATE51' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            State51 (Royalty Report)
+                        </button>
+                    </div>
+
                     <FileSpreadsheet size={48} className="text-green-500" />
                     <div className="text-center">
-                        <h3 className="font-bold text-lg">Upload Daily Streams/Views CSV</h3>
-                        <p className="text-gray-500 text-sm">Supports Revelator/Nodable format</p>
+                        <h3 className="font-bold text-lg">Upload {importFormat === 'REVELATOR' ? 'Daily Streams' : 'Royalty Units'}</h3>
+                        <p className="text-gray-500 text-sm">
+                            {importFormat === 'REVELATOR' ? 'Standard Matrix Format' : 'Vertical Transaction Format'}
+                        </p>
                     </div>
                     <label className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl cursor-pointer transition flex items-center gap-2">
                         <Upload size={18} /> Select File
