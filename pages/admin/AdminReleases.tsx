@@ -57,7 +57,7 @@ const AdminReleases: React.FC = () => {
 
         setIsExporting(true);
         try {
-            // 1. Fetch FULL data (Releases + Tracks + Label) for selected IDs
+            // 1. Fetch FULL data
             const { data: rawData, error } = await supabase
                 .from('releases')
                 .select(`
@@ -71,84 +71,131 @@ const AdminReleases: React.FC = () => {
             if (error) throw error;
             if (!rawData) return;
 
-            // 2. Helper for formatting
-            const pipe = (arr: any[]) => arr ? arr.join('|') : '';
+            // 2. Helper functions
+            const pipe = (arr: any[]) => Array.isArray(arr) ? arr.join('|') : '';
             const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('en-GB') : ''; // DD/MM/YYYY
+            const getBoolY = (val: boolean) => val ? 'Y' : 'N';
 
-            // 3. Prepare Product Level Data
-            const productData = rawData.map((r: any, idx) => ({
-                'CHECK NO.': idx + 1,
-                'GROUPING ID': r.id,
-                'PRODUCT TITLE': r.title,
-                'VERSION DESCRIPTION': r.version,
-                'ARTIST(S)': r.artist,
-                'DISPLAY ARTIST': r.artist,
-                'BARCODE': r.upc,
-                'CATALOGUE NO.': `REL-${r.id}`,
-                'RELEASE FORMAT TYPE': r.format,
-                'SOUND CARRIER': '',
-                'PRICE BAND': 'Full',
-                'LICENSED TERRITORIES to INCLUDE': r.territories?.includes('WORLDWIDE') ? 'WORLD' : pipe(r.territories),
-                'LICENSED TERRITORIES to EXCLUDE': '',
-                'RELEASE START DATE': formatDate(r.release_date),
-                'RELEASE END DATE': '',
-                'GRid': '',
-                '(P) YEAR': r.phonogram_year,
-                '(P) HOLDER': r.phonogram_line,
-                '(C) YEAR': r.copyright_year,
-                '(C) HOLDER': r.copyright_line,
-                'STATUS': r.status,
-                'LABEL': r.labels?.name || 'Independent',
-                'GENRE(S)': r.genre,
-                'Main SubGenre': r.sub_genre,
-                'EXPLICIT CONTENT': r.tracks.some((t: any) => t.is_explicit) ? 'Y' : 'N',
-                'VOLUME NO.': 1,
-                'VOLUME TOTAL': 1,
-                'SERVICES': pipe(r.selected_dsps)
-            }));
+            // 3. Prepare Flat Data (One row per Track)
+            let flatData: any[] = [];
+            let globalCheckNo = 1;
 
-            // 4. Prepare Track Level Data
-            let trackData: any[] = [];
-            rawData.forEach((r: any, idx: number) => {
-                const sortedTracks = r.tracks.sort((a: any, b: any) => a.id - b.id);
+            rawData.forEach((r: any) => {
+                const sortedTracks = r.tracks ? r.tracks.sort((a: any, b: any) => a.id - b.id) : [];
+                const isReleaseExplicit = sortedTracks.some((t: any) => t.is_explicit) ? 'Y' : 'N';
+
+                // Nếu release không có track nào, vẫn export 1 dòng chứa info release (tùy chọn, nhưng thường phải có track)
+                if (sortedTracks.length === 0) return;
 
                 sortedTracks.forEach((t: any, tIdx: number) => {
-                    // Extract contributors from JSONB
-                    const producers = t.contributors?.filter((c: any) => c.role === 'Producer').map((c: any) => c.name) || [];
-                    const composers = t.contributors?.filter((c: any) => c.role === 'Composer').map((c: any) => c.name) || [];
+                    // Extract contributors helper
+                    const getContributors = (role: string) => 
+                        t.contributors?.filter((c: any) => c.role === role).map((c: any) => c.name) || [];
+                    
                     const primaryArtists = t.artists?.filter((a: any) => a.role === 'Primary').map((a: any) => a.name) || [];
+                    const displayArtists = t.artists?.map((a: any) => a.name) || [];
 
-                    trackData.push({
-                        'Check No.': idx + 1, // To link back to product if needed manually
-                        'TRACK NO.': tIdx + 1,
-                        'TRACK TITLE': t.name,
-                        'MIX / VERSION': t.version,
-                        'ARTIST(S)': pipe(primaryArtists),
-                        'DISPLAY ARTIST': pipe(t.artists?.map((a: any) => a.name)),
-                        'ISRC': t.isrc,
-                        'AVAILABLE SEPARATELY': 'Y',
+                    // Mapping dữ liệu theo đúng cột trong template
+                    const row = {
+                        // --- SECTION 1: PRODUCT LEVEL ---
+                        'CHECK NO.': globalCheckNo,
+                        'GROUPING ID': r.id,
+                        'PRODUCT TITLE': r.title,
+                        'VERSION DESCRIPTION': r.version || '',
+                        'ARTIST(S)': r.artist, // Giả sử r.artist đã là string gộp, nếu là mảng cần pipe(r.artist)
+                        'DISPLAY ARTIST': r.artist,
+                        'BARCODE': r.upc,
+                        'CATALOGUE NO.': `REL-${r.id}`, // Hoặc r.catalog_number nếu có
+                        'RELEASE FORMAT TYPE': r.format,
+                        'SOUND CARRIER': '', // Template để trống
+                        'PRICE BAND': 'Full',
+                        'LICENSED TERRITORIES to INCLUDE': r.territories?.includes('WORLDWIDE') ? 'WORLD' : pipe(r.territories),
+                        'LICENSED TERRITORIES to EXCLUDE': '',
+                        'RELEASE START DATE': formatDate(r.release_date),
+                        'RELEASE END DATE': '',
+                        'GRid': '',
                         '(P) YEAR': r.phonogram_year,
                         '(P) HOLDER': r.phonogram_line,
+                        '(C) YEAR': r.copyright_year,
                         '(C) HOLDER': r.copyright_line,
+                        'STATUS': r.status,
+                        'LABEL': r.labels?.name || 'Independent',
                         'GENRE(S)': r.genre,
-                        'EXPLICIT CONTENT': t.is_explicit ? 'Y' : 'N',
-                        'PRODUCER(S)': pipe(producers),
-                        'COMPOSER(S)': pipe(composers),
-                        'HAS INSTRUMENTS?': t.has_lyrics ? 'Y' : 'Y',
+                        'Main SubGenre': r.sub_genre || '',
+                        'Alternate Genre': '', // Chưa có field, để trống
+                        'Alternate SubGenre': '', // Chưa có field, để trống
+                        'EXPLICIT CONTENT': isReleaseExplicit, // Product Level Explicit
+                        'VOLUME NO.': 1,
+                        'VOLUME TOTAL': 1,
+                        'SERVICES': pipe(r.selected_dsps),
+
+                        // --- SECTION 2: TRACK LEVEL ---
+                        'TRACK NO.': tIdx + 1,
+                        'TRACK TITLE': t.name,
+                        'MIX / VERSION': t.version || '',
+                        'ARTIST(S)_Track': pipe(primaryArtists), // Đổi tên key để tránh trùng, thư viện xlsx sẽ dùng header riêng
+                        'DISPLAY ARTIST_Track': pipe(displayArtists),
+                        'ISRC': t.isrc,
+                        'GRid_Track': '',
+                        'AVAILABLE SEPARATELY': 'Y',
+                        '(P) YEAR_Track': r.phonogram_year, // Thường giống Release
+                        '(P) HOLDER_Track': r.phonogram_line,
+                        '(C) YEAR_Track': r.copyright_year,
+                        '(C) HOLDER_Track': r.copyright_line,
+                        'GENRE(S)_Track': r.genre, // Track genre thường giống release trừ khi defined riêng
+                        'Main SubGenre_Track': r.sub_genre || '',
+                        'Alternate Genre_Track': '',
+                        'Alternate SubGenre_Track': '',
+                        'EXPLICIT CONTENT_Track': getBoolY(t.is_explicit),
+                        'PRODUCER(S)': pipe(getContributors('Producer')),
+                        'MIXER(S)': pipe(getContributors('Mixer')),
+                        'COMPOSER(S)': pipe(getContributors('Composer')),
+                        'LYRICIST(S)': pipe(getContributors('Lyricist')),
+                        'PUBLISHER(S)': pipe(getContributors('Publisher')), // Hoặc lấy từ r.publisher nếu không có ở track
+                        'HAS INSTRUMENTS?': t.has_lyrics ? 'Y' : 'Y', // Logic tạm, cần check logic thực tế
                         'HAS VOCALS/LANGUAGE?': t.has_lyrics ? (r.language || 'English') : 'No human vocals'
-                    });
+                    };
+                    flatData.push(row);
                 });
+                globalCheckNo++;
             });
 
-            // 5. Create Excel File
+            // 4. Create Excel File
+            // Định nghĩa Header thủ công để đảm bảo đúng tên cột (do JSON object key không được trùng nhau hoàn toàn nếu gom chung)
+            const headers = [
+                "CHECK NO.", "GROUPING ID", "PRODUCT TITLE", "VERSION DESCRIPTION", "ARTIST(S)", "DISPLAY ARTIST", "BARCODE", 
+                "CATALOGUE NO.", "RELEASE FORMAT TYPE", "SOUND CARRIER", "PRICE BAND", "LICENSED TERRITORIES to INCLUDE", 
+                "LICENSED TERRITORIES to EXCLUDE", "RELEASE START DATE", "RELEASE END DATE", "GRid", "(P) YEAR", "(P) HOLDER", 
+                "(C) YEAR", "(C) HOLDER", "STATUS", "LABEL", "GENRE(S)", "Main SubGenre", "Alternate Genre", "Alternate SubGenre", 
+                "EXPLICIT CONTENT", "VOLUME NO.", "VOLUME TOTAL", "SERVICES",
+                // Track start
+                "TRACK NO.", "TRACK TITLE", "MIX / VERSION", "ARTIST(S)", "DISPLAY ARTIST", "ISRC", "GRid", "AVAILABLE SEPARATELY", 
+                "(P) YEAR", "(P) HOLDER", "(C) YEAR", "(C) HOLDER", "GENRE(S)", "Main SubGenre", "Alternate Genre", "Alternate SubGenre", 
+                "EXPLICIT CONTENT", "PRODUCER(S)", "MIXER(S)", "COMPOSER(S)", "LYRICIST(S)", "PUBLISHER(S)", "HAS INSTRUMENTS?", "HAS VOCALS/LANGUAGE?"
+            ];
+
+            // Chuyển đổi data object sang array of values theo đúng thứ tự headers
+            const sheetData = flatData.map(row => [
+                row['CHECK NO.'], row['GROUPING ID'], row['PRODUCT TITLE'], row['VERSION DESCRIPTION'], row['ARTIST(S)'], row['DISPLAY ARTIST'], row['BARCODE'],
+                row['CATALOGUE NO.'], row['RELEASE FORMAT TYPE'], row['SOUND CARRIER'], row['PRICE BAND'], row['LICENSED TERRITORIES to INCLUDE'],
+                row['LICENSED TERRITORIES to EXCLUDE'], row['RELEASE START DATE'], row['RELEASE END DATE'], row['GRid'], row['(P) YEAR'], row['(P) HOLDER'],
+                row['(C) YEAR'], row['(C) HOLDER'], row['STATUS'], row['LABEL'], row['GENRE(S)'], row['Main SubGenre'], row['Alternate Genre'], row['Alternate SubGenre'],
+                row['EXPLICIT CONTENT'], row['VOLUME NO.'], row['VOLUME TOTAL'], row['SERVICES'],
+                // Track values
+                row['TRACK NO.'], row['TRACK TITLE'], row['MIX / VERSION'], row['ARTIST(S)_Track'], row['DISPLAY ARTIST_Track'], row['ISRC'], row['GRid_Track'], row['AVAILABLE SEPARATELY'],
+                row['(P) YEAR_Track'], row['(P) HOLDER_Track'], row['(C) YEAR_Track'], row['(C) HOLDER_Track'], row['GENRE(S)_Track'], row['Main SubGenre_Track'], row['Alternate Genre_Track'], row['Alternate SubGenre_Track'],
+                row['EXPLICIT CONTENT_Track'], row['PRODUCER(S)'], row['MIXER(S)'], row['COMPOSER(S)'], row['LYRICIST(S)'], row['PUBLISHER(S)'], row['HAS INSTRUMENTS?'], row['HAS VOCALS/LANGUAGE?']
+            ]);
+
             const wb = XLSX.utils.book_new();
-            const wsProduct = XLSX.utils.json_to_sheet(productData);
-            const wsTracks = XLSX.utils.json_to_sheet(trackData);
+            // Tạo sheet từ mảng mảng (AoA) với header ở dòng đầu
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...sheetData]);
 
-            XLSX.utils.book_append_sheet(wb, wsProduct, "Product Level");
-            XLSX.utils.book_append_sheet(wb, wsTracks, "Track Level");
+            // (Tuỳ chọn) Điều chỉnh độ rộng cột cho dễ nhìn
+            ws['!cols'] = headers.map(() => ({ wch: 20 }));
 
-            XLSX.writeFile(wb, `Export_Batch_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "Metadata Template");
+            XLSX.writeFile(wb, `Metadata_Ingestion_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
         } catch (err: any) {
             console.error(err);
