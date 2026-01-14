@@ -15,9 +15,15 @@ interface CsvRow {
 
 interface ConflictItem {
     csvTrackName: string;
-    candidates: Track[]; // Danh sách các track trùng tên tìm thấy trong DB
-    selectedTrackId: number | null; // ID mà Admin chọn
+    candidates: Track[];
+    selectedTrackId: number | null;
 }
+
+// [FIX 1] Hàm chuẩn hóa chuỗi để so sánh (xóa ký tự đặc biệt, chỉ giữ chữ số)
+const normalizeId = (id: string | undefined | null) => {
+    if (!id) return '';
+    return id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+};
 
 const AdminAnalytics: React.FC = () => {
     const [step, setStep] = useState<'UPLOAD' | 'RESOLVE' | 'SAVING' | 'DONE'>('UPLOAD');
@@ -27,12 +33,14 @@ const AdminAnalytics: React.FC = () => {
     const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
     const [log, setLog] = useState<string[]>([]);
 
-    // Load toàn bộ track trong hệ thống để đối chiếu (Cache local)
     useEffect(() => {
         const fetchTracks = async () => {
-            // Dùng hàm getAllTracks của Admin (không lọc theo user)
-            // Lưu ý: Cần đảm bảo api.admin.getAllTracks() đã được implement hoặc dùng supabase trực tiếp
-            const { data } = await supabase.from('tracks').select('id, name, isrc, uid, profiles(email, name)');
+            // [FIX 2] Tăng giới hạn load tracks (mặc định Supabase chỉ trả 1000 dòng)
+            const { data } = await supabase
+                .from('tracks')
+                .select('id, name, isrc, uid, profiles(email, name)')
+                .limit(10000); // Load 10k bài, nếu nhiều hơn cần phân trang
+            
             if (data) setDbTracks(data as any);
         };
         fetchTracks();
@@ -55,39 +63,6 @@ const AdminAnalytics: React.FC = () => {
         });
     };
 
-    // Logic: Chuyển đổi CSV (Pivot) thành Dữ liệu Dọc (Rows)
-    const processCsvData = (rows: any[]) => {
-        const cleanRows: CsvRow[] = [];
-        const uniqueCsvTrackNames = new Set<string>();
-
-        rows.forEach((row: any) => {
-            // Logic parse file Revelator: Cột đầu là Ngày, các cột sau là Tên bài hát
-            const dateKey = Object.keys(row)[0]; // VD: "Streams (daily)" hoặc "Date"
-            const dateRaw = row[dateKey];
-
-            if (!dateRaw || dateRaw.includes('Total') || !dateRaw.includes('-')) return;
-
-            // Format Date: 2025/12/30 - 2025/12/30 -> lấy cái đầu -> 2025-12-30
-            const date = dateRaw.split(' - ')[0].trim().replace(/\//g, '-');
-
-            Object.keys(row).forEach(key => {
-                if (key === dateKey) return; // Bỏ qua cột ngày
-
-                const count = parseInt(row[key].replace(/,/g, ''), 10);
-                if (count > 0) {
-                    cleanRows.push({
-                        Date: date,
-                        Track: key.trim(),
-                        Count: count
-                    });
-                    uniqueCsvTrackNames.add(key.trim());
-                }
-            });
-        });
-
-        setParsedData(cleanRows);
-        analyzeConflicts(uniqueCsvTrackNames);
-    };
     const processRevelatorData = (rows: any[]) => {
         const cleanRows: CsvRow[] = [];
         const uniqueIdentities = new Set<string>();
@@ -97,7 +72,6 @@ const AdminAnalytics: React.FC = () => {
             const dateRaw = row[dateKey];
             if (!dateRaw || dateRaw.includes('Total') || !dateRaw.includes('-')) return;
 
-            // Format Date Revelator (VD: 2024-01-01)
             const date = dateRaw.split(' - ')[0].trim().replace(/\//g, '-');
 
             Object.keys(row).forEach(key => {
@@ -108,8 +82,8 @@ const AdminAnalytics: React.FC = () => {
                         Date: date,
                         Track: key.trim(),
                         Count: count,
-                        Platform: 'ALL',   // Revelator daily thường gộp platform
-                        Country: 'GLOBAL'  // Revelator daily thường gộp country
+                        Platform: 'ALL',
+                        Country: 'GLOBAL'
                     });
                     uniqueIdentities.add(`NAME:${key.trim()}`);
                 }
@@ -117,42 +91,32 @@ const AdminAnalytics: React.FC = () => {
         });
 
         setParsedData(cleanRows);
-        analyzeConflicts(uniqueIdentities);
+        analyzeConflicts(cleanRows, uniqueIdentities);
     };
+
     const processState51Data = (rows: any[]) => {
         const cleanRows: CsvRow[] = [];
         const uniqueIdentities = new Set<string>();
 
         rows.forEach((row: any) => {
-            // 1. Lấy Total Units
             const count = parseInt(row['Total Units'] || '0', 10);
             if (count <= 0) return;
 
-            // 2. Parse ngày (DD-MM-YY -> YYYY-MM-DD)
-            // State51 dùng cột 'Start' hoặc 'Trans Time'
             const dateRaw = row['Start'] || row['Trans Time'] || '';
             let dateISO = '';
 
             if (dateRaw && dateRaw.includes('-')) {
-                const parts = dateRaw.split('-'); // 01-07-22 -> [01, 07, 22]
+                const parts = dateRaw.split('-'); 
                 if (parts.length === 3) {
-                    // Giả định năm 20xx
                     dateISO = `20${parts[2]}-${parts[1]}-${parts[0]}`;
                 }
             }
+            if (!dateISO) return;
 
-            if (!dateISO) return; // Skip nếu lỗi ngày
-
-            // 3. Lấy thông tin Track
             const trackName = row['Track Title'] || '';
             const isrc = row['ISRC'] ? row['ISRC'].trim().toUpperCase() : '';
-
-            // 4. Lấy Platform (Music Service)
-            // VD: "Boomplay - Boomplay" -> BOOMPLAY
             const rawService = row['Music Service'] || 'UNKNOWN';
             const platform = rawService.split(' - ')[0].toUpperCase();
-
-            // 5. Lấy Country
             const country = row['Country of Sale'] || 'GLOBAL';
 
             cleanRows.push({
@@ -164,7 +128,6 @@ const AdminAnalytics: React.FC = () => {
                 Country: country
             });
 
-            // Ưu tiên dùng ISRC để định danh, nếu không có thì dùng Tên
             if (isrc) {
                 uniqueIdentities.add(`ISRC:${isrc}`);
             } else {
@@ -173,69 +136,46 @@ const AdminAnalytics: React.FC = () => {
         });
 
         setParsedData(cleanRows);
-        analyzeConflicts(uniqueIdentities);
+        analyzeConflicts(cleanRows, uniqueIdentities);
     };
 
-    // Logic: Tìm bài hát trùng tên
-    /*
-    const analyzeConflicts = (csvTrackNames: Set<string>) => {
+    // [FIX 3] Logic check conflict sử dụng normalizeId
+    const analyzeConflicts = (allRows: CsvRow[], identities: Set<string>) => {
         const foundConflicts: ConflictItem[] = [];
-
-        csvTrackNames.forEach(csvName => {
-            // Tìm trong DB xem có bao nhiêu bài khớp tên
-            const matches = dbTracks.filter(t => t.name.toLowerCase() === csvName.toLowerCase());
-
-            if (matches.length > 1) {
-                // TRÙNG LẶP: 1 tên bài - nhiều User sở hữu
-                foundConflicts.push({
-                    csvTrackName: csvName,
-                    candidates: matches,
-                    selectedTrackId: null
-                });
-            } else if (matches.length === 0) {
-                setLog(prev => [...prev, `⚠️ Warning: Track "${csvName}" not found in Database. Data will be skipped.`]);
-            }
-        });
-
-        setConflicts(foundConflicts);
-        setStep(foundConflicts.length > 0 ? 'RESOLVE' : 'SAVING');
-    };
-    */
-    const analyzeConflicts = (identities: Set<string>) => {
-        const foundConflicts: ConflictItem[] = [];
+        const logs: string[] = [];
 
         identities.forEach(identity => {
             let matches: any[] = [];
             let displayLabel = '';
 
             if (identity.startsWith('ISRC:')) {
-                // Tìm theo ISRC (Chính xác cao)
-                const isrc = identity.split('ISRC:')[1];
-                displayLabel = `ISRC: ${isrc}`;
-                matches = dbTracks.filter(t => t.isrc === isrc);
+                const isrcRaw = identity.split('ISRC:')[1];
+                displayLabel = `ISRC: ${isrcRaw}`;
+                const targetISRC = normalizeId(isrcRaw);
+                // So sánh dạng chuẩn hóa
+                matches = dbTracks.filter(t => normalizeId(t.isrc) === targetISRC);
             } else {
-                // Tìm theo Tên (Logic cũ)
                 const name = identity.split('NAME:')[1];
                 displayLabel = name;
-                matches = dbTracks.filter(t => t.name.toLowerCase() === name.toLowerCase());
+                matches = dbTracks.filter(t => t.name.toLowerCase().trim() === name.toLowerCase().trim());
             }
 
             if (matches.length > 1) {
-                // Conflict: 1 ISRC/Tên thuộc về nhiều User (lỗi dữ liệu DB hoặc trùng tên)
                 foundConflicts.push({
                     csvTrackName: displayLabel,
                     candidates: matches,
                     selectedTrackId: null
                 });
             } else if (matches.length === 0) {
-                setLog(prev => [...prev, `⚠️ Warning: Asset "${displayLabel}" not found in Database. Skipped.`]);
+                logs.push(`⚠️ Warning: Asset "${displayLabel}" not found in Database. Skipped.`);
             }
         });
 
+        setLog(logs);
         setConflicts(foundConflicts);
-        //setStep(foundConflicts.length > 0 ? 'RESOLVE' : 'SAVING');
-        setStep('RESOLVE');
+        setStep('RESOLVE'); // Luôn hiện màn hình Resolve để user xác nhận
     };
+
     const handleResolve = (csvName: string, trackId: number) => {
         setConflicts(prev => prev.map(c =>
             c.csvTrackName === csvName ? { ...c, selectedTrackId: trackId } : c
@@ -245,61 +185,68 @@ const AdminAnalytics: React.FC = () => {
     const saveToDatabase = async () => {
         setStep('SAVING');
 
-        // Validate conflicts resolved
-        /*
-        const unresolved = conflicts.find(c => c.selectedTrackId === null);
-        if (unresolved) {
-            alert(`Please resolve conflict for "${unresolved.csvTrackName}" first.`);
-            setStep('RESOLVE');
-            return;
-        }*/
-
-        // Map Conflict Choices
         const conflictMap = new Map<string, number>();
         conflicts.forEach(c => {
             if (c.selectedTrackId) conflictMap.set(c.csvTrackName, c.selectedTrackId);
         });
 
-        // Build Insert Payload
+        // [FIX 4] Logic mapping dữ liệu dùng normalizeId
         const payload = parsedData.map(row => {
-            // 1. Check map conflict trước
-            if (conflictMap.has(row.Track)) {
-                const trackId = conflictMap.get(row.Track);
-                const trackInfo = dbTracks.find(t => t.id === trackId);
-                return {
-                    date: row.Date,
-                    track_id: trackId,
-                    uid: trackInfo?.uid, // Quan trọng: Gán đúng tiền cho đúng User
-                    count: row.Count,
-                    type: 'STREAM', // Mặc định Stream, có thể làm UI chọn View sau
-                    platform: 'ALL'
-                };
+            let trackInfo;
+
+            // 1. Tìm bằng ISRC (Ưu tiên)
+            if (row.ISRC) {
+                const normRowIsrc = normalizeId(row.ISRC);
+                // Check conflict map
+                if (conflictMap.has(`ISRC: ${row.ISRC}`)) {
+                    const id = conflictMap.get(`ISRC: ${row.ISRC}`);
+                    trackInfo = dbTracks.find(t => t.id === id);
+                } else {
+                    // Auto match chuẩn hóa
+                    trackInfo = dbTracks.find(t => normalizeId(t.isrc) === normRowIsrc);
+                }
             }
 
-            // 2. Nếu không conflict, tìm match duy nhất
-            const match = dbTracks.find(t => t.name.toLowerCase() === row.Track.toLowerCase());
-            if (match) {
+            // 2. Tìm bằng Tên (Fallback)
+            if (!trackInfo) {
+                if (conflictMap.has(`NAME:${row.Track}`)) {
+                     const id = conflictMap.get(`NAME:${row.Track}`);
+                     trackInfo = dbTracks.find(t => t.id === id);
+                } else {
+                    trackInfo = dbTracks.find(t => t.name.toLowerCase().trim() === row.Track.toLowerCase().trim());
+                }
+            }
+
+            if (trackInfo) {
                 return {
                     date: row.Date,
-                    track_id: match.id,
-                    uid: match.uid,
+                    track_id: trackInfo.id,
+                    uid: trackInfo.uid,
                     count: row.Count,
-                    type: 'STREAM',
-                    platform: 'ALL'
+                    platform: row.Platform || 'OTHER',
+                    country_code: row.Country || 'GLOBAL',
+                    type: 'STREAM'
                 };
             }
             return null;
-        }).filter(Boolean); // Lọc bỏ null (bài hát không tìm thấy)
+        }).filter(Boolean);
 
-        // Batch Insert (Chia nhỏ để tránh quá tải)
+        // [FIX 5] Kiểm tra Payload rỗng
+        if (payload.length === 0) {
+            alert("No valid records matched with Database. Nothing to import.");
+            setStep('RESOLVE');
+            return;
+        }
+
         const BATCH_SIZE = 1000;
         try {
             for (let i = 0; i < payload.length; i += BATCH_SIZE) {
                 const batch = payload.slice(i, i + BATCH_SIZE);
                 const { error } = await supabase.from('analytics_daily').insert(batch as any);
                 if (error) throw error;
-                setLog(prev => [...prev, `✅ Inserted batch ${i} - ${i + batch.length}`]);
             }
+            // Thêm log thành công
+            setLog(prev => [`✅ Successfully inserted ${payload.length} records.`, ...prev]);
             setStep('DONE');
         } catch (err: any) {
             alert("Error saving: " + err.message);
@@ -346,21 +293,19 @@ const AdminAnalytics: React.FC = () => {
                 </div>
             )}
 
+            {/* STEP 2: CONFLICT RESOLVER */}
             {step === 'RESOLVE' && (
                 <div className="space-y-6">
-                    {/* Thống kê tóm tắt */}
                     <div className="grid grid-cols-3 gap-4">
                         <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl text-center">
                             <div className="text-2xl font-black text-blue-500">{parsedData.length}</div>
                             <div className="text-[10px] text-gray-400 uppercase tracking-widest">Total Rows</div>
                         </div>
                         <div className="bg-green-900/20 border border-green-500/30 p-4 rounded-xl text-center">
-                            {/* Tính số dòng hợp lệ (Có match trong DB và không conflict chưa xử lý) */}
                             <div className="text-2xl font-black text-green-500">
-                                {/* Đây là số ước lượng, số thực tế sẽ tính khi bấm Save */}
-                                {parsedData.length - conflicts.length - (log.length)}
+                                {parsedData.length - log.length}
                             </div>
-                            <div className="text-[10px] text-gray-400 uppercase tracking-widest">Valid & Ready</div>
+                            <div className="text-[10px] text-gray-400 uppercase tracking-widest">Valid Matches</div>
                         </div>
                         <div className="bg-red-900/20 border border-red-500/30 p-4 rounded-xl text-center">
                             <div className="text-2xl font-black text-red-500">{log.length}</div>
@@ -368,7 +313,6 @@ const AdminAnalytics: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Danh sách Conflict (nếu có) */}
                     {conflicts.length > 0 ? (
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-yellow-500 font-bold uppercase text-xs tracking-widest">
@@ -401,12 +345,11 @@ const AdminAnalytics: React.FC = () => {
                             <CheckCircle2 size={32} className="text-green-500" />
                             <div>
                                 <h3 className="text-green-500 font-bold uppercase text-sm">Ready to Ingest</h3>
-                                <p className="text-xs text-gray-400 mt-1">No naming conflicts detected. Unknown tracks (warnings) will be skipped automatically.</p>
+                                <p className="text-xs text-gray-400 mt-1">Found valid matches. Unknown tracks will be skipped.</p>
                             </div>
                         </div>
                     )}
 
-                    {/* Hiển thị Log cảnh báo (Not Found) để user biết */}
                     {log.length > 0 && (
                         <div className="bg-black border border-white/10 rounded-xl p-4 max-h-48 overflow-y-auto custom-scrollbar">
                             <div className="text-[10px] font-bold text-gray-500 uppercase mb-2 sticky top-0 bg-black pb-2 border-b border-white/10">Warnings (Will be skipped)</div>
@@ -417,7 +360,7 @@ const AdminAnalytics: React.FC = () => {
                     )}
 
                     <button onClick={saveToDatabase} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest rounded-xl transition shadow-lg flex justify-center gap-2">
-                        <Save size={18} /> Confirm & Ingest Valid Rows
+                        <Save size={18} /> Confirm & Ingest
                     </button>
                 </div>
             )}
@@ -432,9 +375,8 @@ const AdminAnalytics: React.FC = () => {
                         </h3>
                     </div>
                     <div className="flex-1 overflow-y-auto font-mono text-xs text-gray-400 space-y-1 p-4 bg-black rounded-lg">
-                        {log.map((l, i) => <div key={i}>{l}</div>)}
-                        {step === 'SAVING' && <div className="animate-pulse">Processing...</div>}
-                        {step === 'DONE' && <div className="text-green-500 font-bold mt-2">--- INGESTION COMPLETE ---</div>}
+                        {log.map((l, i) => <div key={i} className={l.includes('✅') ? 'text-green-500 font-bold' : ''}>{l}</div>)}
+                        {step === 'SAVING' && <div className="animate-pulse text-blue-400">Processing database insert...</div>}
                     </div>
                     {step === 'DONE' && (
                         <button onClick={() => { setStep('UPLOAD'); setParsedData([]); setConflicts([]); setLog([]); }} className="mt-4 w-full py-3 border border-white/10 hover:bg-white hover:text-black text-white font-bold uppercase transition rounded-lg">
