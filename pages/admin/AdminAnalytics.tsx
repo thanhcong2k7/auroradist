@@ -233,7 +233,8 @@ const AdminAnalytics: React.FC = () => {
         });
 
         setConflicts(foundConflicts);
-        setStep(foundConflicts.length > 0 ? 'RESOLVE' : 'SAVING');
+        //setStep(foundConflicts.length > 0 ? 'RESOLVE' : 'SAVING');
+        setStep('RESOLVE');
     };
     const handleResolve = (csvName: string, trackId: number) => {
         setConflicts(prev => prev.map(c =>
@@ -245,12 +246,13 @@ const AdminAnalytics: React.FC = () => {
         setStep('SAVING');
 
         // Validate conflicts resolved
+        /*
         const unresolved = conflicts.find(c => c.selectedTrackId === null);
         if (unresolved) {
             alert(`Please resolve conflict for "${unresolved.csvTrackName}" first.`);
             setStep('RESOLVE');
             return;
-        }
+        }*/
 
         // Map Conflict Choices
         const conflictMap = new Map<string, number>();
@@ -344,43 +346,78 @@ const AdminAnalytics: React.FC = () => {
                 </div>
             )}
 
-            {/* STEP 2: CONFLICT RESOLVER */}
             {step === 'RESOLVE' && (
                 <div className="space-y-6">
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl flex items-center gap-3">
-                        <AlertTriangle className="text-yellow-500" />
-                        <div>
-                            <h3 className="font-bold text-yellow-500 uppercase text-xs tracking-widest">Conflict Detected</h3>
-                            <p className="text-gray-400 text-xs">Some tracks have identical names but belong to different users. Please assign manually.</p>
+                    {/* Thống kê tóm tắt */}
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="bg-blue-900/20 border border-blue-500/30 p-4 rounded-xl text-center">
+                            <div className="text-2xl font-black text-blue-500">{parsedData.length}</div>
+                            <div className="text-[10px] text-gray-400 uppercase tracking-widest">Total Rows</div>
+                        </div>
+                        <div className="bg-green-900/20 border border-green-500/30 p-4 rounded-xl text-center">
+                            {/* Tính số dòng hợp lệ (Có match trong DB và không conflict chưa xử lý) */}
+                            <div className="text-2xl font-black text-green-500">
+                                {/* Đây là số ước lượng, số thực tế sẽ tính khi bấm Save */}
+                                {parsedData.length - conflicts.length - (log.length)}
+                            </div>
+                            <div className="text-[10px] text-gray-400 uppercase tracking-widest">Valid & Ready</div>
+                        </div>
+                        <div className="bg-red-900/20 border border-red-500/30 p-4 rounded-xl text-center">
+                            <div className="text-2xl font-black text-red-500">{log.length}</div>
+                            <div className="text-[10px] text-gray-400 uppercase tracking-widest">Skipped (Not Found)</div>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        {conflicts.map((conflict, idx) => (
-                            <div key={idx} className="bg-[#111] p-6 rounded-xl border border-white/10">
-                                <h4 className="font-black text-lg text-white mb-4">Track: "{conflict.csvTrackName}"</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {conflict.candidates.map((track: any) => (
-                                        <div
-                                            key={track.id}
-                                            onClick={() => handleResolve(conflict.csvTrackName, track.id)}
-                                            className={`p-4 rounded-lg border cursor-pointer transition flex justify-between items-center ${conflict.selectedTrackId === track.id ? 'bg-green-500/10 border-green-500 text-green-400' : 'bg-black border-white/10 hover:border-white/30'}`}
-                                        >
-                                            <div>
-                                                <div className="font-bold text-sm">{track.profiles?.name || 'Unknown User'}</div>
-                                                <div className="text-xs font-mono text-gray-500">{track.profiles?.email}</div>
-                                                <div className="text-[10px] bg-white/10 px-2 py-0.5 rounded inline-block mt-2">ISRC: {track.isrc || 'N/A'}</div>
-                                            </div>
-                                            {conflict.selectedTrackId === track.id && <CheckCircle2 />}
-                                        </div>
-                                    ))}
-                                </div>
+                    {/* Danh sách Conflict (nếu có) */}
+                    {conflicts.length > 0 ? (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-yellow-500 font-bold uppercase text-xs tracking-widest">
+                                <AlertTriangle size={16} /> Resolve Conflicts ({conflicts.length})
                             </div>
-                        ))}
-                    </div>
+                            {conflicts.map((conflict, idx) => (
+                                <div key={idx} className="bg-[#111] p-6 rounded-xl border border-white/10">
+                                    <h4 className="font-black text-lg text-white mb-4">Track: "{conflict.csvTrackName}"</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {conflict.candidates.map((track: any) => (
+                                            <div
+                                                key={track.id}
+                                                onClick={() => handleResolve(conflict.csvTrackName, track.id)}
+                                                className={`p-4 rounded-lg border cursor-pointer transition flex justify-between items-center ${conflict.selectedTrackId === track.id ? 'bg-green-500/10 border-green-500 text-green-400' : 'bg-black border-white/10 hover:border-white/30'}`}
+                                            >
+                                                <div>
+                                                    <div className="font-bold text-sm">{track.profiles?.name || 'Unknown User'}</div>
+                                                    <div className="text-xs font-mono text-gray-500">{track.profiles?.email}</div>
+                                                    <div className="text-[10px] bg-white/10 px-2 py-0.5 rounded inline-block mt-2">ISRC: {track.isrc || 'N/A'}</div>
+                                                </div>
+                                                {conflict.selectedTrackId === track.id && <CheckCircle2 />}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="p-6 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center gap-4">
+                            <CheckCircle2 size={32} className="text-green-500" />
+                            <div>
+                                <h3 className="text-green-500 font-bold uppercase text-sm">Ready to Ingest</h3>
+                                <p className="text-xs text-gray-400 mt-1">No naming conflicts detected. Unknown tracks (warnings) will be skipped automatically.</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Hiển thị Log cảnh báo (Not Found) để user biết */}
+                    {log.length > 0 && (
+                        <div className="bg-black border border-white/10 rounded-xl p-4 max-h-48 overflow-y-auto custom-scrollbar">
+                            <div className="text-[10px] font-bold text-gray-500 uppercase mb-2 sticky top-0 bg-black pb-2 border-b border-white/10">Warnings (Will be skipped)</div>
+                            {log.map((l, i) => (
+                                <div key={i} className="text-[10px] font-mono text-red-400 mb-1">{l}</div>
+                            ))}
+                        </div>
+                    )}
 
                     <button onClick={saveToDatabase} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest rounded-xl transition shadow-lg flex justify-center gap-2">
-                        <Save size={18} /> Confirm & Ingest
+                        <Save size={18} /> Confirm & Ingest Valid Rows
                     </button>
                 </div>
             )}
