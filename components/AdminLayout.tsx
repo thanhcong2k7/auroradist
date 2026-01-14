@@ -7,7 +7,7 @@ import {
     Globe, MessageSquare
 } from 'lucide-react';
 import { supabase } from '@/services/api';
-
+import { APP_NAME, APP_LOGO_URL } from '@/constants';
 interface AdminLayoutProps {
     children: React.ReactNode;
 }
@@ -42,8 +42,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             {/* Sidebar */}
             <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#0A0A0A] border-r border-red-900/20 transform transition-transform duration-300 lg:transform-none flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-6 border-b border-red-900/20 flex justify-between items-center">
-                    <div className="text-xl font-black uppercase tracking-tighter">
-                        Aurora<span className="text-red-600">.ADMIN</span>
+                    <div className="flex items-center gap-2">
+                        {APP_LOGO_URL ? (
+                            <div className="flex flex-col">
+                                <img src={APP_LOGO_URL} alt={APP_NAME} className="h-8 w-auto object-contain" />
+                                <span className="text-[10px] font-mono text-red-500 uppercase tracking-widest">ADMIN TERMINAL</span>
+                            </div>
+                        ) : (
+                            <div className="text-xl font-black uppercase tracking-tighter">
+                                {APP_NAME}<span className="text-red-600">.ADMIN</span>
+                            </div>
+                        )}
                     </div>
                     <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden"><X size={20} /></button>
                 </div>

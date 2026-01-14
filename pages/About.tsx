@@ -9,7 +9,7 @@ import {
     RefreshCcw,
     Copy
 } from 'lucide-react';
-
+import { APP_NAME, APP_LOGO_URL, COPYRIGHT_TEXT } from '@/constants';
 const About: React.FC = () => {
     const [isChecking, setIsChecking] = useState(true);
     const [upToDate, setUpToDate] = useState(false);
@@ -59,13 +59,17 @@ const About: React.FC = () => {
                         <div className="relative flex items-center justify-center mb-8">
                             <div className="absolute w-20 h-20 bg-blue-600/60 rounded-full blur-[40px] animate-pulse"></div>
                             <div className="absolute w-16 h-16 bg-purple-600/40 rounded-full blur-[30px]"></div>
-                            <img
-                                src="https://auroramusicvietnam.net/amvn.png"
-                                className="relative z-10 w-24 h-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"
-                                alt="Aurora Brand Logo"
-                            />
+                            {APP_LOGO_URL ? (
+                                <img
+                                    src={APP_LOGO_URL}
+                                    className="relative z-10 w-24 h-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+                                    alt={`${APP_NAME} Logo`}
+                                />
+                            ) : (
+                                <h2 className="relative z-10 text-4xl font-black uppercase">{APP_NAME}</h2>
+                            )}
                         </div>
-                        <h2 className="text-2xl font-black uppercase tracking-tight text-white">Aurora<span className="text-blue-500">.</span></h2>
+                        <h2 className="text-2xl font-black uppercase tracking-tight text-white">{APP_NAME}<span className="text-blue-500">.</span></h2>
                         <span className="text-xs font-mono text-gray-500 uppercase tracking-widest mt-2">Distribution Client</span>
                         <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-orange-400 mt-4 border border-orange-500/20">
                             {buildProd.toUpperCase()} BUILD
@@ -77,7 +81,7 @@ const About: React.FC = () => {
 
                         {/* Update Status Section */}
                         <div className="space-y-2">
-                            <h3 className="text-lg font-bold text-white">About Aurora</h3>
+                            <h3 className="text-lg font-bold text-white">About Dashboard</h3>
                             <div className="flex items-center gap-3 text-sm">
                                 {isChecking ? (
                                     <>
@@ -87,7 +91,7 @@ const About: React.FC = () => {
                                 ) : upToDate ? (
                                     <>
                                         <CheckCircle2 size={18} className="text-green-500" />
-                                        <span className="text-gray-300">Aurora is up to date</span>
+                                        <span className="text-gray-300">Dashboard is up to date</span>
                                     </>
                                 ) : (
                                     <span className="text-red-500">Update check failed</span>
@@ -142,11 +146,9 @@ const About: React.FC = () => {
 
                         {/* Legal Footer */}
                         <div className="pt-6 border-t border-white/5 text-[11px] text-gray-500 leading-relaxed">
-                            <p>
-                                Copyright © 2025 Aurora Music Vietnam. All rights reserved.
-                            </p>
+                            <p>{COPYRIGHT_TEXT}</p>
                             <p className="mt-2">
-                                Aurora and the Aurora logo are trademarks of Aurora Music. Using this system implies agreement to the <span className="text-blue-500 underline cursor-pointer">Terms of Service</span> and <span className="text-blue-500 underline cursor-pointer">Privacy Policy</span>. This software is powered by <span className="text-white">Supabase</span> and secured by Google OAuth protocols.
+                                {APP_NAME} and the Aurora logo are trademarks of Aurora Music. Using this system implies agreement to the <span className="text-blue-500 underline cursor-pointer">Terms of Service</span> and <span className="text-blue-500 underline cursor-pointer">Privacy Policy</span>. This software is powered by <span className="text-white">Supabase</span> and secured by Google OAuth protocols.
                             </p>
                         </div>
                     </div>
