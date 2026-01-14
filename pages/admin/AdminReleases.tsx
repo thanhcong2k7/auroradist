@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '@/services/api';
+import { api, supabase } from '@/services/api';
 import { Release } from '@/types';
 import { Eye, Filter, Loader2, Search, Calendar, User, Download, CheckSquare, Square } from 'lucide-react';
 import * as XLSX from 'xlsx';
