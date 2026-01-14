@@ -262,12 +262,12 @@ const Settings: React.FC = () => {
                                     <input type="text" value={pmHolder} onChange={e => setPmHolder(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="Legal Name" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Holder</label>
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">SWIFT Code</label>
                                     <input type="text" value={pmExtra} onChange={e => setPmExtra(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="SWIFT Code" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Holder</label>
-                                    <input type="text" value={pmBankName} onChange={e => setPmBankName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="SWIFT Code" />
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Bank Name</label>
+                                    <input type="text" value={pmBankName} onChange={e => setPmBankName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="Bank Name" />
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">{pmType === 'BANK' ? 'Account Number' : 'Provider Identity (Email)'}</label>
