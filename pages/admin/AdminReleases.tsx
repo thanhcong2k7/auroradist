@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@/services/api';
 import { Release } from '@/types';
-import { Eye, Filter, Loader2, Search, Calendar, User } from 'lucide-react';
+import { Eye, Filter, Loader2, Search, Calendar, User, Download, CheckSquare, Square } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const AdminReleases: React.FC = () => {
     const [releases, setReleases] = useState<(Release & { profiles: any })[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [search, setSearch] = useState('');
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -34,7 +37,126 @@ const AdminReleases: React.FC = () => {
         r.upc?.includes(search) ||
         r.profiles?.email?.toLowerCase().includes(search.toLowerCase())
     );
+    const handleSelectAll = () => {
+        if (selectedIds.length === filtered.length) {
+            setSelectedIds([]); // Deselect all
+        } else {
+            setSelectedIds(filtered.map(r => r.id)); // Select all VISIBLE items
+        }
+    };
 
+    const handleSelectRow = (id: number) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    // --- EXPORT LOGIC ---
+    const handleExport = async () => {
+        if (selectedIds.length === 0) return alert("Select at least one release.");
+
+        setIsExporting(true);
+        try {
+            // 1. Fetch FULL data (Releases + Tracks + Label) for selected IDs
+            const { data: rawData, error } = await supabase
+                .from('releases')
+                .select(`
+                    *,
+                    tracks (*),
+                    labels (name),
+                    profiles (name, email)
+                `)
+                .in('id', selectedIds);
+
+            if (error) throw error;
+            if (!rawData) return;
+
+            // 2. Helper for formatting
+            const pipe = (arr: any[]) => arr ? arr.join('|') : '';
+            const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('en-GB') : ''; // DD/MM/YYYY
+
+            // 3. Prepare Product Level Data
+            const productData = rawData.map((r: any, idx) => ({
+                'CHECK NO.': idx + 1,
+                'GROUPING ID': r.id,
+                'PRODUCT TITLE': r.title,
+                'VERSION DESCRIPTION': r.version,
+                'ARTIST(S)': r.artist,
+                'DISPLAY ARTIST': r.artist,
+                'BARCODE': r.upc,
+                'CATALOGUE NO.': `REL-${r.id}`,
+                'RELEASE FORMAT TYPE': r.format,
+                'SOUND CARRIER': '',
+                'PRICE BAND': 'Full',
+                'LICENSED TERRITORIES to INCLUDE': r.territories?.includes('WORLDWIDE') ? 'WORLD' : pipe(r.territories),
+                'LICENSED TERRITORIES to EXCLUDE': '',
+                'RELEASE START DATE': formatDate(r.release_date),
+                'RELEASE END DATE': '',
+                'GRid': '',
+                '(P) YEAR': r.phonogram_year,
+                '(P) HOLDER': r.phonogram_line,
+                '(C) YEAR': r.copyright_year,
+                '(C) HOLDER': r.copyright_line,
+                'STATUS': r.status,
+                'LABEL': r.labels?.name || 'Independent',
+                'GENRE(S)': r.genre,
+                'Main SubGenre': r.sub_genre,
+                'EXPLICIT CONTENT': r.tracks.some((t: any) => t.is_explicit) ? 'Y' : 'N',
+                'VOLUME NO.': 1,
+                'VOLUME TOTAL': 1,
+                'SERVICES': pipe(r.selected_dsps)
+            }));
+
+            // 4. Prepare Track Level Data
+            let trackData: any[] = [];
+            rawData.forEach((r: any) => {
+                const sortedTracks = r.tracks.sort((a: any, b: any) => a.id - b.id);
+
+                sortedTracks.forEach((t: any, tIdx: number) => {
+                    // Extract contributors from JSONB
+                    const producers = t.contributors?.filter((c: any) => c.role === 'Producer').map((c: any) => c.name) || [];
+                    const composers = t.contributors?.filter((c: any) => c.role === 'Composer').map((c: any) => c.name) || [];
+                    const primaryArtists = t.artists?.filter((a: any) => a.role === 'Primary').map((a: any) => a.name) || [];
+
+                    trackData.push({
+                        'Check No.': idx + 1, // To link back to product if needed manually
+                        'TRACK NO.': tIdx + 1,
+                        'TRACK TITLE': t.name,
+                        'MIX / VERSION': t.version,
+                        'ARTIST(S)': pipe(primaryArtists),
+                        'DISPLAY ARTIST': pipe(t.artists?.map((a: any) => a.name)),
+                        'ISRC': t.isrc,
+                        'AVAILABLE SEPARATELY': 'Y',
+                        '(P) YEAR': r.phonogram_year,
+                        '(P) HOLDER': r.phonogram_line,
+                        '(C) HOLDER': r.copyright_line,
+                        'GENRE(S)': r.genre,
+                        'EXPLICIT CONTENT': t.is_explicit ? 'Y' : 'N',
+                        'PRODUCER(S)': pipe(producers),
+                        'COMPOSER(S)': pipe(composers),
+                        'HAS INSTRUMENTS?': t.has_lyrics ? 'Y' : 'Y',
+                        'HAS VOCALS/LANGUAGE?': t.has_lyrics ? (r.language || 'English') : 'No human vocals'
+                    });
+                });
+            });
+
+            // 5. Create Excel File
+            const wb = XLSX.utils.book_new();
+            const wsProduct = XLSX.utils.json_to_sheet(productData);
+            const wsTracks = XLSX.utils.json_to_sheet(trackData);
+
+            XLSX.utils.book_append_sheet(wb, wsProduct, "Product Level");
+            XLSX.utils.book_append_sheet(wb, wsTracks, "Track Level");
+
+            XLSX.writeFile(wb, `Export_Batch_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+        } catch (err: any) {
+            console.error(err);
+            alert("Export failed: " + err.message);
+        } finally {
+            setIsExporting(false);
+        }
+    };
     const getStatusBadge = (status: string) => {
         const colors: Record<string, string> = {
             'CHECKING': 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30',
@@ -72,6 +194,16 @@ const AdminReleases: React.FC = () => {
                     />
                 </div>
                 <div className="flex items-center gap-2">
+                    {selectedIds.length > 0 && (
+                        <button
+                            onClick={handleExport}
+                            disabled={isExporting}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-xs uppercase rounded-lg transition animate-fade-in"
+                        >
+                            {isExporting ? <Loader2 className="animate-spin" size={14} /> : <Download size={14} />}
+                            Export ({selectedIds.length})
+                        </button>
+                    )}
                     <Filter size={16} className="text-gray-500" />
                     <select
                         value={statusFilter}
@@ -92,6 +224,11 @@ const AdminReleases: React.FC = () => {
                 <table className="w-full text-left text-xs">
                     <thead className="bg-black/50 text-gray-500 font-mono uppercase">
                         <tr>
+                            <th className="px-6 py-4 w-10">
+                                <button onClick={handleSelectAll} className="text-gray-400 hover:text-white">
+                                    {selectedIds.length > 0 && selectedIds.length === filtered.length ? <CheckSquare size={16} /> : <Square size={16} />}
+                                </button>
+                            </th>
                             <th className="px-6 py-4">Release</th>
                             <th className="px-6 py-4">Uploader</th>
                             <th className="px-6 py-4">Status</th>
@@ -104,6 +241,11 @@ const AdminReleases: React.FC = () => {
                             <tr><td colSpan={5} className="p-8 text-center"><Loader2 className="animate-spin mx-auto text-red-500" /></td></tr>
                         ) : filtered.map(release => (
                             <tr key={release.id} className="hover:bg-white/5 transition group">
+                                <td className="px-6 py-4">
+                                    <button onClick={() => handleSelectRow(release.id)} className={`transition ${selectedIds.includes(release.id) ? 'text-blue-500' : 'text-gray-600 group-hover:text-gray-400'}`}>
+                                        {selectedIds.includes(release.id) ? <CheckSquare size={16} /> : <Square size={16} />}
+                                    </button>
+                                </td>
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
                                         <img src={release.coverArt || 'https://placehold.co/40'} className="w-10 h-10 rounded shadow-sm object-cover" />
