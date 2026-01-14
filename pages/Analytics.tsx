@@ -3,7 +3,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { Download, Zap, Globe, Layers } from 'lucide-react';
+import { Download, Zap, Globe, Layers, Calendar } from 'lucide-react';
 import { api } from '../services/api';
 
 const COLORS = ['#1DB954', '#FA243C', '#FF0000', '#00A3FF', '#FFD700', '#888888'];
@@ -12,16 +12,22 @@ const Analytics: React.FC = () => {
     const [dailyData, setDailyData] = useState<any[]>([]);
     const [platformData, setPlatformData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [startDate, setStartDate] = useState('2022-01-01');
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
                 const [daily, platforms] = await Promise.all([
-                    api.dashboard.getDailyTrend(),
-                    api.dashboard.getPlatformStats()
+                    api.dashboard.getDailyTrend(startDate, endDate),
+                    api.dashboard.getPlatformStats(startDate, endDate)
                 ]);
-                setDailyData(daily);
+                const formattedDaily = daily.map((d: any) => ({
+                    ...d,
+                    day: new Date(d.day).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
+                }));
+                setDailyData(formattedDaily);
                 setPlatformData(platforms);
             } catch (err) {
                 console.error("Analytics Load Error", err);
@@ -50,6 +56,31 @@ const Analytics: React.FC = () => {
                         <div className="text-[10px] font-mono uppercase text-blue-400">7-Day Volume</div>
                         <div className="text-lg font-black text-white">{totalStreamsPeriod.toLocaleString()}</div>
                     </div>
+                </div>
+                <div className="flex gap-2 items-center bg-black/40 p-1 rounded-xl border border-white/10">
+                    <div className="flex items-center gap-2 px-3">
+                        <Calendar size={14} className="text-gray-500" />
+                        <span className="text-xs font-bold text-gray-500 uppercase">Range:</span>
+                    </div>
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="bg-transparent border-none text-xs font-mono text-white outline-none focus:ring-0"
+                    />
+                    <span className="text-gray-600">-</span>
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="bg-transparent border-none text-xs font-mono text-white outline-none focus:ring-0"
+                    />
+                    <button
+                        onClick={() => { setStartDate('2022-01-01'); setEndDate(new Date().toISOString().split('T')[0]); }}
+                        className="ml-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold uppercase transition"
+                    >
+                        All Time
+                    </button>
                 </div>
             </div>
 

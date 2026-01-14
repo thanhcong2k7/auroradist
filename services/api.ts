@@ -200,23 +200,29 @@ export const api = {
         version: r.version
       })) as Release[];
     },
-    getPlatformStats: async () => {
-      const { data, error } = await supabase.rpc('get_analytics_by_platform', { p_days: 30 });
+    getPlatformStats: async (startDate: string, endDate: string) => {
+      const { data, error } = await supabase.rpc('get_analytics_by_platform', { 
+        p_start_date: startDate,
+        p_end_date: endDate
+      });
+      
       if (error) {
-        console.error(error);
+        console.error("Platform Stats Error:", error);
         return [];
       }
-      return data; // [{ name: 'Spotify', value: 1000 }, ...]
+      return data; 
     },
-
-    // [MỚI] Lấy dữ liệu biểu đồ cột (Daily Trend)
-    getDailyTrend: async () => {
-      const { data, error } = await supabase.rpc('get_analytics_daily_trend', { p_days: 7 });
+    getDailyTrend: async (startDate: string, endDate: string) => {
+      const { data, error } = await supabase.rpc('get_analytics_daily_trend', { 
+        p_start_date: startDate,
+        p_end_date: endDate
+      });
+      
       if (error) {
-        console.error(error);
+        console.error("Daily Trend Error:", error);
         return [];
       }
-      return data; // [{ day: 'Mon', streams: 50 }, ...]
+      return data;
     }
   },
 
