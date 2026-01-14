@@ -67,7 +67,6 @@ const AdminReleases: React.FC = () => {
                     profiles (name, email)
                 `)
                 .in('id', selectedIds);
-
             if (error) throw error;
             if (!rawData) return;
 
@@ -76,55 +75,64 @@ const AdminReleases: React.FC = () => {
             const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('en-GB') : ''; // DD/MM/YYYY
             const getBoolY = (val: boolean) => val ? 'Y' : 'N';
 
-            // 3. Prepare Flat Data (One row per Track)
+            // 3. Prepare Flat Data
             let flatData: any[] = [];
             let globalCheckNo = 1;
 
             rawData.forEach((r: any) => {
                 const sortedTracks = r.tracks ? r.tracks.sort((a: any, b: any) => a.id - b.id) : [];
                 const isReleaseExplicit = sortedTracks.some((t: any) => t.is_explicit) ? 'Y' : 'N';
+                // Bước 1: Lấy danh sách tên tất cả Primary Artist từ tất cả các track
+                const allTrackArtists = sortedTracks.flatMap((t: any) => 
+                    t.artists?.filter((a: any) => a.role === 'Primary').map((a: any) => a.name) || []
+                );
+                const allTrackArtists_dis = sortedTracks.flatMap((t: any) => 
+                    t.artists?.filter((a: any) => a.role != 'Primary').map((a: any) => a.name) || []
+                );
+                // Bước 2: Dùng Set để loại bỏ trùng lặp, sau đó join lại
+                const uniqueReleaseArtists = [...new Set(allTrackArtists)].join('|');
+                const uniqueReleaseArtists2 = [...new Set(allTrackArtists)].join('|'); // display artist
 
-                // Nếu release không có track nào, vẫn export 1 dòng chứa info release (tùy chọn, nhưng thường phải có track)
                 if (sortedTracks.length === 0) return;
 
                 sortedTracks.forEach((t: any, tIdx: number) => {
-                    // Extract contributors helper
-                    const getContributors = (role: string) => 
+                    const getContributors = (role: string) =>
                         t.contributors?.filter((c: any) => c.role === role).map((c: any) => c.name) || [];
                     
                     const primaryArtists = t.artists?.filter((a: any) => a.role === 'Primary').map((a: any) => a.name) || [];
-                    const displayArtists = t.artists?.map((a: any) => a.name) || [];
+                    
+                    // Fix nhẹ: displayArtists logic cũ của bạn có vẻ bị sai (map ra boolean), sửa lại lấy tên các artist KHÔNG PHẢI Primary (Featured)
+                    const displayArtists = t.artists?.filter((a: any) => a.role !== 'Primary').map((a: any) => a.name) || [];
 
-                    // Mapping dữ liệu theo đúng cột trong template
                     const row = {
                         // --- SECTION 1: PRODUCT LEVEL ---
                         'CHECK NO.': globalCheckNo,
-                        'GROUPING ID': r.id,
+                        'GROUPING ID': '',
                         'PRODUCT TITLE': r.title,
                         'VERSION DESCRIPTION': r.version || '',
-                        'ARTIST(S)': r.artist, // Giả sử r.artist đã là string gộp, nếu là mảng cần pipe(r.artist)
-                        'DISPLAY ARTIST': r.artist,
+                        'ARTIST(S)': uniqueReleaseArtists || r.artist, // Ưu tiên artist gộp từ track, nếu rỗng thì lấy fallback
+                        'DISPLAY ARTIST': uniqueReleaseArtists2 || r.artist,
                         'BARCODE': r.upc,
-                        'CATALOGUE NO.': `REL-${r.id}`, // Hoặc r.catalog_number nếu có
+                        'CATALOGUE NO.': `REL-${r.id}`,
                         'RELEASE FORMAT TYPE': r.format,
-                        'SOUND CARRIER': '', // Template để trống
+                        'SOUND CARRIER': '', 
                         'PRICE BAND': 'Full',
                         'LICENSED TERRITORIES to INCLUDE': r.territories?.includes('WORLDWIDE') ? 'WORLD' : pipe(r.territories),
                         'LICENSED TERRITORIES to EXCLUDE': '',
-                        'RELEASE START DATE': formatDate(r.release_date),
+                        'RELEASE START DATE': formatDate(r.release_date).replaceAll('-', '/'),
                         'RELEASE END DATE': '',
                         'GRid': '',
                         '(P) YEAR': r.phonogram_year,
                         '(P) HOLDER': r.phonogram_line,
                         '(C) YEAR': r.copyright_year,
                         '(C) HOLDER': r.copyright_line,
-                        'STATUS': r.status,
+                        'STATUS': '',
                         'LABEL': r.labels?.name || 'Independent',
                         'GENRE(S)': r.genre,
-                        'Main SubGenre': r.sub_genre || '',
-                        'Alternate Genre': '', // Chưa có field, để trống
-                        'Alternate SubGenre': '', // Chưa có field, để trống
-                        'EXPLICIT CONTENT': isReleaseExplicit, // Product Level Explicit
+                        'Main SubGenre': '',
+                        'Alternate Genre': r.sub_genre || '', 
+                        'Alternate SubGenre': '',
+                        'EXPLICIT CONTENT': isReleaseExplicit,
                         'VOLUME NO.': 1,
                         'VOLUME TOTAL': 1,
                         'SERVICES': pipe(r.selected_dsps),
@@ -133,27 +141,27 @@ const AdminReleases: React.FC = () => {
                         'TRACK NO.': tIdx + 1,
                         'TRACK TITLE': t.name,
                         'MIX / VERSION': t.version || '',
-                        'ARTIST(S)_Track': pipe(primaryArtists), // Đổi tên key để tránh trùng, thư viện xlsx sẽ dùng header riêng
+                        'ARTIST(S)_Track': pipe(primaryArtists),
                         'DISPLAY ARTIST_Track': pipe(displayArtists),
                         'ISRC': t.isrc,
                         'GRid_Track': '',
                         'AVAILABLE SEPARATELY': 'Y',
-                        '(P) YEAR_Track': r.phonogram_year, // Thường giống Release
+                        '(P) YEAR_Track': r.phonogram_year, 
                         '(P) HOLDER_Track': r.phonogram_line,
-                        '(C) YEAR_Track': r.copyright_year,
-                        '(C) HOLDER_Track': r.copyright_line,
-                        'GENRE(S)_Track': r.genre, // Track genre thường giống release trừ khi defined riêng
-                        'Main SubGenre_Track': r.sub_genre || '',
-                        'Alternate Genre_Track': '',
+                        '(C) YEAR_Track': '',
+                        '(C) HOLDER_Track': '',
+                        'GENRE(S)_Track': r.genre, 
+                        'Main SubGenre_Track': '',
+                        'Alternate Genre_Track': r.sub_genre || '',
                         'Alternate SubGenre_Track': '',
                         'EXPLICIT CONTENT_Track': getBoolY(t.is_explicit),
                         'PRODUCER(S)': pipe(getContributors('Producer')),
                         'MIXER(S)': pipe(getContributors('Mixer')),
                         'COMPOSER(S)': pipe(getContributors('Composer')),
                         'LYRICIST(S)': pipe(getContributors('Lyricist')),
-                        'PUBLISHER(S)': pipe(getContributors('Publisher')), // Hoặc lấy từ r.publisher nếu không có ở track
-                        'HAS INSTRUMENTS?': t.has_lyrics ? 'Y' : 'Y', // Logic tạm, cần check logic thực tế
-                        'HAS VOCALS/LANGUAGE?': t.has_lyrics ? (r.language || 'English') : 'No human vocals'
+                        'PUBLISHER(S)': pipe(getContributors('Publisher')), 
+                        'HAS INSTRUMENTS?': t.has_lyrics ? 'Y' : 'Y', 
+                        'HAS VOCALS/LANGUAGE?': t.has_lyrics ? (r.language || 'English') : 'No linguistic content - zxx'
                     };
                     flatData.push(row);
                 });
@@ -161,20 +169,18 @@ const AdminReleases: React.FC = () => {
             });
 
             // 4. Create Excel File
-            // Định nghĩa Header thủ công để đảm bảo đúng tên cột (do JSON object key không được trùng nhau hoàn toàn nếu gom chung)
             const headers = [
-                "CHECK NO.", "GROUPING ID", "PRODUCT TITLE", "VERSION DESCRIPTION", "ARTIST(S)", "DISPLAY ARTIST", "BARCODE", 
-                "CATALOGUE NO.", "RELEASE FORMAT TYPE", "SOUND CARRIER", "PRICE BAND", "LICENSED TERRITORIES to INCLUDE", 
-                "LICENSED TERRITORIES to EXCLUDE", "RELEASE START DATE", "RELEASE END DATE", "GRid", "(P) YEAR", "(P) HOLDER", 
-                "(C) YEAR", "(C) HOLDER", "STATUS", "LABEL", "GENRE(S)", "Main SubGenre", "Alternate Genre", "Alternate SubGenre", 
+                "CHECK NO.", "GROUPING ID", "PRODUCT TITLE", "VERSION DESCRIPTION", "ARTIST(S)", "DISPLAY ARTIST", "BARCODE",
+                "CATALOGUE NO.", "RELEASE FORMAT TYPE", "SOUND CARRIER", "PRICE BAND", "LICENSED TERRITORIES to INCLUDE",
+                "LICENSED TERRITORIES to EXCLUDE", "RELEASE START DATE", "RELEASE END DATE", "GRid", "(P) YEAR", "(P) HOLDER",
+                "(C) YEAR", "(C) HOLDER", "STATUS", "LABEL", "GENRE(S)", "Main SubGenre", "Alternate Genre", "Alternate SubGenre",
                 "EXPLICIT CONTENT", "VOLUME NO.", "VOLUME TOTAL", "SERVICES",
                 // Track start
-                "TRACK NO.", "TRACK TITLE", "MIX / VERSION", "ARTIST(S)", "DISPLAY ARTIST", "ISRC", "GRid", "AVAILABLE SEPARATELY", 
-                "(P) YEAR", "(P) HOLDER", "(C) YEAR", "(C) HOLDER", "GENRE(S)", "Main SubGenre", "Alternate Genre", "Alternate SubGenre", 
+                "TRACK NO.", "TRACK TITLE", "MIX / VERSION", "ARTIST(S)", "DISPLAY ARTIST", "ISRC", "GRid", "AVAILABLE SEPARATELY",
+                "(P) YEAR", "(P) HOLDER", "(C) YEAR", "(C) HOLDER", "GENRE(S)", "Main SubGenre", "Alternate Genre", "Alternate SubGenre",
                 "EXPLICIT CONTENT", "PRODUCER(S)", "MIXER(S)", "COMPOSER(S)", "LYRICIST(S)", "PUBLISHER(S)", "HAS INSTRUMENTS?", "HAS VOCALS/LANGUAGE?"
             ];
 
-            // Chuyển đổi data object sang array of values theo đúng thứ tự headers
             const sheetData = flatData.map(row => [
                 row['CHECK NO.'], row['GROUPING ID'], row['PRODUCT TITLE'], row['VERSION DESCRIPTION'], row['ARTIST(S)'], row['DISPLAY ARTIST'], row['BARCODE'],
                 row['CATALOGUE NO.'], row['RELEASE FORMAT TYPE'], row['SOUND CARRIER'], row['PRICE BAND'], row['LICENSED TERRITORIES to INCLUDE'],
@@ -188,10 +194,7 @@ const AdminReleases: React.FC = () => {
             ]);
 
             const wb = XLSX.utils.book_new();
-            // Tạo sheet từ mảng mảng (AoA) với header ở dòng đầu
             const ws = XLSX.utils.aoa_to_sheet([headers, ...sheetData]);
-
-            // (Tuỳ chọn) Điều chỉnh độ rộng cột cho dễ nhìn
             ws['!cols'] = headers.map(() => ({ wch: 20 }));
 
             XLSX.utils.book_append_sheet(wb, ws, "Metadata Template");

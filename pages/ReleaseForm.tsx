@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, supabase } from '../services/api';
 import FileUploader from '../components/FileUploader';
-// 1. Import XLSX
 import * as XLSX from 'xlsx';
 import {
     Save, Send, X, Clock,
@@ -32,19 +31,77 @@ const MAP_LANGUAGE: Record<string, string> = {
 };
 
 const MAP_GENRE: Record<string, string> = {
-    'Pop': 'Pop',
-    'Hip-Hop/Rap': 'Hip-Hop/Rap',
-    'Electronic': 'Electronic',
-    'Rock': 'Rock',
-    'R&B/Soul': 'R&B',
-    'Latin': 'Latin',
     'Alternative': 'Alternative',
+    'Alternative Rock': 'Alternative Rock',
+    'Alternativo & Rock Latino': 'Alternativo & Rock Latino',
+    'Anime': 'Anime',
+    'Baladas y Boleros': 'Baladas y Boleros',
+    'Big Band': 'Big Band',
+    'Blues': 'Blues',
+    'Brazilian': 'Brazilian',
+    'C-Pop': 'C-Pop',
+    'Cantopop/HK-Pop': 'Cantopop/HK-Pop',
+    "Children's": "Children's",
+    'Chinese': 'Chinese',
+    'Christian': 'Christian',
     'Classical': 'Classical',
+    'Comedy': 'Comedy',
+    'Contemporary Latin': 'Contemporary Latin',
     'Country': 'Country',
+    'Dance': 'Dance',
+    'Easy Listening': 'Easy Listening',
+    'Educational': 'Educational',
+    'Electronic': 'Electronic',
+    'Enka': 'Enka',
+    'Experimental': 'Experimental',
+    'Fitness & Workout': 'Fitness & Workout',
+    'Folk': 'Folk',
+    'French Pop': 'French Pop',
+    'German Folk': 'German Folk',
+    'German Pop': 'German Pop',
+    'Hip-Hop/Rap': 'Hip-Hop/Rap',
+    'Holiday': 'Holiday',
+    'Indo Pop': 'Indo Pop',
+    'Inspirational': 'Inspirational',
+    'Instrumental': 'Instrumental',
+    'J-Pop': 'J-Pop',
     'Jazz': 'Jazz',
+    'K-Pop': 'K-Pop',
+    'Karaoke': 'Karaoke',
+    'Kayokyoku': 'Kayokyoku',
+    'Latin': 'Latin',
+    'Latin Jazz': 'Latin Jazz',
     'Metal': 'Metal',
-    'Lo-Fi': 'Electronic',
-    'Ambient': 'New Age'
+    'New Age': 'New Age',
+    'Opera': 'Opera',
+    'Original Pilipino Music': 'Original Pilipino Music',
+    'Pop': 'Pop',
+    'Pop Latino': 'Pop Latino',
+    'Punk': 'Punk',
+    'R&B': 'R&B',
+    'Raíces': 'Raíces',
+    'Reggae': 'Reggae',
+    'Reggaeton y Hip-Hop': 'Reggaeton y Hip-Hop',
+    'Regional Mexicano': 'Regional Mexicano',
+    'Rock': 'Rock',
+    'Salsa y Tropical': 'Salsa y Tropical',
+    'Singer/Songwriter': 'Singer/Songwriter',
+    'Soul': 'Soul',
+    'Soundtrack': 'Soundtrack',
+    'Spoken Word': 'Spoken Word',
+    'Tai-Pop': 'Tai-Pop',
+    'Thai Pop': 'Thai Pop',
+    'Trot': 'Trot',
+    'Vocal/Nostalgia': 'Vocal/Nostalgia',
+    'World': 'World'
+};
+const MAP_ALT_GENRE: Record<string, string> = {
+    'Alternative': 'Alternative',
+    'Alternative Rock': 'Alternative Rock',
+    'Electronic': 'Electronic',
+    'Pop': 'Pop',
+    'Rock': 'Rock',
+    'World': 'World'
 };
 
 const MAP_FORMAT: Record<string, string> = {
@@ -57,6 +114,7 @@ const MAP_FORMAT: Record<string, string> = {
 const RELEASE_FORMATS = ['SINGLE', 'EP', 'ALBUM'];
 const LANGUAGES = Object.keys(MAP_LANGUAGE);
 const GENRES = Object.keys(MAP_GENRE);
+const ALTGENRES = Object.keys(MAP_ALT_GENRE);
 
 const ReleaseForm: React.FC = () => {
     const { id } = useParams();
@@ -442,8 +500,20 @@ const ReleaseForm: React.FC = () => {
 
                                         <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg space-y-4">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label><select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500"><option value="">Select Genre</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                                <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Sub-Genre</label><input type="text" value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs" /></div>
+                                                <div>
+                                                    <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label>
+                                                    <select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
+                                                        <option value="">Select Genre</option>
+                                                        {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Alternate Genre <span className="text-red-500">*</span></label>
+                                                    <select value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
+                                                        <option value="">Select Genre</option>
+                                                        {ALTGENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                                                    </select>
+                                                </div>
                                                 <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label><select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">{LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
                                             </div>
                                         </div>
@@ -607,7 +677,7 @@ const ReleaseForm: React.FC = () => {
                                     {trackTab === 'CREDITS' && (
                                         <div className="space-y-8">
                                             <div className={trackErrors.artists ? "p-3 border border-red-500/30 bg-red-500/5 rounded-xl" : ""}>
-                                                <div className="flex justify-between items-center mb-2"><label className="text-xs uppercase font-bold text-blue-500">Performing Artists <span className="text-red-500">*</span></label><button onClick={() => { const isFirst = (currentTrack.artists || []).length === 0; setCurrentTrack({ ...currentTrack, artists: [...(currentTrack.artists || []), { name: '', role: isFirst ? 'Primary' : 'Featured' }] }); }} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button></div>
+                                                <div className="flex justify-between items-center mb-2"><label className="text-xs uppercase font-bold text-blue-500">Performing Artists <span className="text-red-500">*</span></label><button onClick={() => { const isFirst = (currentTrack.artists || []).length === 0; setCurrentTrack({ ...currentTrack, artists: [...(currentTrack.artists || []), { name: '', role: 'Primary' }] }); }} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button></div>
                                                 <div className="space-y-2">
                                                     {currentTrack.artists?.map((a, i) => (
                                                         <div key={i} className="flex gap-2"><select value={a.role} onChange={e => updateArtist(i, 'role', e.target.value)} className="w-24 bg-black border border-white/10 rounded px-2 py-2 text-xs outline-none"><option value="Primary">Primary</option><option value="Featured">Featured</option><option value="Remixer">Remixer</option></select><div className="flex-1 relative"><input list={`artist-suggestions-${i}`} value={a.name} onChange={e => updateArtist(i, 'name', e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none" placeholder="Artist Name" /><datalist id={`artist-suggestions-${i}`}>{availableArtists.map(artist => <option key={artist.id} value={artist.name} />)}</datalist></div><button onClick={() => { const copy = currentTrack.artists!.filter((_, idx) => idx !== i); setCurrentTrack({ ...currentTrack, artists: copy }); }} className="p-2 text-gray-500 hover:text-red-500"><X size={14} /></button></div>
