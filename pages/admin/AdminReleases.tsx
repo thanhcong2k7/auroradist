@@ -91,7 +91,7 @@ const AdminReleases: React.FC = () => {
                 );
                 // Bước 2: Dùng Set để loại bỏ trùng lặp, sau đó join lại
                 const uniqueReleaseArtists = [...new Set(allTrackArtists)].join('|');
-                const uniqueReleaseArtists2 = [...new Set(allTrackArtists)].join('|'); // display artist
+                const uniqueReleaseArtists2 = [...new Set(allTrackArtists_dis)].join('|'); // display artist
 
                 if (sortedTracks.length === 0) return;
 
