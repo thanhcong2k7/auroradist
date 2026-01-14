@@ -6,7 +6,7 @@ import { Eye, Filter, Loader2, Search, Calendar, User, Download, CheckSquare, Sq
 import * as XLSX from 'xlsx';
 
 const AdminReleases: React.FC = () => {
-    const [releases, setReleases] = useState<(Release & { profiles: any })[]>([]);
+    const [releases, setReleases] = useState<(Release & { profiles: any, created_at: string })[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [search, setSearch] = useState('');
@@ -109,7 +109,7 @@ const AdminReleases: React.FC = () => {
 
             // 4. Prepare Track Level Data
             let trackData: any[] = [];
-            rawData.forEach((r: any) => {
+            rawData.forEach((r: any, idx: number) => {
                 const sortedTracks = r.tracks.sort((a: any, b: any) => a.id - b.id);
 
                 sortedTracks.forEach((t: any, tIdx: number) => {
