@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { Download, Zap, Globe, Layers, Calendar } from 'lucide-react';
 import { api } from '../services/api';
+import { start } from 'repl';
 
 const COLORS = ['#1DB954', '#FA243C', '#FF0000', '#00A3FF', '#FFD700', '#888888'];
 
@@ -36,7 +37,7 @@ const Analytics: React.FC = () => {
             }
         };
         loadData();
-    }, []);
+    }, [startDate, endDate]);
 
     // Helper: Tính tổng streams để hiển thị
     const totalStreamsPeriod = dailyData.reduce((acc, curr) => acc + curr.streams, 0);
