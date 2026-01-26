@@ -1,28 +1,16 @@
 export const getResizedImage = (url: string | undefined, size: number = 200) => {
   if (!url) return 'https://via.placeholder.com/' + size;
-
-  // Nếu là ảnh local hoặc base64 thì trả về nguyên gốc
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
-
-  // Sử dụng wsrv.nl để resize
-  // &w=size : chiều rộng
-  // &h=size : chiều cao
-  // &fit=cover : cắt ảnh cho vừa khung mà không méo
   return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${size}&h=${size}&fit=cover&output=webp`;
 };
-
 export const createImage = (url: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const image = new Image();
     image.addEventListener('load', () => resolve(image));
     image.addEventListener('error', (error) => reject(error));
-    image.setAttribute('crossOrigin', 'anonymous'); // Cần thiết để tránh lỗi CORS
+    image.setAttribute('crossOrigin', 'anonymous');
     image.src = url;
   });
-
-/**
- * Hàm này nhận vào ảnh gốc và vùng pixel cắt, trả về file Blob đã resize 500x500
- */
 export default async function getCroppedImg(
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number }
@@ -34,12 +22,8 @@ export default async function getCroppedImg(
   if (!ctx) {
     return null;
   }
-
-  // Set kích thước cố định là 500x500 để tối ưu dung lượng
   canvas.width = 500;
   canvas.height = 500;
-
-  // Vẽ ảnh từ vùng crop lên canvas 500x500
   ctx.drawImage(
     image,
     pixelCrop.x,
@@ -51,8 +35,6 @@ export default async function getCroppedImg(
     500,
     500
   );
-
-  // Xuất ra dạng Blob (JPEG chất lượng 90%)
   return new Promise((resolve) => {
     canvas.toBlob(
       (blob) => {
@@ -60,7 +42,6 @@ export default async function getCroppedImg(
           console.error('Canvas is empty');
           return;
         }
-        // Chuyển Blob thành File object để tương thích với api.storage.upload
         const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
         resolve(file);
       },
@@ -74,19 +55,16 @@ export const formatDate = (dateString: string | null | undefined) => {
 
   try {
     const date = new Date(dateString);
-
-    // Kiểm tra xem date có hợp lệ không trước khi format
     if (isNaN(date.getTime())) {
       return 'Invalid Date';
     }
-
     return new Intl.DateTimeFormat('vi-VN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false // Dùng định dạng 24h
+      hour12: false
     }).format(date);
   } catch (error) {
     console.error("Error parsing date:", dateString, error);
@@ -102,8 +80,6 @@ export const getAudioDuration = (file: File): Promise<string> => {
       const totalSeconds = Math.floor(audio.duration);
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
-      
-      // Format 00:00
       const formatted = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
       
       URL.revokeObjectURL(objectUrl);

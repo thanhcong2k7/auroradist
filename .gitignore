@@ -26,3 +26,4 @@ source_dump.txt
 .env
 package-lock.json
 ~$demo.xlsx
+env.bat

@@ -10,7 +10,6 @@ export default function State51Importer() {
     const [summary, setSummary] = useState<{ totalRows: number, totalRevenue: number, month: string } | null>(null);
     const [parsedData, setParsedData] = useState<any[]>([]);
 
-    // Helper to find a key in an object case-insensitively (handles Source vs source vs SOURCE)
     const findKey = (row: any, candidates: string[]) => {
         if (!row) return null;
         const keys = Object.keys(row);
@@ -23,10 +22,8 @@ export default function State51Importer() {
 
     const cleanString = (val: any) => {
         if (val === null || val === undefined) return '';
-        if (typeof val === 'number') {
-            // Prevent scientific notation (e.g. 5.06E+12 -> 506...)
+        if (typeof val === 'number')
             return val.toLocaleString('fullwide', { useGrouping: false });
-        }
         return String(val).trim();
     };
 

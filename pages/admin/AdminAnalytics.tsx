@@ -19,7 +19,6 @@ interface ConflictItem {
     selectedTrackId: number | null;
 }
 
-// [FIX 1] Hàm chuẩn hóa chuỗi để so sánh (xóa ký tự đặc biệt, chỉ giữ chữ số)
 const normalizeId = (id: string | undefined | null) => {
     if (!id) return '';
     return id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
@@ -35,11 +34,10 @@ const AdminAnalytics: React.FC = () => {
 
     useEffect(() => {
         const fetchTracks = async () => {
-            // [FIX 2] Tăng giới hạn load tracks (mặc định Supabase chỉ trả 1000 dòng)
             const { data } = await supabase
                 .from('tracks')
                 .select('id, name, isrc, uid, profiles(email, name)')
-                .limit(10000); // Load 10k bài, nếu nhiều hơn cần phân trang
+                .limit(10000);
             
             if (data) setDbTracks(data as any);
         };
@@ -93,7 +91,6 @@ const AdminAnalytics: React.FC = () => {
         setParsedData(cleanRows);
         analyzeConflicts(cleanRows, uniqueIdentities);
     };
-
     const processState51Data = (rows: any[]) => {
         const cleanRows: CsvRow[] = [];
         const uniqueIdentities = new Set<string>();
@@ -139,7 +136,6 @@ const AdminAnalytics: React.FC = () => {
         analyzeConflicts(cleanRows, uniqueIdentities);
     };
 
-    // [FIX 3] Logic check conflict sử dụng normalizeId
     const analyzeConflicts = (allRows: CsvRow[], identities: Set<string>) => {
         const foundConflicts: ConflictItem[] = [];
         const logs: string[] = [];
@@ -173,7 +169,7 @@ const AdminAnalytics: React.FC = () => {
 
         setLog(logs);
         setConflicts(foundConflicts);
-        setStep('RESOLVE'); // Luôn hiện màn hình Resolve để user xác nhận
+        setStep('RESOLVE');
     };
 
     const handleResolve = (csvName: string, trackId: number) => {
@@ -190,25 +186,18 @@ const AdminAnalytics: React.FC = () => {
             if (c.selectedTrackId) conflictMap.set(c.csvTrackName, c.selectedTrackId);
         });
 
-        // [FIX 4] Logic mapping dữ liệu dùng normalizeId
         const payload = parsedData.map(row => {
             let trackInfo;
-
-            // 1. Tìm bằng ISRC (Ưu tiên)
             if (row.ISRC) {
                 const normRowIsrc = normalizeId(row.ISRC);
-                // Check conflict map
                 if (conflictMap.has(`ISRC: ${row.ISRC}`)) {
                     const id = conflictMap.get(`ISRC: ${row.ISRC}`);
                     trackInfo = dbTracks.find(t => t.id === id);
                 } else {
-                    // Auto match chuẩn hóa
                     trackInfo = dbTracks.find(t => normalizeId(t.isrc) === normRowIsrc);
                 }
             }
-
-            // 2. Tìm bằng Tên (Fallback)
-            if (!trackInfo) {
+            if (!trackInfo) { // fallback
                 if (conflictMap.has(`NAME:${row.Track}`)) {
                      const id = conflictMap.get(`NAME:${row.Track}`);
                      trackInfo = dbTracks.find(t => t.id === id);
@@ -230,14 +219,11 @@ const AdminAnalytics: React.FC = () => {
             }
             return null;
         }).filter(Boolean);
-
-        // [FIX 5] Kiểm tra Payload rỗng
         if (payload.length === 0) {
             alert("No valid records matched with Database. Nothing to import.");
             setStep('RESOLVE');
             return;
         }
-
         const BATCH_SIZE = 1000;
         try {
             for (let i = 0; i < payload.length; i += BATCH_SIZE) {
@@ -245,7 +231,6 @@ const AdminAnalytics: React.FC = () => {
                 const { error } = await supabase.from('analytics_daily').insert(batch as any);
                 if (error) throw error;
             }
-            // Thêm log thành công
             setLog(prev => [`✅ Successfully inserted ${payload.length} records.`, ...prev]);
             setStep('DONE');
         } catch (err: any) {
@@ -260,8 +245,6 @@ const AdminAnalytics: React.FC = () => {
                 <h1 className="text-2xl font-black uppercase tracking-tight text-white">Data Ingestion Node</h1>
                 <p className="text-gray-500 text-xs font-mono uppercase">Import CSV Reports & Resolve Conflicts</p>
             </div>
-
-            {/* STEP 1: UPLOAD */}
             {step === 'UPLOAD' && (
                 <div className="border-2 border-dashed border-white/10 rounded-2xl p-12 flex flex-col items-center justify-center gap-4 bg-white/[0.02]">
                     <div className="flex bg-black p-1 rounded-lg border border-white/10 mb-4">
