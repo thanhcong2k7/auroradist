@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Key, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
-
+import { APP_NAME, APP_LOGO_URL } from '@/constants';
 interface LoginProps {
   onLogin: () => void;
 }
@@ -28,7 +28,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   // LOGIC MỚI: Bỏ lưu token thủ công, Bỏ check null thủ công, Dùng error message động
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Logic cũ: if (!email || !password) return setError('Identity required.'); -> Đã bỏ, dùng 'required' ở input
 
     setLoading(true);
@@ -54,9 +54,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       <div className="w-full max-w-md relative z-10">
         <div className="mb-12 text-center animate-fade-in">
-          <div className="text-5xl font-black tracking-tighter uppercase mb-2">
-            Aurora<span className="text-blue-500">.</span>
-          </div>
+          {APP_LOGO_URL ? (
+            <img src={APP_LOGO_URL} alt={APP_NAME} className="h-20 w-auto mx-auto mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+          ) : (
+            <div className="text-5xl font-black tracking-tighter uppercase mb-2">
+              {APP_NAME}<span className="text-blue-500">.</span>
+            </div>
+          )}
           <p className="text-gray-400 font-mono text-xs tracking-[0.3em] uppercase opacity-50">Global Distribution Node</p>
         </div>
 
@@ -158,7 +162,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         <div className="mt-10 text-center">
           <p className="text-xs text-gray-700 font-mono tracking-widest uppercase opacity-40">
-            © 2025 AURORA MUSIC // NEURAL NETWORK SECURED
+            © {new Date().getFullYear()} {APP_NAME.toUpperCase()} // NEURAL NETWORK SECURED
           </p>
         </div>
       </div>

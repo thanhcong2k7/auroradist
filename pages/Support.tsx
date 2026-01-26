@@ -184,7 +184,7 @@ const Support: React.FC = () => {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="ENTER TRANSMISSION..."
-                      className="w-full bg-black border border-white/10 rounded-xl py-4 pl-6 pr-16 text-xs focus:border-blue-500 outline-none transition placeholder:text-gray-900"
+                      className="w-full bg-black border border-white/10 rounded-xl py-4 pl-6 pr-16 text-xs focus:border-blue-500 outline-none transition placeholder:text-gray-300"
                     />
                     <button
                       type="submit"

@@ -2,26 +2,119 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, supabase } from '../services/api';
 import FileUploader from '../components/FileUploader';
+import * as XLSX from 'xlsx';
 import {
     Save, Send, X, Clock,
     AlertTriangle, Disc, Globe, Plus, Trash2, CheckCircle2,
-    ArrowLeft, ArrowRight, FileAudio, Loader2, Eye, AlertCircle, Map
+    ArrowLeft, ArrowRight, FileAudio, Loader2, Eye, AlertCircle, Map, Download
 } from 'lucide-react';
 import { Label as LabelType, Release, Track, TrackArtist, TrackContributor, DspChannel, Artist } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import DSPLogo from '../components/DSPLogo';
 import { getAudioDuration } from '@/services/utils';
 
+// --- DATA MAPPINGS (Compat with hehe.html) ---
+const MAP_LANGUAGE: Record<string, string> = {
+    'English': 'English - eng',
+    'Vietnamese': 'Vietnamese - vie',
+    'Spanish': 'Spanish or Castilian - spa',
+    'French': 'French - fra',
+    'German': 'German - deu',
+    'Japanese': 'Japanese - jpn',
+    'Korean': 'Korean - kor',
+    'Chinese (Mandarin)': 'Chinese - zho',
+    'Chinese (Cantonese)': 'Chinese - zho',
+    'Portuguese': 'Portuguese - por',
+    'Italian': 'Italian - ita',
+    'Russian': 'Russian - rus',
+    'Instrumental': 'No linguistic content - zxx'
+};
+
+const MAP_GENRE: Record<string, string> = {
+    'Alternative': 'Alternative',
+    'Alternative Rock': 'Alternative Rock',
+    'Alternativo & Rock Latino': 'Alternativo & Rock Latino',
+    'Anime': 'Anime',
+    'Baladas y Boleros': 'Baladas y Boleros',
+    'Big Band': 'Big Band',
+    'Blues': 'Blues',
+    'Brazilian': 'Brazilian',
+    'C-Pop': 'C-Pop',
+    'Cantopop/HK-Pop': 'Cantopop/HK-Pop',
+    "Children's": "Children's",
+    'Chinese': 'Chinese',
+    'Christian': 'Christian',
+    'Classical': 'Classical',
+    'Comedy': 'Comedy',
+    'Contemporary Latin': 'Contemporary Latin',
+    'Country': 'Country',
+    'Dance': 'Dance',
+    'Easy Listening': 'Easy Listening',
+    'Educational': 'Educational',
+    'Electronic': 'Electronic',
+    'Enka': 'Enka',
+    'Experimental': 'Experimental',
+    'Fitness & Workout': 'Fitness & Workout',
+    'Folk': 'Folk',
+    'French Pop': 'French Pop',
+    'German Folk': 'German Folk',
+    'German Pop': 'German Pop',
+    'Hip-Hop/Rap': 'Hip-Hop/Rap',
+    'Holiday': 'Holiday',
+    'Indo Pop': 'Indo Pop',
+    'Inspirational': 'Inspirational',
+    'Instrumental': 'Instrumental',
+    'J-Pop': 'J-Pop',
+    'Jazz': 'Jazz',
+    'K-Pop': 'K-Pop',
+    'Karaoke': 'Karaoke',
+    'Kayokyoku': 'Kayokyoku',
+    'Latin': 'Latin',
+    'Latin Jazz': 'Latin Jazz',
+    'Metal': 'Metal',
+    'New Age': 'New Age',
+    'Opera': 'Opera',
+    'Original Pilipino Music': 'Original Pilipino Music',
+    'Pop': 'Pop',
+    'Pop Latino': 'Pop Latino',
+    'Punk': 'Punk',
+    'R&B': 'R&B',
+    'Raíces': 'Raíces',
+    'Reggae': 'Reggae',
+    'Reggaeton y Hip-Hop': 'Reggaeton y Hip-Hop',
+    'Regional Mexicano': 'Regional Mexicano',
+    'Rock': 'Rock',
+    'Salsa y Tropical': 'Salsa y Tropical',
+    'Singer/Songwriter': 'Singer/Songwriter',
+    'Soul': 'Soul',
+    'Soundtrack': 'Soundtrack',
+    'Spoken Word': 'Spoken Word',
+    'Tai-Pop': 'Tai-Pop',
+    'Thai Pop': 'Thai Pop',
+    'Trot': 'Trot',
+    'Vocal/Nostalgia': 'Vocal/Nostalgia',
+    'World': 'World'
+};
+const MAP_ALT_GENRE: Record<string, string> = {
+    'Alternative': 'Alternative',
+    'Alternative Rock': 'Alternative Rock',
+    'Electronic': 'Electronic',
+    'Pop': 'Pop',
+    'Rock': 'Rock',
+    'World': 'World'
+};
+
+const MAP_FORMAT: Record<string, string> = {
+    'SINGLE': 'Single',
+    'EP': 'EP',
+    'ALBUM': 'Album'
+};
+
 // --- CONSTANTS ---
 const RELEASE_FORMATS = ['SINGLE', 'EP', 'ALBUM'];
-const LANGUAGES = [
-    'English', 'Vietnamese', 'Spanish', 'French', 'German', 'Japanese', 'Korean',
-    'Chinese (Mandarin)', 'Chinese (Cantonese)', 'Portuguese', 'Italian', 'Russian', 'Instrumental'
-];
-const GENRES = [
-    'Pop', 'Hip-Hop/Rap', 'Electronic', 'Rock', 'R&B/Soul', 'Latin', 'Alternative',
-    'Classical', 'Country', 'Jazz', 'Metal', 'Lo-Fi', 'Ambient'
-];
+const LANGUAGES = Object.keys(MAP_LANGUAGE);
+const GENRES = Object.keys(MAP_GENRE);
+const ALTGENRES = Object.keys(MAP_ALT_GENRE);
 
 const ReleaseForm: React.FC = () => {
     const { id } = useParams();
@@ -77,14 +170,12 @@ const ReleaseForm: React.FC = () => {
     // --- INITIALIZATION ---
     useEffect(() => {
         if (!id) {
-            // Nếu không có ID (tức truy cập /new trực tiếp thay vì qua nút create draft), quay về list
             navigate('/discography');
             return;
         }
         loadInitialData();
     }, [id]);
 
-    // Re-fetch tracks khi dialog mở để đảm bảo data mới nhất (nếu có update từ tab khác)
     useEffect(() => {
         if (isTracksDialogOpen) {
             const fetchAvailable = async () => {
@@ -123,7 +214,6 @@ const ReleaseForm: React.FC = () => {
                 return;
             }
 
-            // Fill Form Data
             setTitle(release.title);
             setVersion(release.version || '');
             setLabelId(release.labelId || '');
@@ -151,10 +241,9 @@ const ReleaseForm: React.FC = () => {
                 setSelectedStores(fetchedDsps.map(d => d.code));
             }
 
-            // Lọc track thuộc về release này từ danh sách fetchedTracks
             const tracksForThisRelease = fetchedTracks
                 .filter(t => t.releaseId === parseInt(id!))
-                .sort((a, b) => (a.id - b.id)); // Sort theo ID hoặc track_number
+                .sort((a, b) => (a.id - b.id));
 
             setReleaseTracks(tracksForThisRelease);
 
@@ -166,9 +255,7 @@ const ReleaseForm: React.FC = () => {
         }
     };
 
-    // --- FORM SUBMISSION ---
     const handleSave = async (newStatus: Release['status']) => {
-        // Validate trước khi submit duyệt
         if (newStatus === 'CHECKING') {
             if (!validateForDistribution()) {
                 window.scrollTo(0, 0);
@@ -183,7 +270,6 @@ const ReleaseForm: React.FC = () => {
 
         setLoading(true);
         try {
-            // 1. Lưu Metadata Release
             await api.catalog.save({
                 id: parseInt(id!),
                 title,
@@ -206,7 +292,6 @@ const ReleaseForm: React.FC = () => {
                 territories
             });
 
-            // 2. Lưu Metadata các Track (Gán releaseId, cập nhật tiktok time)
             if (releaseTracks.length > 0) {
                 const trackUpdates = releaseTracks.map((track) => {
                     return api.tracks.save({
@@ -228,7 +313,6 @@ const ReleaseForm: React.FC = () => {
         }
     };
 
-    // --- VALIDATION & UTILS ---
     const validateForDistribution = (): boolean => {
         const errors: string[] = [];
         if (!title) errors.push("Release Title");
@@ -256,34 +340,18 @@ const ReleaseForm: React.FC = () => {
     const toggleStore = (code: string) => { if (selectedStores.includes(code)) setSelectedStores(selectedStores.filter(s => s !== code)); else setSelectedStores([...selectedStores, code]); };
     const toggleAllStores = () => { const allActiveCodes = availableDsps.filter(d => d.isEnabled).map(d => d.code); setSelectedStores(allActiveCodes.every(code => selectedStores.includes(code)) ? [] : allActiveCodes); };
 
-    // --- TRACK LOGIC ---
-
-    // Xử lý khi chọn track có sẵn từ Library (Browse Mode)
     const handleAddTrackToRelease = (track: Track) => {
-        // Kiểm tra xem track đã có trong list chưa
         if (!releaseTracks.find(t => t.id === track.id)) {
-            // Thêm vào UI
             setReleaseTracks([...releaseTracks, track]);
-            // (Tuỳ chọn) Có thể gọi API update release_id ngay tại đây, 
-            // nhưng để an toàn ta đợi user ấn Save chung hoặc Confirm.
-            // Tuy nhiên, để nhất quán với nút Remove bên dưới (tác động DB ngay), 
-            // tốt nhất ta nên update DB ngay khi Add nếu muốn UX realtime.
-            // Nhưng ở đây ta giữ logic: Add vào list -> User ấn Save Form -> Update DB.
         }
     };
 
-    // [COMPLETED] Xử lý xóa track khỏi Release: Cập nhật DB release_id -> null
     const handleRemoveTrack = async (trackId: number) => {
         if (!confirm("Unlink this track from the release? It will remain in your Master Catalog.")) return;
-
-        // 1. Lưu lại state cũ để revert nếu lỗi
         const previousTracks = [...releaseTracks];
-
-        // 2. Optimistic UI Update (Xóa ngay trên giao diện)
         setReleaseTracks(prev => prev.filter(t => t.id !== trackId));
 
         try {
-            // 3. Cập nhật DB: Gỡ liên kết track khỏi release này (set null)
             const { error } = await supabase
                 .from('tracks')
                 .update({ release_id: null })
@@ -294,15 +362,13 @@ const ReleaseForm: React.FC = () => {
         } catch (err: any) {
             console.error("Failed to remove track:", err);
             alert("Failed to unlink track. Please check connection.");
-            setReleaseTracks(previousTracks); // Revert UI
+            setReleaseTracks(previousTracks);
         }
     };
 
-    // --- MODAL HANDLERS ---
     const openTrackManager = () => { setModalView('BROWSE'); setIsTracksDialogOpen(true); setShowTrackModal(true); };
 
     const openEditTrackModal = (track: Track) => {
-        // Load data vào form modal
         setCurrentTrack(JSON.parse(JSON.stringify(track)));
         setModalView('EDIT');
         setTrackTab('GENERAL');
@@ -327,11 +393,9 @@ const ReleaseForm: React.FC = () => {
         return isValid;
     };
 
-    // Hàm Save/Add Track trong Modal
     const handleSaveTrackAdvanced = async () => {
         if (!validateTrackForm()) return;
 
-        // Chuẩn bị payload, gán releaseId hiện tại luôn
         const trackToSave = {
             ...currentTrack,
             releaseId: parseInt(id!),
@@ -339,25 +403,18 @@ const ReleaseForm: React.FC = () => {
         };
 
         try {
-            // Gọi API Save Track (Tạo mới hoặc Update)
             const savedTrack = await api.tracks.save(trackToSave as any);
-
-            // Cập nhật lại list releaseTracks
             if (releaseTracks.some(t => t.id === savedTrack.id)) {
-                // Nếu track đang sửa
                 setReleaseTracks(releaseTracks.map(t => t.id === savedTrack.id ? savedTrack : t));
             } else {
-                // Nếu track mới tạo
                 setReleaseTracks([...releaseTracks, savedTrack]);
             }
-
             setShowTrackModal(false);
         } catch (e: any) {
             alert("Error saving track: " + e.message);
         }
     };
 
-    // Helpers Array Updates
     const updateArtist = (i: number, f: keyof TrackArtist, v: any) => { const a = [...(currentTrack.artists || [])]; a[i] = { ...a[i], [f]: v }; setCurrentTrack({ ...currentTrack, artists: a }); };
     const updateContributor = (i: number, f: keyof TrackContributor, v: any) => { const c = [...(currentTrack.contributors || [])]; c[i] = { ...c[i], [f]: v }; if (f === 'role' && v !== 'Performer') delete c[i].instrument; setCurrentTrack({ ...currentTrack, contributors: c }); };
     const removeArtist = (i: number) => { const a = [...(currentTrack.artists || [])]; a.splice(i, 1); setCurrentTrack({ ...currentTrack, artists: a }); };
@@ -443,8 +500,20 @@ const ReleaseForm: React.FC = () => {
 
                                         <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg space-y-4">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label><select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500"><option value="">Select Genre</option>{GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-                                                <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Sub-Genre</label><input type="text" value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs" /></div>
+                                                <div>
+                                                    <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Primary Genre <span className="text-red-500">*</span></label>
+                                                    <select value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
+                                                        <option value="">Select Genre</option>
+                                                        {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Alternate Genre <span className="text-red-500">*</span></label>
+                                                    <select value={subGenre} onChange={(e) => setSubGenre(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
+                                                        <option value="">Select Genre</option>
+                                                        {ALTGENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                                                    </select>
+                                                </div>
                                                 <div><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">Language <span className="text-red-500">*</span></label><select value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500">{LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}</select></div>
                                             </div>
                                         </div>
@@ -455,7 +524,7 @@ const ReleaseForm: React.FC = () => {
                                         </div>
                                         <div className="space-y-2"><h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">©</span> Copyright <span className="text-red-500">*</span></h3><div className="flex gap-4"><div className="w-24"><input type="text" value={copyrightYear} onChange={(e) => setCopyrightYear(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center" placeholder="Year" /></div><div className="flex-1"><input type="text" value={copyrightLine} onChange={(e) => setCopyrightLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div></div></div>
                                         <div className="space-y-2 mt-4"><h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2"><span className="text-lg">℗</span> Phonogram <span className="text-red-500">*</span></h3><div className="flex gap-4"><div className="w-24"><input type="text" value={phonogramYear} onChange={(e) => setPhonogramYear(e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center" placeholder="Year" /></div><div className="flex-1"><input type="text" value={phonogramLine} onChange={(e) => setPhonogramLine(e.target.value)} className="w-full bg-black border border-white/10 rounded px-4 py-2" placeholder="Owner" /></div></div></div>
-                                        <div className="space-y-2 mt-4"><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">UPC / Barcode</label><input type="text" value={upc} onChange={(e) => setUpc(e.target.value)} maxLength={13} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition" placeholder="Auto-assigned if empty" /></div>
+                                        <div className="space-y-2 mt-4"><label className="block text-xs font-sans text-gray-500 mb-1 uppercase">UPC / Barcode</label><input type="text" value={upc} onChange={(e) => setUpc(e.target.value)} maxLength={12} className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition" placeholder="Auto-assigned if empty" /></div>
                                     </div>
                                 </div>
                             </>
@@ -489,14 +558,7 @@ const ReleaseForm: React.FC = () => {
                                                     <td className="px-6 py-4 font-mono text-xs text-blue-400">{(track as any).tiktokClipStartTime || '00:00'}</td>
                                                     <td className="px-6 py-4 text-right font-mono text-gray-400">{track.duration}</td>
                                                     <td className="px-6 py-4 text-center">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleRemoveTrack(track.id);
-                                                            }}
-                                                            className="text-gray-400 hover:text-red-500 transition"
-                                                            title="Unlink track"
-                                                        >
+                                                        <button onClick={(e) => { e.stopPropagation(); handleRemoveTrack(track.id); }} className="text-gray-400 hover:text-red-500 transition" title="Unlink track">
                                                             <Trash2 size={16} />
                                                         </button>
                                                     </td>
@@ -574,7 +636,6 @@ const ReleaseForm: React.FC = () => {
                         </div>
                         {modalView === 'EDIT' && Object.keys(trackErrors).length > 0 && (<div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2 flex items-center gap-2"><AlertCircle size={14} className="text-red-500" /><span className="text-xs text-red-400 font-mono font-bold">Please fix errors in highlighted tabs.</span></div>)}
 
-                        {/* Tabs (Edit Mode) */}
                         {modalView === 'EDIT' && (
                             <div className="flex border-b border-white/5 bg-black/60">
                                 <button onClick={() => setTrackTab('GENERAL')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition ${trackTab === 'GENERAL' ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-gray-400'} ${trackErrors.name ? 'text-red-400' : ''}`}>1. General</button>
@@ -616,7 +677,7 @@ const ReleaseForm: React.FC = () => {
                                     {trackTab === 'CREDITS' && (
                                         <div className="space-y-8">
                                             <div className={trackErrors.artists ? "p-3 border border-red-500/30 bg-red-500/5 rounded-xl" : ""}>
-                                                <div className="flex justify-between items-center mb-2"><label className="text-xs uppercase font-bold text-blue-500">Performing Artists <span className="text-red-500">*</span></label><button onClick={() => { const isFirst = (currentTrack.artists || []).length === 0; setCurrentTrack({ ...currentTrack, artists: [...(currentTrack.artists || []), { name: '', role: isFirst ? 'Primary' : 'Featured' }] }); }} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button></div>
+                                                <div className="flex justify-between items-center mb-2"><label className="text-xs uppercase font-bold text-blue-500">Performing Artists <span className="text-red-500">*</span></label><button onClick={() => { const isFirst = (currentTrack.artists || []).length === 0; setCurrentTrack({ ...currentTrack, artists: [...(currentTrack.artists || []), { name: '', role: 'Primary' }] }); }} className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase">+ Add</button></div>
                                                 <div className="space-y-2">
                                                     {currentTrack.artists?.map((a, i) => (
                                                         <div key={i} className="flex gap-2"><select value={a.role} onChange={e => updateArtist(i, 'role', e.target.value)} className="w-24 bg-black border border-white/10 rounded px-2 py-2 text-xs outline-none"><option value="Primary">Primary</option><option value="Featured">Featured</option><option value="Remixer">Remixer</option></select><div className="flex-1 relative"><input list={`artist-suggestions-${i}`} value={a.name} onChange={e => updateArtist(i, 'name', e.target.value)} className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none" placeholder="Artist Name" /><datalist id={`artist-suggestions-${i}`}>{availableArtists.map(artist => <option key={artist.id} value={artist.name} />)}</datalist></div><button onClick={() => { const copy = currentTrack.artists!.filter((_, idx) => idx !== i); setCurrentTrack({ ...currentTrack, artists: copy }); }} className="p-2 text-gray-500 hover:text-red-500"><X size={14} /></button></div>

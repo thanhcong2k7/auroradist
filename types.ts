@@ -38,15 +38,6 @@ export interface Artist {
   address?: string;
 }
 
-export interface UserProfile {
-  id: number;
-  name: string;
-  legal_name?: string; // Matching DB schema
-  email: string;
-  role: string;
-  avatar?: string;
-}
-
 export interface ActionLog {
   id: string;
   releaseId?: number;
@@ -88,8 +79,8 @@ export interface TrackArtist {
 export interface TrackContributor {
   id?: number;
   name: string;
-  role: 'Composer' | 'Lyricist' | 'Producer' | 'Performer';
-  instrument?: string; 
+  role: 'Composer' | 'Lyricist' | 'Producer' | 'Mixer' | 'Publisher';
+  instrument?: string;
 }
 
 export interface Track {
@@ -102,6 +93,8 @@ export interface Track {
   releaseId?: number;
   audioUrl?: string;
   filename?: string;
+  genre?: string;
+  subGenre?: string;
   artists: TrackArtist[];
   contributors: TrackContributor[];
   hasLyrics: boolean;
@@ -144,10 +137,9 @@ export interface UserProfile {
   name: string;
   legal_name?: string;
   email: string;
-  role: 'USER' | 'ADMIN' | 'MODERATOR'; // Quan trọng
+  role: string;
   avatar?: string;
 }
-
 // Thêm Type cho Admin Stats (nếu cần sau này)
 export interface AdminStats {
   pendingReleases: number;

@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { Transaction, PayoutMethod } from '../types';
-import { DollarSign, Download, Clock, Loader2, CheckCircle2, X, CreditCard, AlertCircle, ArrowUpRight, Ban } from 'lucide-react';
+import { 
+    DollarSign, Clock, Loader2, CheckCircle2, X, 
+    CreditCard, Trash2, ChevronLeft, ChevronRight, Filter 
+} from 'lucide-react';
 
 const Wallet: React.FC = () => {
-    const [transactions, setTransactions] = useState<any[]>([]); // Use any temporarily to accommodate 'note' field
+    const [transactions, setTransactions] = useState<any[]>([]); 
     const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
     const [loading, setLoading] = useState(true);
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -13,6 +16,10 @@ const Wallet: React.FC = () => {
     const [selectedMethod, setSelectedMethod] = useState('');
     const [requesting, setRequesting] = useState(false);
     const [summary, setSummary] = useState<any>(null);
+
+    // --- PAGINATION STATE ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number | 'ALL'>(5); // Default to 5 as requested
 
     useEffect(() => { loadData(); }, []);
 
@@ -52,6 +59,25 @@ const Wallet: React.FC = () => {
             setRequesting(false);
         }
     };
+
+    // --- PAGINATION LOGIC ---
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        setItemsPerPage(value === 'ALL' ? 'ALL' : Number(value));
+        setCurrentPage(1); // Reset to first page when limit changes
+    };
+
+    // Calculate Slice
+    const indexOfLastItem = itemsPerPage === 'ALL' ? transactions.length : currentPage * itemsPerPage;
+    const indexOfFirstItem = itemsPerPage === 'ALL' ? 0 : indexOfLastItem - itemsPerPage;
+    const currentTransactions = transactions.slice(indexOfFirstItem, indexOfLastItem);
+    
+    // Calculate Totals
+    const totalPages = itemsPerPage === 'ALL' ? 1 : Math.ceil(transactions.length / itemsPerPage);
 
     return (
         <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-20">
@@ -103,13 +129,31 @@ const Wallet: React.FC = () => {
                 </div>
             </div>
 
-            {/* Transactions Ledger */}
-            <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm">
+            {/* Transactions Ledger with Pagination */}
+            <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm flex flex-col">
                 <div className="p-5 border-b border-white/5 flex justify-between items-center bg-black/40">
                     <h3 className="font-bold uppercase tracking-widest text-xs">Operational Ledger</h3>
-                    <span className="text-xs font-sans text-gray-400 uppercase tracking-widest">Feed Status: Optimal</span>
+                    
+                    {/* Items Per Page Selector */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-gray-500 font-bold uppercase hidden sm:inline">Rows per page:</span>
+                        <div className="relative">
+                            <select 
+                                value={itemsPerPage} 
+                                onChange={handleLimitChange} 
+                                className="bg-black border border-white/10 rounded-lg px-2 py-1 text-[10px] font-bold text-white focus:border-blue-500 outline-none appearance-none pr-6 cursor-pointer"
+                            >
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                                <option value="ALL">All</option>
+                            </select>
+                            <Filter size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                        </div>
+                    </div>
                 </div>
-                <div className="overflow-x-auto">
+
+                <div className="overflow-x-auto min-h-[300px]">
                     <table className="w-full text-left">
                         <thead className="bg-black text-gray-400 font-sans text-xs uppercase tracking-wide">
                             <tr>
@@ -121,41 +165,82 @@ const Wallet: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {transactions.map((txn) => (
-                                <tr key={txn.id} className="hover:bg-white/[0.01] transition-colors text-xs">
-                                    <td className="px-6 py-4 font-mono text-gray-500">{txn.id.slice(0, 8)}...</td>
-                                    <td className="px-6 py-4 font-mono text-gray-400">
-                                        {new Date(txn.date).toLocaleDateString()}
-                                        <div className="text-[10px] opacity-50">{new Date(txn.date).toLocaleTimeString()}</div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="font-bold uppercase text-white mb-1">{txn.type}</div>
-                                        {/* Hiển thị Note từ Admin */}
-                                        {txn.note && (
-                                            <div className="text-[10px] text-blue-400 font-mono border-l-2 border-blue-500/30 pl-2">
-                                                {txn.note}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`text-[8px] font-black px-2 py-1 rounded border uppercase ${txn.status === 'COMPLETED' ? 'border-green-500/20 text-green-500 bg-green-500/5' :
-                                                txn.status === 'REJECTED' ? 'border-red-500/20 text-red-500 bg-red-500/5' :
-                                                    'border-yellow-500/20 text-yellow-500 bg-yellow-500/5'
-                                            }`}>
-                                            {txn.status}
-                                        </span>
-                                    </td>
-                                    <td className={`px-6 py-4 text-right font-sans font-bold text-sm ${txn.type === 'WITHDRAWAL' ? 'text-gray-400' : 'text-green-400'}`}>
-                                        {txn.type === 'WITHDRAWAL' ? '-' : '+'}${txn.amount.toFixed(2)}
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="p-10 text-center">
+                                        <Loader2 className="animate-spin mx-auto text-blue-500" />
                                     </td>
                                 </tr>
-                            ))}
+                            ) : currentTransactions.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="p-10 text-center text-gray-500 text-xs font-mono uppercase">
+                                        No records found in ledger.
+                                    </td>
+                                </tr>
+                            ) : (
+                                currentTransactions.map((txn) => (
+                                    <tr key={txn.id} className="hover:bg-white/[0.01] transition-colors text-xs">
+                                        <td className="px-6 py-4 font-mono text-gray-500">{txn.id.slice(0, 8)}...</td>
+                                        <td className="px-6 py-4 font-mono text-gray-400">
+                                            {new Date(txn.date).toLocaleDateString()}
+                                            <div className="text-[10px] opacity-50">{new Date(txn.date).toLocaleTimeString()}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold uppercase text-white mb-1">{txn.type}</div>
+                                            {txn.note && (
+                                                <div className="text-[10px] text-blue-400 font-mono border-l-2 border-blue-500/30 pl-2 max-w-xs truncate" title={txn.note}>
+                                                    {txn.note}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`text-[8px] font-black px-2 py-1 rounded border uppercase ${txn.status === 'COMPLETED' ? 'border-green-500/20 text-green-500 bg-green-500/5' :
+                                                    txn.status === 'REJECTED' ? 'border-red-500/20 text-red-500 bg-red-500/5' :
+                                                        'border-yellow-500/20 text-yellow-500 bg-yellow-500/5'
+                                                }`}>
+                                                {txn.status}
+                                            </span>
+                                        </td>
+                                        <td className={`px-6 py-4 text-right font-sans font-bold text-sm ${txn.type === 'WITHDRAWAL' ? 'text-gray-400' : 'text-green-400'}`}>
+                                            {txn.type === 'WITHDRAWAL' ? '-' : '+'}${txn.amount.toFixed(2)}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination Controls */}
+                {!loading && transactions.length > 0 && itemsPerPage !== 'ALL' && (
+                    <div className="p-4 bg-black/40 border-t border-white/5 flex items-center justify-between">
+                        <div className="text-[10px] text-gray-500 font-mono uppercase">
+                            Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, transactions.length)} of {transactions.length}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="p-2 border border-white/10 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition"
+                            >
+                                <ChevronLeft size={14} />
+                            </button>
+                            <span className="text-xs font-bold text-white px-2">
+                                {currentPage} <span className="text-gray-600">/</span> {totalPages}
+                            </span>
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="p-2 border border-white/10 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition"
+                            >
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* Withdrawal Modal (Logic giữ nguyên nhưng hiển thị đẹp hơn) */}
+            {/* Withdrawal Modal */}
             {showWithdrawModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
                     <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">

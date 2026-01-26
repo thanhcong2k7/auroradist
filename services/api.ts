@@ -1,27 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import { Release, Track, Label, PayoutMethod, UserProfile, SupportTicket, Transaction, Artist, DspChannel } from '../types';
-
-// Initialize Supabase
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
 if (!supabaseUrl || !supabaseKey) {
   throw new Error("Missing Supabase Environment Variables");
 }
-
 export const supabase = createClient(supabaseUrl, supabaseKey);
-
-// --- HELPER FUNCTIONS ---
-
 const handleError = (error: any) => {
   console.error("API Error:", error);
   throw new Error(error.message || "An unexpected error occurred");
 };
-
-/**
- * Securely retrieves the current authenticated User ID.
- * Throws an error if no session exists.
- */
 const getUserId = async (): Promise<string> => {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) {
@@ -30,9 +18,6 @@ const getUserId = async (): Promise<string> => {
   }
   return user.id;
 };
-
-// --- API EXPORT ---
-
 export const api = {
   auth: {
     login: async (email: string, pass: string) => {
@@ -41,13 +26,10 @@ export const api = {
         password: pass,
       });
       if (error) throw error;
-
-      // Fetch profile details after auth
       const profile = await api.auth.getProfile();
       return { token: data.session.access_token, user: profile };
     },
     loginWithGoogle: async () => {
-      // Lấy URL hiện tại để redirect về sau khi đăng nhập thành công
       const redirectTo = `${window.location.origin}/`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -96,7 +78,6 @@ export const api = {
       return { success: true };
     }
   },
-
   storage: {
     upload: async (file: File): Promise<string> => {
       try {
@@ -142,7 +123,6 @@ export const api = {
       }
     }
   },
-
   dashboard: {
     // 1. Lấy chỉ số tổng quan (Gọi RPC mới)
     getStats: async () => {
@@ -200,26 +180,31 @@ export const api = {
         version: r.version
       })) as Release[];
     },
-    getPlatformStats: async () => {
-      const { data, error } = await supabase.rpc('get_analytics_by_platform', { p_days: 30 });
+    getPlatformStats: async (startDate: string, endDate: string) => {
+      const { data, error } = await supabase.rpc('get_analytics_by_platform', { 
+        p_start_date: startDate,
+        p_end_date: endDate
+      });
+      
       if (error) {
-        console.error(error);
+        console.error("Platform Stats Error:", error);
         return [];
       }
-      return data; // [{ name: 'Spotify', value: 1000 }, ...]
+      return data; 
     },
-
-    // [MỚI] Lấy dữ liệu biểu đồ cột (Daily Trend)
-    getDailyTrend: async () => {
-      const { data, error } = await supabase.rpc('get_analytics_daily_trend', { p_days: 7 });
+    getDailyTrend: async (startDate: string, endDate: string) => {
+      const { data, error } = await supabase.rpc('get_analytics_daily_trend', { 
+        p_start_date: startDate,
+        p_end_date: endDate
+      });
+      
       if (error) {
-        console.error(error);
+        console.error("Daily Trend Error:", error);
         return [];
       }
-      return data; // [{ day: 'Mon', streams: 50 }, ...]
+      return data;
     }
   },
-
   dsps: {
     getAll: async () => {
       const { data, error } = await supabase
@@ -239,7 +224,6 @@ export const api = {
       })) as DspChannel[];
     }
   },
-
   catalog: {
     getReleases: async () => {
       const userId = await getUserId();
@@ -402,7 +386,6 @@ export const api = {
       if (error) throw error;
     }
   },
-
   artists: {
     getAll: async () => {
       const userId = await getUserId();
@@ -475,7 +458,6 @@ export const api = {
       return { success: true };
     }
   },
-
   labels: {
     getAll: async () => {
       const userId = await getUserId();
@@ -518,7 +500,6 @@ export const api = {
       return { success: true };
     }
   },
-
   tracks: {
     getAll: async () => {
       const userId = await getUserId();
@@ -635,7 +616,6 @@ export const api = {
       return { success: true };
     }
   },
-
   wallet: {
     getSummary: async () => {
       const userId = await getUserId();
@@ -681,17 +661,16 @@ export const api = {
     },
 
     savePayoutMethod: async (pm: Partial<PayoutMethod>) => {
-      const { data, error } = await supabase.rpc('save_secure_payout_method', {
-        p_type: pm.type,
-        p_name: pm.name,
-        p_details: pm.details, // Pass raw data, function encrypts it
-        p_account_holder: pm.account_holder,
-        p_bank_name: pm.bank_name,
-        p_swift_code: pm.swift_code
-      });
+      const userId = await getUserId();
+      const payload = { ...pm, uid: userId };
 
+      const { data, error } = await supabase
+        .from('payout_methods')
+        .upsert(payload)
+        .select()
+        .single();
       if (error) throw error;
-      return { success: true };
+      return data as PayoutMethod;
     },
 
     deletePayoutMethod: async (id: string) => {
@@ -785,7 +764,6 @@ export const api = {
       return updatedTicket;
     }
   },
-
   admin: {
     // 1. Lấy toàn bộ Releases (cho trang Moderation)
     getAllReleases: async (statusFilter?: string) => {

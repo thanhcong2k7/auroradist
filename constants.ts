@@ -137,7 +137,6 @@ export const MOCK_TICKETS: SupportTicket[] = [
     subject: 'Spotify URI Mapping Issue',
     category: 'DISTRIBUTION',
     status: 'OPEN',
-    priority: 'HIGH',
     createdAt: '2024-05-18T10:00:00Z',
     updatedAt: '2024-05-18T10:00:00Z',
     messages: [
@@ -155,7 +154,6 @@ export const MOCK_TICKETS: SupportTicket[] = [
     subject: 'Withdrawal delay',
     category: 'FINANCIAL',
     status: 'RESOLVED',
-    priority: 'MEDIUM',
     createdAt: '2024-05-10T09:00:00Z',
     updatedAt: '2024-05-12T14:30:00Z',
     messages: [
@@ -227,3 +225,7 @@ export const WALLET_SUMMARY = {
     pendingClearance: 340.20,
     lifetimeEarnings: 12450.00
 };
+export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Aurora';
+// If this URL is set, the app will use an Image Logo. If empty, it uses the Text Name.
+export const APP_LOGO_URL = import.meta.env.VITE_APP_LOGO_URL || ''; 
+export const COPYRIGHT_TEXT = `© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.`;
