@@ -13,7 +13,6 @@ import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import DSPLogo from '../components/DSPLogo';
 import { getAudioDuration } from '@/services/utils';
 
-// --- DATA MAPPINGS (Compat with hehe.html) ---
 const MAP_LANGUAGE: Record<string, string> = {
     'English': 'English - eng',
     'Vietnamese': 'Vietnamese - vie',

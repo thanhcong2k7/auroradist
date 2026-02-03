@@ -51,7 +51,7 @@ const RevenueSplitModal: React.FC<Props> = ({ isOpen, onClose, releaseId, releas
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
             <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                     <div>

@@ -74,7 +74,7 @@ export default function State51Importer() {
         // Filter valid rows using flexible key search
         const validRows = rows.filter(r => {
             const isrc = findKey(r, ['ISRC']);
-            const upc = findKey(r, ['UPC', 'Barcode']);
+            const upc = findKey(r, ['UPC']);
             return isrc && upc;
         });
 
@@ -85,17 +85,14 @@ export default function State51Importer() {
         }
 
         validRows.forEach(row => {
-            const amountVal = findKey(row, ['Royalty GBP', 'Net Revenue', 'Revenue', 'Total']);
+            const amountVal = findKey(row, ['To Label']);
             const amount = parseFloat(amountVal || '0');
             if (!isNaN(amount)) {
                 revenueSum += amount;
             }
         });
-
-        // Determine Month
         if (validRows.length > 0) {
-            const dateVal = findKey(validRows[0], ['Start', 'Date', 'Period', 'Trans Time']);
-
+            const dateVal = findKey(validRows[0], ['Start']);
             if (dateVal) {
                 try {
                     if (dateVal instanceof Date) {
@@ -103,13 +100,11 @@ export default function State51Importer() {
                         const month = String(dateVal.getMonth() + 1).padStart(2, '0');
                         reportMonth = `${year}-${month}-01`;
                     } else {
-                        // Handle string dates (e.g. 01-06-22)
                         const dateStr = String(dateVal).replace(/\//g, '-').trim();
                         const parts = dateStr.split('-');
                         if (parts.length === 3) {
                             let year = parts[2];
                             let month = parts[1];
-
                             if (year.length === 2) year = `20${year}`;
                             reportMonth = `${year}-${month}-01`;
                         }
@@ -117,7 +112,7 @@ export default function State51Importer() {
                 } catch (e) { console.error("Date parse error", e); }
             }
         }
-
+        console.log(reportMonth);
         if (!reportMonth || reportMonth.includes('undefined')) {
             reportMonth = new Date().toISOString().slice(0, 7) + '-01';
         }
@@ -138,21 +133,15 @@ export default function State51Importer() {
 
         try {
             setLogs(prev => ["Fetching track map...", ...prev]);
-
-            // 1. Get DB Map
             const { data: dbTracks, error: trackError } = await supabase
                 .from('tracks')
                 .select('id, isrc, uid');
-
             if (trackError) throw trackError;
-
             const isrcMap = new Map();
             dbTracks?.forEach(t => {
                 if (t.isrc) isrcMap.set(t.isrc.trim().toUpperCase(), { id: t.id, uid: t.uid });
             });
-
             setLogs(prev => ["Processing data...", ...prev]);
-
             const revenuePayload: Record<string, number> = {};
             const analyticsPayload: any[] = [];
 
@@ -167,16 +156,11 @@ export default function State51Importer() {
                 const streamsVal = findKey(row, ['Total Units', 'Quantity', 'Units']);
                 const streams = parseInt(streamsVal || '0');
 
-                // [CRITICAL FIX] Platform mapping
-                // Look for 'Source', 'Music Service', or 'DSP'
-                const platformRaw = findKey(row, ['Source', 'Music Service', 'DSP']) || 'Unknown';
-                // Clean up: "Spotify - Stream" -> "SPOTIFY"
-                // Ensure default 'OTHER' if empty to satisfy NOT NULL constraint
+                const platformRaw = findKey(row, ['Music Service']) || 'Unknown';
                 const platform = String(platformRaw).split(' - ')[0].trim().toUpperCase() || 'OTHER';
 
                 const country = findKey(row, ['Country of Sale', 'Country', 'Territory']) || 'GLOBAL';
 
-                // Accumulate Revenue for Bulk RPC
                 if (amount > 0 && upc) {
                     revenuePayload[upc] = (revenuePayload[upc] || 0) + amount;
                 }
@@ -184,8 +168,6 @@ export default function State51Importer() {
                 // Prepare Analytics Record
                 if (isrcMap.has(isrc)) {
                     const trackInfo = isrcMap.get(isrc);
-
-                    // [CRITICAL FIX] Map to correct DB columns for `analytics_detailed`
                     const entry = {
                         user_id: trackInfo.uid,          // was `uid`
                         track_id: trackInfo.id,
@@ -223,14 +205,26 @@ export default function State51Importer() {
             }
 
             // --- DISTRIBUTE REVENUE (Wallet) ---
-            const distItems = Object.entries(revenuePayload).map(([upc, amount]) => ({ upc, amount }));
+            const distItems = parsedData.map(row => {
+                const upc = cleanString(findKey(row, ['UPC']));
+                const amount = parseFloat(findKey(row, ['To Label']) || '0');
+                const platformRaw = findKey(row, ['Music Service']) || 'Unknown';
+                const platform = String(platformRaw).split(' - ')[0].trim().toUpperCase() || 'OTHER';
+                
+                return { upc, amount, platform };
+            }).filter(item => item.amount > 0 && item.upc);
 
-            if (distItems.length > 0) {
+            // Remove duplicates (keep max amount per UPC)
+            const uniqueDistItems = Array.from(
+                new Map(distItems.map(item => [item.upc, item])).values()
+            );
+
+            if (uniqueDistItems.length > 0) {
                 setLogs(prev => [`Distributing £${summary.totalRevenue.toFixed(2)} to wallets...`, ...prev]);
 
                 const { data: rpcData, error: rpcError } = await supabase.rpc('admin_distribute_revenue_bulk', {
                     p_month: summary.month,
-                    p_items: distItems
+                    p_items: uniqueDistItems
                 });
 
                 if (rpcError) throw rpcError;
@@ -261,9 +255,9 @@ export default function State51Importer() {
             <div className="flex justify-between items-start">
                 <div>
                     <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                        <CloudLightning className="text-blue-500" /> State51 / Universal Import
+                        <CloudLightning className="text-blue-500" /> State51 Analytics Import
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">Smart-parser for CSV/XLSX (Auto-detects Source/Revenue columns)</p>
+                    <p className="text-xs text-gray-500 mt-1">Smart-parser for CSV/XLSX formats</p>
                 </div>
                 {summary && (
                     <div className="text-right">

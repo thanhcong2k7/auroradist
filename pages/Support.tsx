@@ -89,7 +89,7 @@ const Support: React.FC = () => {
 
   return (
     <>
-      <div className="space-y-6 animate-fade-in max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col">
+      <div className="space-y-6 max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/5 pb-4">
           <div>
             <h1 className="text-2xl font-black uppercase tracking-tight">Communications</h1>
@@ -162,7 +162,7 @@ const Support: React.FC = () => {
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-[#080808]">
                   {selectedTicket.messages.map((msg, idx) => (
-                    <div key={msg.id} className={`flex ${msg.role === 'USER' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
+                    <div key={msg.id} className={`flex ${msg.role === 'USER' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] flex flex-col ${msg.role === 'USER' ? 'items-end' : 'items-start'}`}>
                         <div className="flex items-center gap-2 mb-1.5 px-1">
                           <span className="text-xs font-mono text-gray-700 uppercase">{msg.senderName}</span>
@@ -185,6 +185,8 @@ const Support: React.FC = () => {
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="ENTER TRANSMISSION..."
                       className="w-full bg-black border border-white/10 rounded-xl py-4 pl-6 pr-16 text-xs focus:border-blue-500 outline-none transition placeholder:text-gray-300"
+                      maxLength={500}
+                      minLength={1}
                     />
                     <button
                       type="submit"
@@ -210,7 +212,7 @@ const Support: React.FC = () => {
       </div>
 
       {showNewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
               <h3 className="font-black uppercase tracking-widest text-xs text-blue-500">Initialize Support Session</h3>

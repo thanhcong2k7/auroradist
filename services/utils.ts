@@ -92,3 +92,12 @@ export const getAudioDuration = (file: File): Promise<string> => {
     };
   });
 };
+// utils/customError.js
+export class APIError extends Error {
+  statusCode: any;
+  constructor(message, statusCode) {
+    super(message);
+    this.name = 'APIError';
+    this.statusCode = statusCode;
+  }
+}

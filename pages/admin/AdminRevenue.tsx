@@ -5,21 +5,14 @@ import {
     DollarSign, Upload, FileText, CheckCircle2, AlertTriangle,
     Loader2, XCircle, ArrowRightLeft, User, Calendar, Layers
 } from 'lucide-react';
-// IMPORT THE NEW COMPONENT
 import State51Importer from '@/components/State51Importer';
 
 const AdminRevenue: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'INGEST' | 'WITHDRAWALS'>('WITHDRAWALS');
-
-    // NEW: State to toggle between ingestion providers
     const [ingestProvider, setIngestProvider] = useState<'STANDARD' | 'STATE51'>('STANDARD');
-
-    // --- States for Standard Ingestion ---
     const [processing, setProcessing] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
     const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
-
-    // --- States for Withdrawals ---
     const [withdrawals, setWithdrawals] = useState<any[]>([]);
     const [loadingW, setLoadingW] = useState(false);
     const [actionProcessing, setActionProcessing] = useState<string | null>(null);
@@ -39,8 +32,6 @@ const AdminRevenue: React.FC = () => {
             setLoadingW(false);
         }
     };
-
-    // --- LOGIC STANDARD INGESTION ---
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -58,12 +49,11 @@ const AdminRevenue: React.FC = () => {
 
         setProcessing(true);
         setLogs(["Preparing bulk payload..."]);
-
         const payload = rows.map(row => ({
-            upc: (row['UPC'] || row['Barcode'])?.toString().trim(),
-            amount: parseFloat(row['Net Revenue'] || row['Amount'] || row['USD'])
-        })).filter(item => item.upc && item.amount > 0);
-
+            upc: row['UPC'].toString().trim(),
+            amount: parseFloat(row['To Label']),
+            platform: row['Music Service'] || "No service available"
+        })).filter(item => item.upc && item.amount > 0 && item.platform);
         try {
             const { data, error } = await supabase.rpc('admin_distribute_revenue_bulk', {
                 p_items: payload,
@@ -145,7 +135,6 @@ const AdminRevenue: React.FC = () => {
             {/* === TAB 1: WITHDRAWALS === */}
             {activeTab === 'WITHDRAWALS' && (
                 <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden min-h-[400px]">
-                    {/* ... Existing Withdrawal UI code ... */}
                     {loadingW ? (
                         <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
                     ) : withdrawals.length === 0 ? (
@@ -218,59 +207,7 @@ const AdminRevenue: React.FC = () => {
             {/* === TAB 2: INGESTION === */}
             {activeTab === 'INGEST' && (
                 <div className="space-y-6">
-                    {/* Provider Toggle */}
-                    <div className="flex justify-center mb-6">
-                        <div className="bg-[#111] border border-white/10 p-1 rounded-xl flex gap-1">
-                            <button
-                                onClick={() => setIngestProvider('STANDARD')}
-                                className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition flex items-center gap-2 ${ingestProvider === 'STANDARD' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}
-                            >
-                                <DollarSign size={14} /> Standard / Revelator
-                            </button>
-                            <button
-                                onClick={() => setIngestProvider('STATE51')}
-                                className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition flex items-center gap-2 ${ingestProvider === 'STATE51' ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}
-                            >
-                                <Layers size={14} /> State51 Conspiracy
-                            </button>
-                        </div>
-                    </div>
-
-                    {ingestProvider === 'STATE51' ? (
-                        <State51Importer />
-                    ) : (
-                        // Standard Importer UI
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-[#111] p-8 rounded-xl border border-white/10 flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="p-4 bg-green-500/10 rounded-full text-green-500"><DollarSign size={32} /></div>
-                                <div>
-                                    <h3 className="font-bold text-white">Standard Royalty Report</h3>
-                                    <p className="text-xs text-gray-500 mt-1">Columns: <span className="font-mono text-green-400">UPC, Amount (Net Revenue)</span></p>
-                                </div>
-                                <div className="w-full">
-                                    <label className="block text-[10px] text-gray-500 font-bold uppercase mb-1">Reporting Month</label>
-                                    <input
-                                        type="month"
-                                        value={reportMonth}
-                                        onChange={(e) => setReportMonth(e.target.value)}
-                                        className="w-full bg-black border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-green-500"
-                                    />
-                                    <p className="text-[10px] text-gray-600 mt-1">
-                                        Splits created AFTER this month will be ignored.
-                                    </p>
-                                </div>
-                                <label className={`px-6 py-3 bg-white text-black font-bold uppercase text-xs rounded-lg cursor-pointer hover:bg-gray-200 transition flex items-center gap-2 ${processing ? 'opacity-50 pointer-events-none' : ''}`}>
-                                    {processing ? <Loader2 className="animate-spin" /> : <Upload size={16} />}
-                                    {processing ? 'Distributing...' : 'Select CSV File'}
-                                    <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} disabled={processing} />
-                                </label>
-                            </div>
-                            <div className="bg-black border border-white/10 rounded-xl p-4 h-64 overflow-y-auto font-mono text-[10px] space-y-1">
-                                {logs.length === 0 && <div className="text-gray-600 text-center mt-20">System Idle. Waiting for input...</div>}
-                                {logs.map((log, i) => <div key={i} className={log.includes('ERROR') ? 'text-red-500' : 'text-green-500'}>{log}</div>)}
-                            </div>
-                        </div>
-                    )}
+                    <State51Importer />
                 </div>
             )}
         </div>

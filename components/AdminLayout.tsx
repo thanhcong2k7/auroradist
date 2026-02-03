@@ -26,7 +26,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         { path: '/admin', icon: LayoutDashboard, label: 'Overview' },
         { path: '/admin/releases', icon: ShieldCheck, label: 'Moderation' },
         { path: '/admin/dsps', icon: Globe, label: 'Store Manager' },
-        { path: '/admin/analytics', icon: FileAudio, label: 'Analytics Import' },
+        { path: '/admin/analytics', icon: FileAudio, label: 'Analytics' },
         { path: '/admin/revenue', icon: DollarSign, label: 'Finance' },
         { path: '/admin/support', icon: MessageSquare, label: 'Support Center' },
         { path: '/admin/users', icon: Users, label: 'User Manager' },
@@ -38,27 +38,25 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             {isSidebarOpen && (
                 <div className="fixed inset-0 z-40 bg-black/80 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
             )}
-
-            {/* Sidebar */}
             <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#0A0A0A] border-r border-red-900/20 transform transition-transform duration-300 lg:transform-none flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="p-6 border-b border-red-900/20 flex justify-between items-center">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         {APP_LOGO_URL ? (
-                            <div className="flex flex-col">
-                                <img src={APP_LOGO_URL} alt={APP_NAME} className="h-8 w-auto object-contain" />
-                                <span className="text-[10px] font-mono text-red-500 uppercase tracking-widest">ADMIN TERMINAL</span>
-                            </div>
+                            <img src={APP_LOGO_URL} alt={APP_NAME} className="h-8 w-auto object-contain" />
                         ) : (
                             <div className="text-xl font-black uppercase tracking-tighter">
                                 {APP_NAME}<span className="text-red-600">.ADMIN</span>
                             </div>
                         )}
+                        <div className="text-xl font-black tracking-tighter uppercase text-white">
+                            {APP_NAME}<span className="text-blue-500">.</span>
+                        </div>
                     </div>
                     <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden"><X size={20} /></button>
                 </div>
 
                 <nav className="flex-1 py-6 px-4 space-y-1">
-                    <div className="px-2 mb-2 text-[10px] font-mono text-red-500 uppercase tracking-widest">System Core</div>
+                    <div className="px-2 mb-2 text-[10px] font-mono text-red-500 uppercase tracking-widest">ADMIN MODULES</div>
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         return (
@@ -93,7 +91,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                     <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-gray-400"><Menu size={24} /></button>
                     <div className="ml-auto flex items-center gap-4">
                         <div className="px-3 py-1 bg-red-600 text-white text-[10px] font-black uppercase rounded tracking-widest">
-                            Admin Mode Active
+                            Admin only!
                         </div>
                     </div>
                 </header>

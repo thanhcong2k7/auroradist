@@ -84,7 +84,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Streams" value={stats.totalStreams} icon={Activity} change={stats.totalStreamsChange} loading={loading} />
         <StatCard label="Lifetime Revenue" value={stats.revenue} icon={DollarSign} change={stats.revenueChange} loading={loading} />
