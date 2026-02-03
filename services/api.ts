@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Release, Track, Label, PayoutMethod, UserProfile, SupportTicket, Transaction, Artist, DspChannel } from '../types';
+import { APIError } from './utils';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 if (!supabaseUrl || !supabaseKey) {
@@ -27,6 +28,10 @@ export const api = {
       });
       if (error) throw error;
       const profile = await api.auth.getProfile();
+      if (profile.status === "SUSPEND"){
+        window.dispatchEvent(new Event('force-logout'));
+        throw new APIError("User has been suspended",401);
+      }
       return { token: data.session.access_token, user: profile };
     },
     loginWithGoogle: async () => {
@@ -44,6 +49,11 @@ export const api = {
       });
 
       if (error) throw error;
+      const profile = await api.auth.getProfile();
+      if (profile.status === "SUSPEND"){
+        window.dispatchEvent(new Event('force-logout'));
+        throw new APIError("User has been suspended", 401);
+      }
       return data;
     },
     getProfile: async () => {
@@ -56,6 +66,11 @@ export const api = {
         .single();
 
       if (error) throw error;
+      if (data.status === "SUSPEND"){
+        window.dispatchEvent(new Event('force-logout'));
+        alert("User has been suspended. Reach out to support team for more info.");
+        throw new APIError("User has been suspended",401);
+      }
       return data as UserProfile;
     },
 
@@ -190,7 +205,7 @@ export const api = {
         console.error("Platform Stats Error:", error);
         return [];
       }
-      return data; 
+      return data;
     },
     getDailyTrend: async (startDate: string, endDate: string) => {
       const { data, error } = await supabase.rpc('get_analytics_daily_trend', { 
@@ -849,10 +864,6 @@ export const api = {
       status?: string,
       rejection_reason?: string
     }) => {
-      // Khi update ngược lại DB, ta dùng snake_case (nếu cần) hoặc object mapping
-      // Tuy nhiên Supabase JS client đủ thông minh để map nếu key khớp column.
-      // Nhưng để chắc ăn, ta map thủ công payload update nếu tên khác nhau.
-      // Ở đây upc và status trùng tên nên ok.
       const { data, error } = await supabase
         .from('releases')
         .update(updates)
@@ -888,12 +899,23 @@ export const api = {
 
     // 6. User Management: Xóa user (Admin only)
     deleteUser: async (userId: string) => {
-      // Lưu ý: Client-side chỉ xóa được profile. 
-      // Để xóa hoàn toàn trong Auth, cần dùng Edge Function (sẽ làm ở bước sau).
-      // Tạm thời ta xóa profile để "soft ban".
       const { error } = await supabase
         .from('profiles')
         .delete()
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    suspendUser: async (userId: string) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'SUSPEND' })
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    activateUser: async (userId: string) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'ACTIVE' })
         .eq('id', userId);
       if (error) throw error;
     },

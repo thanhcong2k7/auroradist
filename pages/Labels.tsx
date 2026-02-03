@@ -74,69 +74,69 @@ const Labels: React.FC = () => {
 
   return (
     <>
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
-        <div>
-          <h1 className="text-3xl font-black uppercase tracking-tight">Record Imprints</h1>
-          <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Distribution Entity Management</p>
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
+          <div>
+            <h1 className="text-3xl font-black uppercase tracking-tight">Record Imprints</h1>
+            <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Distribution Entity Management</p>
+          </div>
+          <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)] flex items-center gap-2 text-xs">
+            <Plus size={16} /> New Label
+          </button>
         </div>
-        <button onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)] flex items-center gap-2 text-xs rounded-xl">
-          <Plus size={16} /> New Label
-        </button>
-      </div>
 
-      {loading && !labels.length ? (
-        <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {labels.map(label => {
-            const used = isLabelUsed(label.id);
-            return (
-              <div key={label.id} className="bg-surface border border-white/5 p-6 rounded-2xl hover:border-white/10 transition group relative">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><Tags size={24} /></div>
+        {loading && !labels.length ? (
+          <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {labels.map(label => {
+              const used = isLabelUsed(label.id);
+              return (
+                <div key={label.id} className="bg-surface border border-white/5 p-6 rounded-2xl hover:border-white/10 transition group relative">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><Tags size={24} /></div>
 
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                    <button
-                      onClick={() => handleOpenModal(label)}
-                      className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition"
-                      title="Edit Label"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-
-                    {/* Delete Button - Only shown if not in use */}
-                    {!used ? (
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
                       <button
-                        onClick={() => handleDelete(label.id)}
-                        className="p-2 bg-white/5 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition"
-                        title="Delete Label"
+                        onClick={() => handleOpenModal(label)}
+                        className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition"
+                        title="Edit Label"
                       >
-                        <Trash2 size={14} />
+                        <Edit2 size={14} />
                       </button>
-                    ) : (
-                      <div className="p-2 cursor-help text-gray-700" title="Cannot delete: Active releases associated">
-                        <AlertCircle size={14} />
-                      </div>
-                    )}
+
+                      {/* Delete Button - Only shown if not in use */}
+                      {!used ? (
+                        <button
+                          onClick={() => handleDelete(label.id)}
+                          className="p-2 bg-white/5 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition"
+                          title="Delete Label"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      ) : (
+                        <div className="p-2 cursor-help text-gray-700" title="Cannot delete: Active releases associated">
+                          <AlertCircle size={14} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold uppercase tracking-tight mb-1">{label.name}</h3>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 font-mono"><Mail size={12} /> {label.email}</div>
+
+                  <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-xs font-mono font-bold uppercase tracking-widest">
+                    <span className="text-gray-400">State</span>
+                    <span className={used ? 'text-blue-500' : 'text-gray-700'}>
+                      {used ? 'ACTIVE' : 'IDLE'}
+                    </span>
                   </div>
                 </div>
-
-                <h3 className="text-xl font-bold uppercase tracking-tight mb-1">{label.name}</h3>
-                <div className="flex items-center gap-2 text-xs text-gray-500 font-mono"><Mail size={12} /> {label.email}</div>
-
-                <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center text-xs font-mono font-bold uppercase tracking-widest">
-                  <span className="text-gray-400">State</span>
-                  <span className={used ? 'text-blue-500' : 'text-gray-700'}>
-                    {used ? 'ACTIVE' : 'IDLE'}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">

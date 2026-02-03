@@ -97,9 +97,18 @@ const App: React.FC = () => {
       }
     });
 
-    const handleForceLogout = () => {
+    const handleForceLogout = async () => {
       setIsAuthenticated(false);
       localStorage.removeItem('aurora_session');
+      // Clear Supabase auth token from localStorage
+      const storageKeys = Object.keys(localStorage);
+      storageKeys.forEach(key => {
+        if (key.includes('auth-token') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
+      // Sign out from Supabase to clear server-side session
+      await supabase.auth.signOut().catch(err => console.log('Signout error:', err));
     };
     window.addEventListener('force-logout', handleForceLogout);
 

@@ -6,15 +6,19 @@ import {
 import { Download, Zap, Globe, Layers, Calendar } from 'lucide-react';
 import { api } from '../services/api';
 import { start } from 'repl';
-
+const currentDate = new Date().toISOString().split('T')[0];
 const COLORS = ['#1DB954', '#FA243C', '#FF0000', '#00A3FF', '#FFD700', '#888888'];
 
 const Analytics: React.FC = () => {
+    let tmpDate = new Date(currentDate);
+    tmpDate.setMonth(tmpDate.getMonth()-1);
     const [dailyData, setDailyData] = useState<any[]>([]);
     const [platformData, setPlatformData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [startDate, setStartDate] = useState('2022-01-01');
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(tmpDate.toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(currentDate);
+    const [showStartPicker, setShowStartPicker] = useState(false);
+    const [showEndPicker, setShowEndPicker] = useState(false);
 
     useEffect(() => {
         const loadData = async () => {
@@ -43,26 +47,26 @@ const Analytics: React.FC = () => {
     const totalStreamsPeriod = dailyData.reduce((acc, curr) => acc + curr.streams, 0);
 
     return (
-        <div className="space-y-6 animate-fade-in max-w-7xl mx-auto pb-20">
+        <div className="space-y-6 max-w-7xl mx-auto pb-20">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-6">
                 <div>
-                    <h1 className="text-2xl font-black uppercase tracking-tight">Intelligence</h1>
+                    <h1 className="text-2xl font-black uppercase tracking-tight">System Analytics</h1>
                     <p className="text-gray-500 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2 mt-1 opacity-60">
                         <Zap size={12} className="text-yellow-500" /> Real-time Nodes Synchronized
                     </p>
-                </div>
-                <div className="flex gap-2">
-                    <div className="bg-blue-600/10 border border-blue-500/20 px-4 py-2 rounded-xl text-center">
-                        <div className="text-[10px] font-mono uppercase text-blue-400">7-Day Volume</div>
-                        <div className="text-lg font-black text-white">{totalStreamsPeriod.toLocaleString()}</div>
-                    </div>
                 </div>
                 <div className="flex gap-2 items-center bg-black/40 p-1 rounded-xl border border-white/10">
                     <div className="flex items-center gap-2 px-3">
                         <Calendar size={14} className="text-gray-500" />
                         <span className="text-xs font-bold text-gray-500 uppercase">Range:</span>
                     </div>
+                    <style>{`
+                        input[type="date"]::-webkit-calendar-picker-indicator {
+                            filter: invert(1) brightness(1.2);
+                            cursor: pointer;
+                        }
+                    `}</style>
                     <input
                         type="date"
                         value={startDate}
@@ -125,7 +129,7 @@ const Analytics: React.FC = () => {
                 {/* 2. Platform Breakdown Pie Chart */}
                 <div className="bg-surface border border-white/5 p-6 rounded-2xl">
                     <h3 className="font-bold uppercase text-[12px] tracking-widest text-purple-500 mb-6 flex items-center gap-2">
-                        <Globe size={14} /> Platform Share (30d)
+                        <Globe size={14} /> Platform Share
                     </h3>
 
                     <div className="h-[250px] w-full relative">

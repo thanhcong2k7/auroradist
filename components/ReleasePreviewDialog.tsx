@@ -31,7 +31,7 @@ const ReleasePreviewDialog: React.FC<ReleasePreviewProps> = ({ isOpen, onClose, 
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
 
                 {/* Header */}
@@ -79,7 +79,6 @@ const ReleasePreviewDialog: React.FC<ReleasePreviewProps> = ({ isOpen, onClose, 
                                 <p className="text-xl text-gray-400">{release.artist}</p>
                                 {release.status === 'REJECTED' && release.rejectionReason && (
                                     <div className="mb-3 mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-[12px] text-red-400 font-mono">
-                                        <span className="font-bold uppercase mr-1">Reason:</span>
                                         {release.rejectionReason}
                                     </div>
                                 )}

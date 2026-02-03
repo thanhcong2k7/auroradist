@@ -12,35 +12,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // LOGIC MỚI: Cập nhật thông báo lỗi Google chi tiết hơn
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
     try {
       await api.auth.loginWithGoogle();
-      // Lưu ý: OAuth sẽ redirect trang web
     } catch (err: any) {
       setLoading(false);
       setError("Google Auth Error: " + err.message);
     }
   };
 
-  // LOGIC MỚI: Bỏ lưu token thủ công, Bỏ check null thủ công, Dùng error message động
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Logic cũ: if (!email || !password) return setError('Identity required.'); -> Đã bỏ, dùng 'required' ở input
 
     setLoading(true);
     setError('');
 
     try {
       await api.auth.login(email, password);
-      // Logic cũ: localStorage.setItem(...) -> Đã bỏ theo code mới
       onLogin();
     } catch (err: any) {
-      // Logic cũ: setError('AUTHENTICATION_FAILED: ACCESS_DENIED');
-      // Logic mới: Lấy message từ server
       setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);
@@ -49,7 +41,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-background text-white font-sans flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background FX - GIỮ NGUYÊN GIAO DIỆN CŨ */}
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.1),transparent_70%)] pointer-events-none"></div>
 
       <div className="w-full max-w-md relative z-10">
@@ -84,7 +75,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
                 placeholder="user@aurora.com"
-                required // LOGIC MỚI: Thêm required để thay thế check tay JS
+                required
               />
             </div>
 
@@ -97,7 +88,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-black border border-white/10 rounded-xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/50 transition-all shadow-inner placeholder:text-gray-600"
                   placeholder="••••••••"
-                  required // LOGIC MỚI: Thêm required
+                  required
                 />
                 <Key className="absolute right-5 top-4 text-gray-700" size={18} />
               </div>

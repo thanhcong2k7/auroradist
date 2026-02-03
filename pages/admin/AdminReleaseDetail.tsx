@@ -76,12 +76,10 @@ const AdminReleaseDetail: React.FC = () => {
 
         setSubmitting(true);
         try {
-            // [UPDATED] Gọi API mới (Edge Function)
             await api.admin.moderateRelease(release.id, 'APPROVE', {
                 upc: upcInput,
                 isrcs: isrcList
             });
-
             alert("Release Approved! Email notification sent.");
             navigate('/admin/releases');
         } catch (err: any) {
@@ -216,10 +214,7 @@ const AdminReleaseDetail: React.FC = () => {
 
             {/* Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                {/* LEFT COLUMN: Metadata & Profile */}
                 <div className="lg:col-span-4 space-y-6">
-                    {/* Cover Art */}
                     <div className="aspect-square rounded-xl overflow-hidden border border-white/10 bg-black relative group shadow-2xl">
                         <img src={release.cover_art} className="w-full h-full object-cover" alt="Cover" />
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -302,13 +297,12 @@ const AdminReleaseDetail: React.FC = () => {
                             <h2 className="text-2xl font-black uppercase tracking-tight">{release.title}</h2>
                             {release.version && <span className="px-2 py-0.5 bg-white/10 rounded text-[10px] font-mono uppercase border border-white/5">{release.version}</span>}
                         </div>
-                        {release.rejection_reason && (
-                            <div className="px-4 py-2 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-xs font-bold">
-                                Reason: {release.rejection_reason}
-                            </div>
-                        )}
                     </div>
-
+                    {release.rejection_reason && (
+                        <div className="px-4 py-2 bg-red-900/20 border border-red-500/30 rounded-lg text-red-300 text-wider text-xs">
+                            <span className='font-bold'>Reason:</span> {release.rejection_reason}
+                        </div>
+                    )}
                     {/* Tracklist Block */}
                     <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden">
                         <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">

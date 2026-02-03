@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom'; // [SỬA 1]: Import Link từ router
 import { api, supabase } from '@/services/api';
 import { UserProfile } from '@/types';
-import { Trash2, Mail, Shield, User, Loader2, Plus, X, Key, Send, Eye } from 'lucide-react'; // [SỬA 1]: Bỏ Link khỏi đây
+import { Trash2, Mail, Shield, User, Loader2, Plus, X, Key, Send, Eye, AlertTriangle } from 'lucide-react'; // [SỬA 1]: Bỏ Link khỏi đây
 
 const AdminUsers: React.FC = () => {
     const [users, setUsers] = useState<UserProfile[]>([]);
@@ -79,13 +79,10 @@ const AdminUsers: React.FC = () => {
             {loading ? <Loader2 className="animate-spin text-red-500 mx-auto" /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {users.map(user => (
-                        // [SỬA 2]: Khôi phục lại thẻ bao quanh (Card) và thêm relative
                         <div key={user.id} className="relative bg-[#111] border border-white/5 p-6 rounded-xl flex items-start justify-between group hover:border-white/20 transition">
-
-                            {/* Thông tin User (Avatar, Tên...) */}
                             <div className="flex gap-4">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-lg ${user.role === 'ADMIN' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>
-                                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                                    {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : user.name?.charAt(0).toUpperCase() || 'U'}
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-white">{user.name || 'No Name'}</h3>
@@ -96,6 +93,12 @@ const AdminUsers: React.FC = () => {
                                         {user.role === 'ADMIN' ? <Shield size={10} /> : <User size={10} />}
                                         {user.role}
                                     </div>
+                                    {user.status === "SUSPEND" ? (
+                                        <div className={`text-[10px] font-black uppercase mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded border border-yellow-500/30 text-yellow-500`}>
+                                            <AlertTriangle size={10} />
+                                            suspended
+                                        </div>
+                                    ) : (<span></span>)}
                                 </div>
                             </div>
 

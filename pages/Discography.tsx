@@ -250,7 +250,7 @@ const Discography: React.FC = () => {
                 {release.status === 'REJECTED' && release.rejectionReason && (
                   <div className="mb-3 mt-1 p-2 bg-red-500/10 border border-red-500/20 rounded text-[12px] text-red-400 font-mono">
                     <span className="font-bold uppercase mr-1">Reason:</span>
-                    {release.rejectionReason}
+                    {release.rejectionReason.substring(0,34)+"..."}
                   </div>
                 )}
                 <div className="flex justify-between items-end">

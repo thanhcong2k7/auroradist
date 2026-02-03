@@ -123,7 +123,7 @@ const Settings: React.FC = () => {
 
     return (
         <>
-            <div className="space-y-8 max-w-6xl mx-auto pb-24 animate-fade-in">
+            <div className="space-y-8 max-w-6xl mx-auto pb-24">
                 <div className="border-b border-white/5 pb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                     <div>
                         <h1 className="text-2xl font-black uppercase tracking-tight">System Node Config</h1>
@@ -173,7 +173,10 @@ const Settings: React.FC = () => {
                                     </div>
                                     <div>
                                         <h4 className="text-xl font-black uppercase tracking-tight">{profile.name}</h4>
-                                        <p className="text-gray-400 font-mono text-xs uppercase tracking-widest mt-1">{profile.role}</p>
+                                        <div className={`text-[10px] font-black uppercase mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded border ${profile.role === 'ADMIN' ? 'border-red-500 text-red-500' : 'border-blue-500/30 text-blue-500'}`}>
+                                            {profile.role === 'ADMIN' ? <Shield size={10} /> : <User size={10} />}
+                                            {profile.role}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -238,116 +241,115 @@ const Settings: React.FC = () => {
                         </div>
                     </div>
                 </div>
-
-                {showPayoutModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
-                        <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
-                                <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Add Disbursement Node</h3>
-                                <button onClick={() => setShowPayoutModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
-                            </div>
-                            <div className="p-8 space-y-6">
-                                <div className="flex bg-black p-1 rounded-xl border border-white/5">
-                                    <button onClick={() => setPmType('BANK')} className={`flex-1 py-2 text-xs font-black uppercase rounded-lg transition-all ${pmType === 'BANK' ? 'bg-white text-black' : 'text-gray-700'}`}>Swift / IBAN</button>
-                                    <button onClick={() => setPmType('PAYPAL')} className={`flex-1 py-2 text-xs font-black uppercase rounded-lg transition-all ${pmType === 'PAYPAL' ? 'bg-white text-black' : 'text-gray-700'}`}>PayPal Gateway</button>
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Nickname</label>
-                                        <input type="text" value={pmName} onChange={e => setPmName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="e.g. Asset Accumulator" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Holder</label>
-                                        <input type="text" value={pmHolder} onChange={e => setPmHolder(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="Legal Name" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">SWIFT Code</label>
-                                        <input type="text" value={pmExtra} onChange={e => setPmExtra(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="SWIFT Code" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Bank Name</label>
-                                        <input type="text" value={pmBankName} onChange={e => setPmBankName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="Bank Name" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">{pmType === 'BANK' ? 'Account Number' : 'Provider Identity (Email)'}</label>
-                                        <input type={pmType === 'BANK' ? 'password' : 'email'} value={pmAccount} onChange={e => setPmAccount(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none font-mono" placeholder={pmType === 'BANK' ? '••••••••' : 'identity@aurora.net'} />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
-                                <button onClick={() => setShowPayoutModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-gray-700 hover:text-white transition">Cancel</button>
-                                <button onClick={handleAddPayout} disabled={isSubmitting || !pmName || !pmAccount} className="flex-1 py-3 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 shadow-xl disabled:opacity-30">
-                                    {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Establish Node'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
                 <AvatarUploadModal
                     isOpen={showAvatarModal}
                     onClose={() => setShowAvatarModal(false)}
                     onUploadSuccess={handleAvatarSuccess}
                 />
-                {showPasswordModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 animate-fade-in">
-                        <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
-                                <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Security Override</h3>
-                                <button onClick={() => setShowPasswordModal(false)}>
-                                    <X size={18} className="text-gray-500 hover:text-white" />
-                                </button>
-                            </div>
-                            <div className="p-8 space-y-6">
-                                <div className="space-y-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">New Passcode</label>
-                                        <div className="relative">
-                                            <input
-                                                type="password"
-                                                value={newPassword}
-                                                onChange={e => setNewPassword(e.target.value)}
-                                                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition font-mono"
-                                                placeholder="••••••••"
-                                            />
-                                            <Lock size={14} className="absolute right-4 top-3.5 text-gray-600" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Confirm Passcode</label>
+            </div>
+            {showPasswordModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
+                            <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Security Override</h3>
+                            <button onClick={() => setShowPasswordModal(false)}>
+                                <X size={18} className="text-gray-500 hover:text-white" />
+                            </button>
+                        </div>
+                        <div className="p-8 space-y-6">
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">New Passcode</label>
+                                    <div className="relative">
                                         <input
                                             type="password"
-                                            value={confirmPassword}
-                                            onChange={e => setConfirmPassword(e.target.value)}
+                                            value={newPassword}
+                                            onChange={e => setNewPassword(e.target.value)}
                                             className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition font-mono"
                                             placeholder="••••••••"
                                         />
+                                        <Lock size={14} className="absolute right-4 top-3.5 text-gray-600" />
                                     </div>
                                 </div>
-
-                                <div className="bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/10 flex gap-4 text-xs text-gray-500 font-mono uppercase leading-relaxed tracking-widest">
-                                    <Shield size={18} className="text-yellow-500 shrink-0" />
-                                    Action will revoke all active tokens on other devices immediately.
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Confirm Passcode</label>
+                                    <input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition font-mono"
+                                        placeholder="••••••••"
+                                    />
                                 </div>
                             </div>
-                            <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
-                                <button
-                                    onClick={() => setShowPasswordModal(false)}
-                                    className="flex-1 py-3 text-xs font-black uppercase text-gray-700 hover:text-white transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleUpdatePassword}
-                                    disabled={isSubmitting || !newPassword}
-                                    className="flex-1 py-3 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 shadow-xl disabled:opacity-30"
-                                >
-                                    {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Update Matrix'}
-                                </button>
+
+                            <div className="bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/10 flex gap-4 text-xs text-gray-500 font-mono uppercase leading-relaxed tracking-widest">
+                                <Shield size={18} className="text-yellow-500 shrink-0" />
+                                Action will revoke all active tokens on other devices immediately.
                             </div>
                         </div>
+                        <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
+                            <button
+                                onClick={() => setShowPasswordModal(false)}
+                                className="flex-1 py-3 text-xs font-black uppercase text-gray-700 hover:text-white transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleUpdatePassword}
+                                disabled={isSubmitting || !newPassword}
+                                className="flex-1 py-3 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 shadow-xl disabled:opacity-30"
+                            >
+                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Update Matrix'}
+                            </button>
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+            {showPayoutModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
+                            <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Add Disbursement Node</h3>
+                            <button onClick={() => setShowPayoutModal(false)}><X size={18} className="text-gray-500 hover:text-white" /></button>
+                        </div>
+                        <div className="p-8 space-y-6">
+                            <div className="flex bg-black p-1 rounded-xl border border-white/5">
+                                <button onClick={() => setPmType('BANK')} className={`flex-1 py-2 text-xs font-black uppercase rounded-lg transition-all ${pmType === 'BANK' ? 'bg-white text-black' : 'text-gray-700'}`}>Swift / IBAN</button>
+                                <button onClick={() => setPmType('PAYPAL')} className={`flex-1 py-2 text-xs font-black uppercase rounded-lg transition-all ${pmType === 'PAYPAL' ? 'bg-white text-black' : 'text-gray-700'}`}>PayPal Gateway</button>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Nickname</label>
+                                    <input type="text" value={pmName} onChange={e => setPmName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="e.g. Asset Accumulator" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Holder</label>
+                                    <input type="text" value={pmHolder} onChange={e => setPmHolder(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="Legal Name" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">SWIFT Code</label>
+                                    <input type="text" value={pmExtra} onChange={e => setPmExtra(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="SWIFT Code" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">Bank Name</label>
+                                    <input type="text" value={pmBankName} onChange={e => setPmBankName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none" placeholder="Bank Name" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-mono text-gray-500 uppercase tracking-widest ml-1">{pmType === 'BANK' ? 'Account Number' : 'Provider Identity (Email)'}</label>
+                                    <input type={pmType === 'BANK' ? 'password' : 'email'} value={pmAccount} onChange={e => setPmAccount(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none font-mono" placeholder={pmType === 'BANK' ? '••••••••' : 'identity@aurora.net'} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-4 bg-black/60 border-t border-white/5 flex gap-3">
+                            <button onClick={() => setShowPayoutModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-gray-700 hover:text-white transition">Cancel</button>
+                            <button onClick={handleAddPayout} disabled={isSubmitting || !pmName || !pmAccount} className="flex-1 py-3 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 active:scale-95 shadow-xl disabled:opacity-30">
+                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : 'Establish Node'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

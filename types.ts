@@ -119,6 +119,7 @@ export interface TicketMessage {
   senderName: string;
   role: 'USER' | 'ADMIN';
   content: string;
+  created_at: string;
   timestamp: string;
 }
 
@@ -128,6 +129,7 @@ export interface SupportTicket {
   category: 'TECHNICAL' | 'FINANCIAL' | 'DISTRIBUTION' | 'OTHER';
   status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
   createdAt: string;
+  created_at: string; // fallback
   updatedAt: string;
   messages: TicketMessage[];
 }
@@ -139,8 +141,8 @@ export interface UserProfile {
   email: string;
   role: string;
   avatar?: string;
+  status: string; //ACTIVE - SUSPEND
 }
-// Thêm Type cho Admin Stats (nếu cần sau này)
 export interface AdminStats {
   pendingReleases: number;
   totalUsers: number;
