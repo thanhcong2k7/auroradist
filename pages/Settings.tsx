@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { PayoutMethod, UserProfile } from '../types';
 import { User, Bell, Shield, Plus, Trash2, CreditCard, Banknote, Save, CheckCircle2, X, Smartphone, Loader2, Lock, Fingerprint, Camera, KeyRound } from 'lucide-react';
 import AvatarUploadModal from '../components/AvatarUploadModal';
+import { toast } from 'sonner';
 
 const Settings: React.FC = () => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -12,6 +13,7 @@ const Settings: React.FC = () => {
     const [showPayoutModal, setShowPayoutModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [saveFeedback, setSaveFeedback] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     // New Payout Form
     const [pmType, setPmType] = useState<'BANK' | 'PAYPAL'>('BANK');
@@ -28,30 +30,56 @@ const Settings: React.FC = () => {
     useEffect(() => { loadData(); }, []);
 
     const loadData = async () => {
-        const [prof, payouts] = await Promise.all([api.auth.getProfile(), api.wallet.getPayoutMethods()]);
-        setProfile(prof);
-        setPayoutMethods(payouts);
-        setTempProfile(prof);
+        setLoading(true);
+        try {
+            const [prof, payouts] = await Promise.all([api.auth.getProfile(), api.wallet.getPayoutMethods()]);
+            setProfile(prof);
+            setPayoutMethods(payouts);
+            setTempProfile(prof);
+        } catch (e) {
+            toast.error(e, {
+                description: new Date().toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            });
+        } finally {
+            setLoading(false);
+        }
     };
     const handleUpdatePassword = async () => {
         if (!newPassword || newPassword.length < 6) {
-            alert("Password must be at least 6 characters.");
+            toast.error("Password must be at least 6 characters.");
             return;
         }
         if (newPassword !== confirmPassword) {
-            alert("Passwords do not match.");
+            toast.error("Passwords do not match.");
             return;
         }
 
         setIsSubmitting(true);
         try {
             await api.auth.updatePassword(newPassword);
-            alert("Security Protocol Updated: Password changed successfully.");
+            toast.success("Password changed successfully.", {
+                description: new Date().toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                icon: <Shield />
+            });
             setShowPasswordModal(false);
             setNewPassword('');
             setConfirmPassword('');
         } catch (err: any) {
-            alert("Update Failed: " + err.message);
+            toast.error(err.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -136,111 +164,114 @@ const Settings: React.FC = () => {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <div className="lg:col-span-7 space-y-6">
-                        <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm">
-                            <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/40">
-                                <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500 flex items-center gap-2"><Fingerprint size={14} /> Identity Matrix</h3>
-                                {!isEditingProfile ? (
-                                    <button onClick={() => setIsEditingProfile(true)} className="px-4 py-2 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Modify</button>
-                                ) : (
-                                    <div className="flex gap-2">
-                                        <button onClick={() => setIsEditingProfile(false)} className="px-4 py-2 text-xs font-black uppercase text-gray-400">Discard</button>
-                                        <button onClick={handleSaveProfile} className="px-6 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">{isSubmitting ? <Loader2 size={12} className="animate-spin" /> : 'Commit'}</button>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-8 space-y-8">
-                                <div className="flex items-center gap-6">
-                                    <div className="relative group cursor-pointer" onClick={() => isEditingProfile && setShowAvatarModal(true)}>
-                                        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 shadow-lg overflow-hidden relative">
-                                            <div className="w-full h-full rounded-full bg-[#080808] flex items-center justify-center relative overflow-hidden">
-                                                {profile.avatar ? (
-                                                    <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <span className="text-3xl font-black text-white">
-                                                        {profile.name.charAt(0).toUpperCase()}
-                                                    </span>
-                                                )}
+                {loading ? (
+                    <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div className="lg:col-span-7 space-y-6">
+                            <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm">
+                                <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/40">
+                                    <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500 flex items-center gap-2"><Fingerprint size={14} /> Identity Matrix</h3>
+                                    {!isEditingProfile ? (
+                                        <button onClick={() => setIsEditingProfile(true)} className="px-4 py-2 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Modify</button>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setIsEditingProfile(false)} className="px-4 py-2 text-xs font-black uppercase text-gray-400">Discard</button>
+                                            <button onClick={handleSaveProfile} className="px-6 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2">{isSubmitting ? <Loader2 size={12} className="animate-spin" /> : 'Commit'}</button>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="p-8 space-y-8">
+                                    <div className="flex items-center gap-6">
+                                        <div className="relative group cursor-pointer" onClick={() => isEditingProfile && setShowAvatarModal(true)}>
+                                            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 shadow-lg overflow-hidden relative">
+                                                <div className="w-full h-full rounded-full bg-[#080808] flex items-center justify-center relative overflow-hidden">
+                                                    {profile.avatar ? (
+                                                        <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-3xl font-black text-white">
+                                                            {profile.name.charAt(0).toUpperCase()}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {isEditingProfile && (
+                                                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Camera size={20} className="text-white" />
+                                                </div>
+                                            )}
+                                            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 border-2 border-[#080808] rounded-full shadow-[0_0_10px_green]"></div>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xl font-black uppercase tracking-tight">{profile.name}</h4>
+                                            <div className={`text-[10px] font-black uppercase mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded border ${profile.role === 'ADMIN' ? 'border-red-500 text-red-500' : 'border-blue-500/30 text-blue-500'}`}>
+                                                {profile.role === 'ADMIN' ? <Shield size={10} /> : <User size={10} />}
+                                                {profile.role}
                                             </div>
                                         </div>
-                                        {isEditingProfile && (
-                                            <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Camera size={20} className="text-white" />
-                                            </div>
-                                        )}
-                                        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-green-500 border-2 border-[#080808] rounded-full shadow-[0_0_10px_green]"></div>
                                     </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Alias</label>
+                                            <input type="text" value={isEditingProfile ? tempProfile.name : profile.name} onChange={e => setTempProfile({ ...tempProfile, name: e.target.value })} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-400 cursor-not-allowed'}`} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Legal Identity</label>
+                                            {/* Fixed: Use legal_name property instead of legalName to match UserProfile interface */}
+                                            <input type="text" value={isEditingProfile ? tempProfile.legal_name : profile.legal_name} onChange={e => setTempProfile({ ...tempProfile, legal_name: e.target.value })} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-400 cursor-not-allowed'}`} placeholder="Required for financial nodes" />
+                                        </div>
+                                        <div className="md:col-span-2 space-y-1">
+                                            <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Endpoint (Email)</label>
+                                            <input type="text" value={isEditingProfile ? tempProfile.email : profile.email} onChange={e => setTempProfile({ ...tempProfile, email: e.target.value })} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-400 cursor-not-allowed'}`} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-surface border border-white/5 rounded-2xl p-6 group hover:border-blue-500/10 transition-all">
+                                <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-blue-500 mb-6">
+                                    <Shield size={16} /> Access Control
+                                </div>
+                                <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-black/40 p-5 rounded-xl border border-white/5">
                                     <div>
-                                        <h4 className="text-xl font-black uppercase tracking-tight">{profile.name}</h4>
-                                        <div className={`text-[10px] font-black uppercase mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded border ${profile.role === 'ADMIN' ? 'border-red-500 text-red-500' : 'border-blue-500/30 text-blue-500'}`}>
-                                            {profile.role === 'ADMIN' ? <Shield size={10} /> : <User size={10} />}
-                                            {profile.role}
-                                        </div>
+                                        <p className="text-xs font-black uppercase">System Passcode</p>
+                                        <p className="text-xs text-gray-500 font-mono uppercase mt-1">Global Authorization Override</p>
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Alias</label>
-                                        <input type="text" value={isEditingProfile ? tempProfile.name : profile.name} onChange={e => setTempProfile({ ...tempProfile, name: e.target.value })} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-400 cursor-not-allowed'}`} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Legal Identity</label>
-                                        {/* Fixed: Use legal_name property instead of legalName to match UserProfile interface */}
-                                        <input type="text" value={isEditingProfile ? tempProfile.legal_name : profile.legal_name} onChange={e => setTempProfile({ ...tempProfile, legal_name: e.target.value })} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-400 cursor-not-allowed'}`} placeholder="Required for financial nodes" />
-                                    </div>
-                                    <div className="md:col-span-2 space-y-1">
-                                        <label className="text-xs font-mono text-gray-400 uppercase tracking-widest ml-1">Endpoint (Email)</label>
-                                        <input type="text" value={isEditingProfile ? tempProfile.email : profile.email} onChange={e => setTempProfile({ ...tempProfile, email: e.target.value })} readOnly={!isEditingProfile} className={`w-full bg-black border rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition ${isEditingProfile ? 'border-blue-500/50 text-white' : 'border-white/5 text-gray-400 cursor-not-allowed'}`} />
-                                    </div>
+                                    <button
+                                        onClick={() => setShowPasswordModal(true)}
+                                        className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all flex items-center gap-2"
+                                    >
+                                        <KeyRound size={14} /> Rotate Key
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-surface border border-white/5 rounded-2xl p-6 group hover:border-blue-500/10 transition-all">
-                            <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-blue-500 mb-6">
-                                <Shield size={16} /> Access Control
-                            </div>
-                            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-black/40 p-5 rounded-xl border border-white/5">
-                                <div>
-                                    <p className="text-xs font-black uppercase">System Passcode</p>
-                                    <p className="text-xs text-gray-500 font-mono uppercase mt-1">Global Authorization Override</p>
+                        <div className="lg:col-span-5 space-y-6">
+                            <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm flex flex-col h-full">
+                                <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/40">
+                                    <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-green-500"><Banknote size={16} /> Disbursement Nodes</div>
+                                    <button onClick={() => setShowPayoutModal(true)} className="p-2 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white rounded-xl transition-all active:scale-90"><Plus size={16} /></button>
                                 </div>
-                                <button
-                                    onClick={() => setShowPasswordModal(true)}
-                                    className="px-6 py-2.5 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all flex items-center gap-2"
-                                >
-                                    <KeyRound size={14} /> Rotate Key
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="lg:col-span-5 space-y-6">
-                        <div className="bg-surface border border-white/5 rounded-2xl overflow-hidden shadow-sm flex flex-col h-full">
-                            <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/40">
-                                <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-green-500"><Banknote size={16} /> Disbursement Nodes</div>
-                                <button onClick={() => setShowPayoutModal(true)} className="p-2 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white rounded-xl transition-all active:scale-90"><Plus size={16} /></button>
-                            </div>
-                            <div className="p-5 space-y-3 flex-1 custom-scrollbar overflow-y-auto">
-                                {payoutMethods.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-white/5 rounded-xl opacity-20"><p className="text-xs font-mono uppercase tracking-widest">No nodes configured</p></div>
-                                ) : (
-                                    payoutMethods.map(pm => (
-                                        <div key={pm.id} className="p-4 bg-black/40 border border-white/5 rounded-xl flex items-center justify-between group hover:border-blue-500/20 transition-all">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-white/5 rounded-lg text-gray-400 group-hover:text-blue-400 transition-colors">{pm.type === 'BANK' ? <CreditCard size={18} /> : <Smartphone size={18} />}</div>
-                                                <div><p className="text-xs font-black uppercase tracking-wide">{pm.name}</p><p className="text-[11px] font-mono text-gray-500">{pm.details}</p></div>
+                                <div className="p-5 space-y-3 flex-1 custom-scrollbar overflow-y-auto">
+                                    {payoutMethods.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-white/5 rounded-xl opacity-20"><p className="text-xs font-mono uppercase tracking-widest">No nodes configured</p></div>
+                                    ) : (
+                                        payoutMethods.map(pm => (
+                                            <div key={pm.id} className="p-4 bg-black/40 border border-white/5 rounded-xl flex items-center justify-between group hover:border-blue-500/20 transition-all">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 bg-white/5 rounded-lg text-gray-400 group-hover:text-blue-400 transition-colors">{pm.type === 'BANK' ? <CreditCard size={18} /> : <Smartphone size={18} />}</div>
+                                                    <div><p className="text-xs font-black uppercase tracking-wide">{pm.name}</p><p className="text-[11px] font-mono text-gray-500">{pm.details}</p></div>
+                                                </div>
+                                                <button onClick={() => handleDeletePayout(pm.id)} className="p-2 text-gray-800 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
                                             </div>
-                                            <button onClick={() => handleDeletePayout(pm.id)} className="p-2 text-gray-800 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
-                                        </div>
-                                    ))
-                                )}
+                                        ))
+                                    )}
+                                </div>
+                                <div className="p-5 bg-blue-500/5 border-t border-blue-500/10 text-center"><p className="text-[8px] text-gray-400 font-mono uppercase tracking-widest leading-relaxed">Multi-DSP reconciliation feed prioritized.</p></div>
                             </div>
-                            <div className="p-5 bg-blue-500/5 border-t border-blue-500/10 text-center"><p className="text-[8px] text-gray-400 font-mono uppercase tracking-widest leading-relaxed">Multi-DSP reconciliation feed prioritized.</p></div>
                         </div>
-                    </div>
-                </div>
+                    </div>)}
                 <AvatarUploadModal
                     isOpen={showAvatarModal}
                     onClose={() => setShowAvatarModal(false)}
@@ -248,7 +279,7 @@ const Settings: React.FC = () => {
                 />
             </div>
             {showPasswordModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
                         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/40">
                             <h3 className="font-bold uppercase tracking-widest text-xs text-blue-500">Security Override</h3>
@@ -266,7 +297,7 @@ const Settings: React.FC = () => {
                                             value={newPassword}
                                             onChange={e => setNewPassword(e.target.value)}
                                             className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition font-mono"
-                                            placeholder="••••••••"
+                                            placeholder="••••••••" autoComplete="off"
                                         />
                                         <Lock size={14} className="absolute right-4 top-3.5 text-gray-600" />
                                     </div>
@@ -278,7 +309,7 @@ const Settings: React.FC = () => {
                                         value={confirmPassword}
                                         onChange={e => setConfirmPassword(e.target.value)}
                                         className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-blue-500 outline-none transition font-mono"
-                                        placeholder="••••••••"
+                                        placeholder="••••••••" autoComplete="off"
                                     />
                                 </div>
                             </div>

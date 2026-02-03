@@ -1,9 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Music2, Plus, X, Save, MapPin, Edit2, Trash2, Search, Loader2 } from 'lucide-react';
+import { User, Mail, Music2, Plus, X, Save, MapPin, Edit2, Trash2, Search, Loader2, Disc } from 'lucide-react';
 import { Artist } from '../types';
 import FileUploader from '../components/FileUploader';
 import { api } from '@/services/api';
-
+import { toast } from 'sonner';
+import placeholderArtist from '@/components/placeholderArtist.png';
+/**
+ * Artists Management Component
+ * 
+ * A comprehensive page for managing artist profiles and metadata within the Aurora distribution system.
+ * This component provides full CRUD operations for artist entities, including profile creation, editing,
+ * deletion, and searching capabilities.
+ * 
+ * @component
+ * 
+ * @features
+ * - **Artist Listing**: Displays all artists in a responsive grid layout with profile information
+ * - **Search Functionality**: Real-time search filtering by artist name or email address
+ * - **Create/Edit Modal**: Comprehensive form for managing artist details including:
+ *   - Identity information (official name, legal name)
+ *   - Streaming platform IDs (Spotify, Apple Music, Soundcloud)
+ *   - Contact information (email, physical address)
+ *   - Profile avatar upload
+ * - **Delete Operations**: Confirmation-based artist removal from the roster
+ * - **Loading States**: Visual feedback during data fetching and submission
+ * - **Error Handling**: Toast notifications for user feedback on operations
+ * 
+ * @state
+ * - `artists` - Array of Artist objects fetched from the database
+ * - `showModal` - Controls visibility of the create/edit modal
+ * - `editingId` - ID of the artist being edited (null for create operations)
+ * - `searchQuery` - Current search input value for filtering artists
+ * - `isSubmitting` - Indicates form submission in progress
+ * - `loading` - Indicates data loading or API operation in progress
+ * - `formData` - Current form state for artist creation/editing
+ * 
+ * @returns {React.ReactElement} The rendered Artists management interface
+ * 
+ * @example
+ * ```tsx
+ * <Artists />
+ * ```
+ */
 const Artists: React.FC = () => {
     const [artists, setArtists] = useState<Artist[]>([]);
     const [showModal, setShowModal] = useState(false);
@@ -11,7 +49,7 @@ const Artists: React.FC = () => {
 
     // MISSING FEATURE 1: Search State
     const [searchQuery, setSearchQuery] = useState('');
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [loading, setLoading] = useState(false);
 
     //Artist loading
@@ -61,19 +99,21 @@ const Artists: React.FC = () => {
 
     const handleSave = async () => {
         if (!formData.name) {
-            alert("Official Artist Name is required.");
+            toast.error("Official Artist Name is required.");
             return;
         }
 
         setLoading(true);
+        setIsSubmitting(true);
         try {
             await api.artists.save(formData);
             await loadData();
             setShowModal(false);
         } catch (err: any) {
-            alert("Failed to save artist: " + err.message);
+            toast.error("Failed to save artist: " + err.message);
         } finally {
             setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -85,15 +125,15 @@ const Artists: React.FC = () => {
             await api.artists.delete(id);
             await loadData();
         } catch (err: any) {
-            alert("Failed to delete artist: " + err.message);
+            toast.error("Failed to delete artist: " + err.message);
         } finally {
             setLoading(false);
         }
     };
 
     // MISSING FEATURE 2: Filter Logic
-    const filteredArtists = artists.filter(artist => 
-        artist.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const filteredArtists = artists.filter(artist =>
+        artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (artist.email && artist.email.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
@@ -101,7 +141,9 @@ const Artists: React.FC = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
                 <div>
-                    <h1 className="text-3xl font-black uppercase mb-1">Artist Roster</h1>
+                    <h1 className="text-3xl font-black uppercase tracking-tighter text-white flex items-center gap-21">
+                        Artist Roster
+                    </h1>
                     <p className="text-gray-400 font-mono text-sm">Manage profiles, IDs and contact details.</p>
                 </div>
                 <button
@@ -115,9 +157,9 @@ const Artists: React.FC = () => {
             {/* MISSING FEATURE 1: Search Bar UI */}
             <div className="relative max-w-md group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={16} />
-                <input 
-                    type="text" 
-                    placeholder="SEARCH ROSTER..." 
+                <input
+                    type="text"
+                    placeholder="SEARCH ROSTER..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-surface border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition font-mono uppercase placeholder:text-gray-700"
@@ -132,7 +174,7 @@ const Artists: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {filteredArtists.map(artist => (
                         <div key={artist.id} className="relative bg-surface border border-white/10 rounded-xl p-6 flex gap-6 hover:border-white/30 transition group">
-                            
+
                             {/* MISSING FEATURE 3: Action Buttons (Edit + Delete) */}
                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition flex gap-2">
                                 <button
@@ -151,27 +193,21 @@ const Artists: React.FC = () => {
                                 </button>
                             </div>
 
-                            <img src={artist.avatar || 'https://via.placeholder.com/150'} alt={artist.name} className="w-24 h-24 rounded-full object-cover border-2 border-white/10 group-hover:border-blue-500/50 transition" />
+                            <img src={artist.avatar || placeholderArtist} alt={artist.name} className="w-24 h-24 rounded-full object-cover border-2 border-white/10 group-hover:border-blue-500/50 transition" />
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-xl font-bold mb-1">{artist.name}</h3>
-                                {artist.legalName && <p className="text-xs text-gray-500 font-mono mb-3">LEGAL: {artist.legalName}</p>}
+                                <p className="text-xs text-gray-500 tracking-wide font-mono mb-3">LEGAL: {artist.legalName ? <span className='text-gray-300'>{artist.legalName}</span> : <span className='text-gray-500'>undefined</span>}</p>
 
                                 <div className="space-y-1 mb-4">
-                                    {artist.email && (
-                                        <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
-                                            <Mail size={12} className="text-blue-500" /> {artist.email}
-                                        </div>
-                                    )}
-                                    {artist.spotifyId && (
-                                        <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
-                                            <Music2 size={12} className="text-green-500" /> Spotify: {artist.spotifyId}
-                                        </div>
-                                    )}
-                                    {artist.appleMusicId && (
-                                        <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
-                                            <Music2 size={12} className="text-red-500" /> Apple: {artist.appleMusicId}
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
+                                        <Mail size={12} className="text-blue-500" /> {artist.email ? <span className='text-gray-300'>{artist.email}</span> : <span className='text-gray-500'>undefined-email</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
+                                        <Music2 size={12} className="text-green-500" /> Spotify: {artist.spotifyId ? <span className='text-gray-300'>{artist.spotifyId}</span> : <span className='text-gray-500'>undefined</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-gray-400 font-mono truncate">
+                                        <Music2 size={12} className="text-red-500" /> Apple: {artist.appleMusicId ? <span className='text-gray-300'>{artist.appleMusicId}</span> : <span className='text-gray-500'>undefined</span>}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -316,7 +352,7 @@ const Artists: React.FC = () => {
                                 Cancel
                             </button>
                             <button onClick={handleSave} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs flex items-center gap-2">
-                                <Save size={14} /> {editingId ? 'Update Profile' : 'Save Profile'}
+                                {isSubmitting ? <span className='flex items-center gap-2'><Loader2 size={14} className="animate-spin" /> Saving</span> : editingId ? <span className='flex items-center gap-2'><Save size={14} /> Update Profile</span> : <span className='flex items-center gap-2'><Save size={14} /> Save Profile</span>}
                             </button>
                         </div>
                     </div>

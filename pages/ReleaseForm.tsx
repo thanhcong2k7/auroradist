@@ -12,6 +12,7 @@ import { Label as LabelType, Release, Track, TrackArtist, TrackContributor, DspC
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
 import DSPLogo from '../components/DSPLogo';
 import { getAudioDuration } from '@/services/utils';
+import { toast } from 'sonner';
 
 const MAP_LANGUAGE: Record<string, string> = {
     'English': 'English - eng',
@@ -263,7 +264,7 @@ const ReleaseForm: React.FC = () => {
         }
 
         if (!title) {
-            alert("Please enter a Release Title.");
+            toast.error("Please enter a Release Title.");
             return;
         }
 
@@ -306,7 +307,7 @@ const ReleaseForm: React.FC = () => {
             navigate('/discography');
         } catch (err: any) {
             console.error(err);
-            alert("Save failed: " + err.message);
+            toast.error("Save failed: " + err.message);
         } finally {
             setLoading(false);
         }
@@ -335,7 +336,7 @@ const ReleaseForm: React.FC = () => {
 
     const isValidTimeFormat = (time: string) => /^([0-5]?[0-9]):([0-5][0-9])$/.test(time);
     const validateImageDimensions = (url: string): Promise<boolean> => new Promise((resolve) => { const img = new Image(); img.onload = () => resolve(img.width >= 1400 && img.height >= 1400); img.onerror = () => resolve(false); img.src = url; });
-    const handleCoverArtUpload = async (url: string) => { if (await validateImageDimensions(url)) { if (coverArt && coverArt !== url) await api.storage.delete(coverArt); setCoverArt(url); } else { alert("Image resolution too low! Minimum 1400x1400px."); await api.storage.delete(url); } };
+    const handleCoverArtUpload = async (url: string) => { if (await validateImageDimensions(url)) { if (coverArt && coverArt !== url) await api.storage.delete(coverArt); setCoverArt(url); } else { toast.error("Image resolution too low! Minimum 1400x1400px."); await api.storage.delete(url); } };
     const toggleStore = (code: string) => { if (selectedStores.includes(code)) setSelectedStores(selectedStores.filter(s => s !== code)); else setSelectedStores([...selectedStores, code]); };
     const toggleAllStores = () => { const allActiveCodes = availableDsps.filter(d => d.isEnabled).map(d => d.code); setSelectedStores(allActiveCodes.every(code => selectedStores.includes(code)) ? [] : allActiveCodes); };
 
@@ -360,7 +361,7 @@ const ReleaseForm: React.FC = () => {
 
         } catch (err: any) {
             console.error("Failed to remove track:", err);
-            alert("Failed to unlink track. Please check connection.");
+            toast.error("Failed to unlink track. Please check connection.");
             setReleaseTracks(previousTracks);
         }
     };
@@ -386,7 +387,7 @@ const ReleaseForm: React.FC = () => {
         const hasProducer = t.contributors?.some(c => c.role === 'Producer' && c.name.trim() !== '');
         if (!hasComposer || !hasProducer) { newErrors.contributors = "Composer & Producer are mandatory."; isValid = false; if (isValid) setTrackTab('CREDITS'); }
         const tkTime = currentTrack.tiktokClipStartTime;
-        if (tkTime && tkTime.trim() !== '' && !isValidTimeFormat(tkTime)) { alert("Invalid TikTok Time format (MM:SS)."); return false; }
+        if (tkTime && tkTime.trim() !== '' && !isValidTimeFormat(tkTime)) { toast.error("Invalid TikTok Time format (MM:SS)."); return false; }
 
         setTrackErrors(newErrors);
         return isValid;
@@ -410,7 +411,7 @@ const ReleaseForm: React.FC = () => {
             }
             setShowTrackModal(false);
         } catch (e: any) {
-            alert("Error saving track: " + e.message);
+            toast.error("Error saving track: " + e.message);
         }
     };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Layout from './components/Layout';
+import MaintenanceBar from './components/MaintenanceBar';
 import Dashboard from './pages/Dashboard';
 import Discography from './pages/Discography';
 import ReleaseForm from './pages/ReleaseForm';
@@ -16,8 +17,6 @@ import About from './pages/About';
 import UpdatePassword from './pages/UpdatePassword'; // Import new page
 import { api, supabase } from './services/api';
 import { Toaster } from 'sonner';
-
-// Import Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminReleases from './pages/admin/AdminReleases';
 import AdminReleaseDetail from './pages/admin/AdminReleaseDetail';
@@ -56,6 +55,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [maintenanceActive, setMaintenanceActive] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -76,10 +76,7 @@ const App: React.FC = () => {
         if (mounted) setIsAuthenticated(false);
       }
     };
-
     checkUserSession();
-
-    // LISTEN FOR AUTH EVENTS (Includes Invite/Reset Link detection)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth Event:', event);
 
@@ -90,9 +87,7 @@ const App: React.FC = () => {
         setIsAuthenticated(false);
         localStorage.removeItem('aurora_session');
       } else if (event === 'PASSWORD_RECOVERY') {
-        // [IMPORTANT] Handle Invite/Reset Link -> Redirect to Password Update
-        setIsAuthenticated(true); // User is technically logged in via the token
-        // Force redirect using window.location since we are outside the Router context here
+        setIsAuthenticated(true);
         window.location.hash = '#/update-password';
       }
     });
@@ -100,14 +95,12 @@ const App: React.FC = () => {
     const handleForceLogout = async () => {
       setIsAuthenticated(false);
       localStorage.removeItem('aurora_session');
-      // Clear Supabase auth token from localStorage
       const storageKeys = Object.keys(localStorage);
       storageKeys.forEach(key => {
         if (key.includes('auth-token') || key.includes('supabase')) {
           localStorage.removeItem(key);
         }
       });
-      // Sign out from Supabase to clear server-side session
       await supabase.auth.signOut().catch(err => console.log('Signout error:', err));
     };
     window.addEventListener('force-logout', handleForceLogout);
@@ -136,7 +129,14 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <Toaster position="top-center" richColors theme="dark" />
+      <MaintenanceBar 
+        isActive={maintenanceActive}
+        message="System maintenance in progress. Some features may be unavailable."
+        type="maintenance"
+        onDismiss={() => setMaintenanceActive(false)}
+      />
+      {maintenanceActive && <div className="h-[52px]"></div>}
+      <Toaster position="bottom-right" richColors theme="dark" />
       <Routes>
         {/* NEW ROUTE: Password Update (Standalone, authenticated) */}
         <Route path="/update-password" element={<UpdatePassword />} />

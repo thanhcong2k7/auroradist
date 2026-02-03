@@ -10,6 +10,8 @@ import {
     Copy
 } from 'lucide-react';
 import { APP_NAME, APP_LOGO_URL, COPYRIGHT_TEXT } from '@/constants';
+import { toast } from 'sonner';
+
 const About: React.FC = () => {
     const [isChecking, setIsChecking] = useState(true);
     const [upToDate, setUpToDate] = useState(false);
@@ -32,7 +34,7 @@ const About: React.FC = () => {
 
     const handleCopyHash = () => {
         navigator.clipboard.writeText(buildHash);
-        alert('Build hash copied to clipboard');
+        toast('Build hash copied to clipboard');
     };
 
     return (

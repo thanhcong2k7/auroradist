@@ -1,5 +1,6 @@
+import placeholderImage from "@/components/undefined.png";
 export const getResizedImage = (url: string | undefined, size: number = 200) => {
-  if (!url) return 'https://via.placeholder.com/' + size;
+  if (!url) return placeholderImage;
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
   return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${size}&h=${size}&fit=cover&output=webp`;
 };

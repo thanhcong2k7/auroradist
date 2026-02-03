@@ -4,7 +4,6 @@ import { Plus, Edit2, Trash2, Search, AlertCircle, Loader2, Info, Eye, Filter, X
 import { Link, useNavigate } from 'react-router-dom';
 import { Release, Track } from '../types';
 import ReleasePreviewDialog from '../components/ReleasePreviewDialog';
-import { MOCK_TRACKS } from '../constants'; // Fallback for tracks
 import RevenueSplitModal from '../components/RevenueSplitModal';
 import { PieChart } from 'lucide-react';
 import { toast } from 'sonner';
@@ -126,7 +125,7 @@ const Discography: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 pb-4 border-b border-white/10">
         <div>
-          <h1 className="text-3xl font-black uppercase mb-1">Discography</h1>
+          <h1 className="text-3xl font-black uppercase tracking-tighter text-white flex items-center gap-2">Discography</h1>
           <p className="text-gray-400 font-mono text-sm">Manage your releases and distribution status.</p>
         </div>
         <button

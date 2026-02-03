@@ -28,9 +28,9 @@ export const api = {
       });
       if (error) throw error;
       const profile = await api.auth.getProfile();
-      if (profile.status === "SUSPEND"){
+      if (profile.status === "SUSPEND") {
         window.dispatchEvent(new Event('force-logout'));
-        throw new APIError("User has been suspended",401);
+        throw new APIError("User has been suspended", 401);
       }
       return { token: data.session.access_token, user: profile };
     },
@@ -50,7 +50,7 @@ export const api = {
 
       if (error) throw error;
       const profile = await api.auth.getProfile();
-      if (profile.status === "SUSPEND"){
+      if (profile.status === "SUSPEND") {
         window.dispatchEvent(new Event('force-logout'));
         throw new APIError("User has been suspended", 401);
       }
@@ -66,10 +66,10 @@ export const api = {
         .single();
 
       if (error) throw error;
-      if (data.status === "SUSPEND"){
+      if (data.status === "SUSPEND") {
         window.dispatchEvent(new Event('force-logout'));
         alert("User has been suspended. Reach out to support team for more info.");
-        throw new APIError("User has been suspended",401);
+        throw new APIError("User has been suspended", 401);
       }
       return data as UserProfile;
     },
@@ -196,11 +196,11 @@ export const api = {
       })) as Release[];
     },
     getPlatformStats: async (startDate: string, endDate: string) => {
-      const { data, error } = await supabase.rpc('get_analytics_by_platform', { 
+      const { data, error } = await supabase.rpc('get_analytics_by_platform', {
         p_start_date: startDate,
         p_end_date: endDate
       });
-      
+
       if (error) {
         console.error("Platform Stats Error:", error);
         return [];
@@ -208,16 +208,46 @@ export const api = {
       return data;
     },
     getDailyTrend: async (startDate: string, endDate: string) => {
-      const { data, error } = await supabase.rpc('get_analytics_daily_trend', { 
+      const { data, error } = await supabase.rpc('get_analytics_daily_trend', {
         p_start_date: startDate,
         p_end_date: endDate
       });
-      
+
       if (error) {
         console.error("Daily Trend Error:", error);
         return [];
       }
       return data;
+    },
+    getAnalyticsTrend: async (startDate: string, endDate: string) => {
+      const userId = await getUserId();
+      const { data, error } = await supabase.rpc('get_artist_analytics_v3', {
+        p_uid: userId,
+        p_start_date: startDate,
+        p_end_date: endDate
+      });
+      if (error) throw error;
+      return data;
+    },
+    getPlatformDistribution: async (startDate: string, endDate: string) => {
+      const userId = await getUserId();
+      const { data, error } = await supabase.rpc('get_platform_stats_v3', {
+        p_uid: userId,
+        p_start_date: startDate,
+        p_end_date: endDate
+      });
+      if (error) throw error;
+      return data;
+    },
+    getMyRate: async () => {
+      const userId = await getUserId();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('contract_rate')
+        .eq('id', userId)
+        .single();
+      if (error) throw error;
+      return data?.contract_rate || 0.8;
     }
   },
   dsps: {
@@ -240,37 +270,42 @@ export const api = {
     }
   },
   catalog: {
-    getReleases: async () => {
-      const userId = await getUserId();
-      const { data, error } = await supabase
+    getReleases: async (page: number = 1, limit: number = 100000) => {
+    const userId = await getUserId();
+    
+    // Tính toán range cho Supabase
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error } = await supabase
         .from('releases')
         .select('*')
         .eq('uid', userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to); // Thêm dòng này để chỉ lấy số lượng cần thiết
 
-      if (error) throw error;
+    if (error) throw error;
 
-      // UPDATED: Map DB snake_case to TS camelCase including new SoundOn fields
-      return data.map(r => ({
+    // Mapping giữ nguyên như code của bạn
+    return data.map(r => ({
         ...r,
         labelId: r.label_id,
         releaseDate: r.release_date,
         originalReleaseDate: r.original_release_date,
-        coverArt: r.cover_art,
+        coverArt: r.cover_art, // Lưu ý: Dashboard cần dùng key 'coverArt' này
         copyrightYear: r.copyright_year,
         copyrightLine: r.copyright_line,
         phonogramYear: r.phonogram_year,
         phonogramLine: r.phonogram_line,
         selectedDsps: r.selected_dsps,
-        // New Fields
         genre: r.genre,
         subGenre: r.sub_genre,
         language: r.language,
         format: r.format,
         territories: r.territories,
         rejectionReason: r.rejection_reason
-      })) as Release[];
-    },
+    })) as Release[];
+},
 
     createDraft: async () => {
       const userId = await getUserId();
@@ -1062,6 +1097,23 @@ export const api = {
 
       return { success: true };
     },
+    ingestRawAnalytics: async (payload: any[]) => {
+      // Chia nhỏ batch nếu quá lớn (ví dụ > 5000 dòng)
+      const { error } = await supabase
+        .from('raw_analytics')
+        .insert(payload);
+      if (error) throw error;
+      return { success: true };
+    },
+    updateArtistRate: async (userId: string, newRate: number) => {
+      // newRate nên là số thập phân, ví dụ 0.85 (85%)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ contract_rate: newRate })
+        .eq('id', userId);
 
+      if (error) throw error;
+      return { success: true };
+    }
   }
 };

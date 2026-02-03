@@ -31,7 +31,7 @@ const ReleasePreviewDialog: React.FC<ReleasePreviewProps> = ({ isOpen, onClose, 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
 
                 {/* Header */}
@@ -49,7 +49,6 @@ const ReleasePreviewDialog: React.FC<ReleasePreviewProps> = ({ isOpen, onClose, 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-8">
                     <div className="flex flex-col md:flex-row gap-8">
-                        {/* Artwork */}
                         <div className="w-full md:w-80 shrink-0">
                             <div className="aspect-square rounded-xl overflow-hidden border border-white/10 bg-black shadow-2xl relative group">
                                 {release.coverArt ? (

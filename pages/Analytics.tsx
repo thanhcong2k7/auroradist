@@ -1,186 +1,337 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    PieChart, Pie, Cell
 } from 'recharts';
-import { Download, Zap, Globe, Layers, Calendar } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, Music, Globe, Filter, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
-import { start } from 'repl';
-const currentDate = new Date().toISOString().split('T')[0];
-const COLORS = ['#1DB954', '#FA243C', '#FF0000', '#00A3FF', '#FFD700', '#888888'];
+
+// --- Types định nghĩa cấu trúc dữ liệu trả về từ RPC Supabase ---
+interface TrendData {
+    group_key: string;      // "YYYY-MM-DD"
+    total_streams: number;
+    total_revenue: number;
+}
+
+interface PlatformData {
+    platform_name: string;
+    stream_count: number;
+    revenue_amount: number;
+}
+
+const COLORS = ['#1DB954', '#FF0055', '#333333', '#00A3FF', '#FFD700', '#888888', '#6366f1'];
+
+const KpiCard = ({ title, value, icon: Icon, color, loading }: any) => (
+    <div className="bg-[#111] border border-white/5 p-5 rounded-2xl relative overflow-hidden group hover:border-white/10 transition-all">
+        <div className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}>
+            <Icon size={60} />
+        </div>
+        <p className="text-gray-500 text-[11px] font-bold uppercase tracking-wider mb-1">{title}</p>
+        {loading ? (
+            <div className="h-8 w-24 bg-white/10 rounded animate-pulse" />
+        ) : (
+            <h3 className="text-2xl font-black text-white">{value}</h3>
+        )}
+    </div>
+);
 
 const Analytics: React.FC = () => {
-    let tmpDate = new Date(currentDate);
-    tmpDate.setMonth(tmpDate.getMonth()-1);
-    const [dailyData, setDailyData] = useState<any[]>([]);
-    const [platformData, setPlatformData] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [startDate, setStartDate] = useState(tmpDate.toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(currentDate);
-    const [showStartPicker, setShowStartPicker] = useState(false);
-    const [showEndPicker, setShowEndPicker] = useState(false);
+    // --- State ---
+    // Mặc định lấy 30 ngày gần nhất
+    const [dateRange, setDateRange] = useState({
+        start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0]
+    });
 
+    const [trendData, setTrendData] = useState<TrendData[]>([]);
+    const [platformData, setPlatformData] = useState<PlatformData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'STREAMS' | 'REVENUE'>('STREAMS');
+
+    // --- Fetch Data ---
     useEffect(() => {
+        let isMounted = true;
         const loadData = async () => {
             setLoading(true);
             try {
-                const [daily, platforms] = await Promise.all([
-                    api.dashboard.getDailyTrend(startDate, endDate),
-                    api.dashboard.getPlatformStats(startDate, endDate)
+                // Gọi song song 2 API để tối ưu tốc độ
+                const [trendRes, platformRes] = await Promise.all([
+                    api.dashboard.getAnalyticsTrend(dateRange.start, dateRange.end),
+                    api.dashboard.getPlatformDistribution(dateRange.start, dateRange.end)
                 ]);
-                const formattedDaily = daily.map((d: any) => ({
-                    ...d,
-                    day: new Date(d.day).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
-                }));
-                setDailyData(formattedDaily);
-                setPlatformData(platforms);
-            } catch (err) {
-                console.error("Analytics Load Error", err);
+
+                if (isMounted) {
+                    setTrendData(trendRes || []);
+                    setPlatformData(platformRes || []);
+                }
+            } catch (error) {
+                console.error("Failed to load analytics:", error);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
+
         loadData();
-    }, [startDate, endDate]);
+        return () => { isMounted = false; };
+    }, [dateRange]);
 
-    // Helper: Tính tổng streams để hiển thị
-    const totalStreamsPeriod = dailyData.reduce((acc, curr) => acc + curr.streams, 0);
+    // --- Computed KPI (Tính toán trực tiếp từ dữ liệu Trend) ---
+    const kpis = useMemo(() => {
+        const totalStreams = trendData.reduce((acc, curr) => acc + (Number(curr.total_streams) || 0), 0);
+        const totalRevenue = trendData.reduce((acc, curr) => acc + (Number(curr.total_revenue) || 0), 0);
+        return { totalStreams, totalRevenue };
+    }, [trendData]);
 
-    return (
-        <div className="space-y-6 max-w-7xl mx-auto pb-20">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-6">
-                <div>
-                    <h1 className="text-2xl font-black uppercase tracking-tight">System Analytics</h1>
-                    <p className="text-gray-500 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2 mt-1 opacity-60">
-                        <Zap size={12} className="text-yellow-500" /> Real-time Nodes Synchronized
+    // --- Helpers ---
+    const setQuickRange = (days: number) => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - days);
+        setDateRange({
+            start: start.toISOString().split('T')[0],
+            end: end.toISOString().split('T')[0]
+        });
+    };
+
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-black/90 border border-white/10 p-3 rounded-lg shadow-xl backdrop-blur-md z-50">
+                    <p className="text-gray-400 text-[10px] mb-1 font-mono">{label}</p>
+                    <p className="text-white font-bold text-sm">
+                        {viewMode === 'REVENUE' ? '£' : ''}
+                        {Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        {viewMode === 'STREAMS' ? ' streams' : ''}
                     </p>
                 </div>
-                <div className="flex gap-2 items-center bg-black/40 p-1 rounded-xl border border-white/10">
-                    <div className="flex items-center gap-2 px-3">
-                        <Calendar size={14} className="text-gray-500" />
-                        <span className="text-xs font-bold text-gray-500 uppercase">Range:</span>
+            );
+        }
+        return null;
+    };
+
+    return (
+        <div className="space-y-6 pb-20 max-w-7xl mx-auto">
+            {/* --- Header Controls --- */}
+            <div className="flex flex-col xl:flex-row justify-between items-end gap-4 border-b border-white/5 pb-6">
+                <div>
+                    <h1 className="text-3xl font-black uppercase tracking-tighter text-white flex items-center gap-2">
+                        Analytics
+                    </h1>
+                    <p className="text-gray-500 text-xs font-mono mt-1">
+                        Performance from <span className="text-white">{dateRange.start}</span> to <span className="text-white">{dateRange.end}</span>
+                    </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                    {/* View Mode Switcher */}
+                    <div className="bg-white/5 p-1 rounded-lg flex gap-1 border border-white/10">
+                        <button
+                            onClick={() => setViewMode('STREAMS')}
+                            className={`flex-1 sm:flex-none px-4 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${viewMode === 'STREAMS' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Streams
+                        </button>
+                        <button
+                            onClick={() => setViewMode('REVENUE')}
+                            className={`flex-1 sm:flex-none px-4 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${viewMode === 'REVENUE' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Revenue
+                        </button>
                     </div>
-                    <style>{`
-                        input[type="date"]::-webkit-calendar-picker-indicator {
-                            filter: invert(1) brightness(1.2);
-                            cursor: pointer;
-                        }
-                    `}</style>
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-transparent border-none text-xs font-mono text-white outline-none focus:ring-0"
-                    />
-                    <span className="text-gray-600">-</span>
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="bg-transparent border-none text-xs font-mono text-white outline-none focus:ring-0"
-                    />
-                    <button
-                        onClick={() => { setStartDate('2022-01-01'); setEndDate(new Date().toISOString().split('T')[0]); }}
-                        className="ml-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold uppercase transition"
-                    >
-                        All Time
-                    </button>
+
+                    {/* Quick Ranges */}
+                    <div className="flex gap-1 bg-black border border-white/10 p-1 rounded-lg">
+                        <button onClick={() => setQuickRange(7)} className="px-3 py-1.5 text-[10px] font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded transition">7D</button>
+                        <button onClick={() => setQuickRange(30)} className="px-3 py-1.5 text-[10px] font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded transition">30D</button>
+                        <button onClick={() => setQuickRange(90)} className="px-3 py-1.5 text-[10px] font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded transition">90D</button>
+                    </div>
+
+                    {/* Custom Date Picker */}
+                    <div className="flex items-center gap-2 bg-black border border-white/10 px-3 py-1.5 rounded-lg">
+                        <Calendar size={14} className="text-gray-500" />
+                        <input
+                            type="date"
+                            value={dateRange.start}
+                            onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
+                            className="bg-transparent text-white text-[10px] font-mono outline-none w-20 appearance-none"
+                        />
+                        <span className="text-gray-600">-</span>
+                        <input
+                            type="date"
+                            value={dateRange.end}
+                            onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
+                            className="bg-transparent text-white text-[10px] font-mono outline-none w-20 appearance-none"
+                        />
+                    </div>
                 </div>
             </div>
 
+            {/* --- KPI Grid --- */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <KpiCard
+                    loading={loading}
+                    title="Total Streams"
+                    value={kpis.totalStreams.toLocaleString()}
+                    icon={Music}
+                    color="text-blue-500"
+                />
+                <KpiCard
+                    loading={loading}
+                    title="Est. Revenue"
+                    value={`£${kpis.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    icon={DollarSign}
+                    color="text-green-500"
+                />
+                <KpiCard
+                    loading={loading}
+                    title="Active Platforms"
+                    value={platformData.length}
+                    icon={Globe}
+                    color="text-purple-500"
+                />
+            </div>
+
+            {/* --- Main Charts --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* 1. Daily Trend Bar Chart */}
-                <div className="lg:col-span-2 bg-surface border border-white/5 rounded-2xl p-6 shadow-sm">
-                    <div className="flex justify-between items-center mb-8">
-                        <div>
-                            <h3 className="font-bold uppercase text-[12px] tracking-widest text-blue-500 mb-1">Stream Frequency</h3>
-                            <p className="text-gray-400 text-[10px] font-sans uppercase tracking-widest">Last 7 Days Activity</p>
-                        </div>
+                {/* 1. Trend Chart (Area) */}
+                <div className="lg:col-span-2 bg-[#111] border border-white/5 p-6 rounded-2xl h-[400px] flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                            <TrendingUp size={16} className={viewMode === 'STREAMS' ? "text-blue-500" : "text-green-500"} />
+                            {viewMode === 'STREAMS' ? 'Growth Trend' : 'Revenue Trend'}
+                        </h3>
                     </div>
 
-                    <div className="h-[300px] w-full">
+                    <div className="flex-1 w-full min-h-0">
                         {loading ? (
-                            <div className="h-full flex items-center justify-center text-xs font-mono animate-pulse">Loading Matrix...</div>
-                        ) : dailyData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={dailyData} barSize={30}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                                    <XAxis dataKey="day" stroke="#333" fontSize={10} tickLine={false} axisLine={false} tickMargin={10} />
-                                    <YAxis stroke="#333" fontSize={10} tickLine={false} axisLine={false} tickMargin={10} />
-                                    <Tooltip
-                                        cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                                        contentStyle={{ backgroundColor: '#0A0A0A', border: '1px solid #333', borderRadius: '8px', fontSize: '10px' }}
-                                        itemStyle={{ textTransform: 'uppercase', fontWeight: 900, color: '#fff' }}
-                                    />
-                                    <Bar dataKey="streams" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-600">
-                                <div className="p-4 bg-white/5 rounded-full mb-2"><Activity size={24} /></div>
-                                <span className="text-xs font-mono uppercase">No Data Available</span>
+                            <div className="w-full h-full flex items-center justify-center">
+                                <Loader2 className="animate-spin text-gray-600" />
                             </div>
+                        ) : trendData.length === 0 ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-600">
+                                <AlertCircle size={32} className="mb-2 opacity-50" />
+                                <p className="text-xs">No data for this period</p>
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={trendData}>
+                                    <defs>
+                                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={viewMode === 'STREAMS' ? "#3b82f6" : "#22c55e"} stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor={viewMode === 'STREAMS' ? "#3b82f6" : "#22c55e"} stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                                    <XAxis
+                                        dataKey="group_key"
+                                        stroke="#555"
+                                        tick={{ fontSize: 10, fill: '#666' }}
+                                        tickFormatter={(val) => val.slice(5)} // Show MM-DD
+                                        axisLine={false}
+                                        tickLine={false}
+                                        dy={10}
+                                        minTickGap={30}
+                                    />
+                                    <YAxis
+                                        stroke="#555"
+                                        tick={{ fontSize: 10, fill: '#666' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tickFormatter={(val) => viewMode === 'REVENUE' ? `£${val}` : `${(val / 1000).toFixed(0)}k`}
+                                        width={40}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} />
+                                    <Area
+                                        type="monotone"
+                                        dataKey={viewMode === 'STREAMS' ? "total_streams" : "total_revenue"}
+                                        stroke={viewMode === 'STREAMS' ? "#3b82f6" : "#22c55e"}
+                                        strokeWidth={2}
+                                        fillOpacity={1}
+                                        fill="url(#colorValue)"
+                                        activeDot={{ r: 4, strokeWidth: 0 }}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         )}
                     </div>
                 </div>
 
-                {/* 2. Platform Breakdown Pie Chart */}
-                <div className="bg-surface border border-white/5 p-6 rounded-2xl">
-                    <h3 className="font-bold uppercase text-[12px] tracking-widest text-purple-500 mb-6 flex items-center gap-2">
-                        <Globe size={14} /> Platform Share
+                {/* 2. Platform Breakdown (Pie) */}
+                <div className="bg-[#111] border border-white/5 p-6 rounded-2xl h-[400px] flex flex-col">
+                    <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
+                        <Globe size={16} className="text-purple-500" />
+                        Market Share
                     </h3>
 
-                    <div className="h-[250px] w-full relative">
+                    <div className="flex-1 relative min-h-0">
                         {loading ? (
-                            <div className="h-full flex items-center justify-center text-xs font-mono animate-pulse">Analyzing...</div>
-                        ) : platformData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={platformData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {platformData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '8px', fontSize: '10px' }}
-                                        itemStyle={{ color: '#fff' }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
+                            <div className="w-full h-full flex items-center justify-center">
+                                <Loader2 className="animate-spin text-gray-600" />
+                            </div>
+                        ) : platformData.length === 0 ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-600">
+                                <p className="text-xs">No platform data</p>
+                            </div>
                         ) : (
-                            <div className="h-full flex items-center justify-center text-gray-600 text-xs font-mono">No Platform Data</div>
-                        )}
+                            <>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={platformData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={4}
+                                            dataKey={viewMode === 'STREAMS' ? "stream_count" : "revenue_amount"}
+                                            stroke="none"
+                                        >
+                                            {platformData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip content={<CustomTooltip />} />
+                                    </PieChart>
+                                </ResponsiveContainer>
 
-                        {/* Custom Legend */}
-                        <div className="mt-4 grid grid-cols-2 gap-2">
-                            {platformData.slice(0, 6).map((p, i) => (
-                                <div key={i} className="flex items-center gap-2 text-[10px] uppercase font-bold text-gray-400">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                                    <span className="truncate">{p.name}</span>
-                                    <span className="ml-auto text-white">{Math.round((p.value / totalStreamsPeriod) * 100) || 0}%</span>
+                                {/* Center Text Overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="text-center">
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Top Source</p>
+                                        <p className="text-lg font-black text-white truncate max-w-[100px]">
+                                            {platformData[0]?.platform_name || '-'}
+                                        </p>
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Legend List */}
+                    <div className="mt-4 space-y-2 overflow-y-auto max-h-[120px] pr-2 custom-scrollbar">
+                        {platformData.map((p, i) => {
+                            const total = viewMode === 'STREAMS' ? kpis.totalStreams : kpis.totalRevenue;
+                            const current = viewMode === 'STREAMS' ? p.stream_count : p.revenue_amount;
+                            const percent = total > 0 ? ((current / total) * 100).toFixed(1) : 0;
+
+                            return (
+                                <div key={i} className="flex justify-between items-center text-[11px] group hover:bg-white/5 p-1 rounded transition">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
+                                        <span className="text-gray-300 truncate max-w-[100px]">{p.platform_name}</span>
+                                    </div>
+                                    <span className="font-mono text-gray-500 group-hover:text-white transition">
+                                        {percent}%
+                                    </span>
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
             </div>
         </div>
     );
 };
-
-// Icon Activity component bổ sung
-const Activity = ({ size, className }: any) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-);
 
 export default Analytics;

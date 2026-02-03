@@ -1,254 +1,175 @@
-import React, { useState, useEffect } from 'react';
-import Papa from 'papaparse';
-import { api, supabase } from '@/services/api';
-import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, Save, Loader2, Search } from 'lucide-react';
-import { Track } from '@/types';
+import React, { useState } from 'react';
+import { supabase } from '@/services/api';
+import { Database, Wallet, Calendar, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import State51Importer from '@/components/State51Importer';
-
-interface CsvRow {
-    Date: string;
-    Track: string;
-    Count: number;
-    ISRC?: string;
-    Platform?: string;
-    Country?: string;
-}
-
-interface ConflictItem {
-    csvTrackName: string;
-    candidates: Track[];
-    selectedTrackId: number | null;
-}
-
-const normalizeId = (id: string | undefined | null) => {
-    if (!id) return '';
-    return id.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-};
+import RevelatorImporter from '@/components/RevelatorImporter';
 
 const AdminAnalytics: React.FC = () => {
-    const [step, setStep] = useState<'UPLOAD' | 'RESOLVE' | 'SAVING' | 'DONE'>('UPLOAD');
-    const [importFormat, setImportFormat] = useState<'REVELATOR' | 'STATE51'>('REVELATOR');
-    const [parsedData, setParsedData] = useState<CsvRow[]>([]);
-    const [dbTracks, setDbTracks] = useState<Track[]>([]);
-    const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
-    const [log, setLog] = useState<string[]>([]);
+    const [activeTab, setActiveTab] = useState<'State51' | 'Revelator' | 'Payout'>('State51');
 
-    useEffect(() => {
-        const fetchTracks = async () => {
-            const { data } = await supabase
-                .from('tracks')
-                .select('id, name, isrc, uid, profiles(email, name)')
-                .limit(10000);
+    // --- State cho phần Payout ---
+    const [payoutMonth, setPayoutMonth] = useState(''); // Format: YYYY-MM
+    const [payoutLoading, setPayoutLoading] = useState(false);
+    const [payoutResult, setPayoutResult] = useState<{ count: number, total: number } | null>(null);
 
-            if (data) setDbTracks(data as any);
-        };
-        fetchTracks();
-    }, []);
+    // --- Logic xử lý Payout ---
+    const handlePayout = async () => {
+        if (!payoutMonth) return alert("Please select a month first!");
+        
+        // 1. Tính toán ngày đầu và ngày cuối tháng
+        const [year, month] = payoutMonth.split('-').map(Number);
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        // Trick lấy ngày cuối tháng: Day 0 của tháng sau
+        const lastDay = new Date(year, month, 0).getDate(); 
+        const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-                if (importFormat === 'REVELATOR') {
-                    processRevelatorData(results.data);
-                } else {
-                    processState51Data(results.data);
-                }
-            }
-        });
-    };
-
-    const processRevelatorData = (rows: any[]) => {
-        const cleanRows: CsvRow[] = [];
-        const uniqueIdentities = new Set<string>();
-
-        rows.forEach((row: any) => {
-            const dateKey = Object.keys(row)[0];
-            const dateRaw = row[dateKey];
-            if (!dateRaw || dateRaw.includes('Total') || !dateRaw.includes('-')) return;
-
-            const date = dateRaw.split(' - ')[0].trim().replace(/\//g, '-');
-
-            Object.keys(row).forEach(key => {
-                if (key === dateKey) return;
-                const count = parseInt(row[key].replace(/,/g, ''), 10);
-                if (count > 0) {
-                    cleanRows.push({
-                        Date: date,
-                        Track: key.trim(),
-                        Count: count,
-                        Platform: 'ALL',
-                        Country: 'GLOBAL'
-                    });
-                    uniqueIdentities.add(`NAME:${key.trim()}`);
-                }
-            });
-        });
-
-        setParsedData(cleanRows);
-        analyzeConflicts(cleanRows, uniqueIdentities);
-    };
-    const processState51Data = (rows: any[]) => {
-        const cleanRows: CsvRow[] = [];
-        const uniqueIdentities = new Set<string>();
-
-        rows.forEach((row: any) => {
-            const count = parseInt(row['Total Units'] || '0', 10);
-            if (count <= 0) return;
-
-            const dateRaw = row['Start'] || row['Trans Time'] || '';
-            let dateISO = '';
-
-            if (dateRaw && dateRaw.includes('-')) {
-                const parts = dateRaw.split('-');
-                if (parts.length === 3) {
-                    dateISO = `20${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-            }
-            if (!dateISO) return;
-
-            const trackName = row['Track Title'] || '';
-            const isrc = row['ISRC'] ? row['ISRC'].trim().toUpperCase() : '';
-            const rawService = row['Music Service'] || 'UNKNOWN';
-            const platform = rawService.split(' - ')[0].toUpperCase();
-            const country = row['Country of Sale'] || 'GLOBAL';
-
-            cleanRows.push({
-                Date: dateISO,
-                Track: trackName,
-                ISRC: isrc,
-                Count: count,
-                Platform: platform,
-                Country: country
-            });
-
-            if (isrc) {
-                uniqueIdentities.add(`ISRC:${isrc}`);
-            } else {
-                uniqueIdentities.add(`NAME:${trackName}`);
-            }
-        });
-
-        setParsedData(cleanRows);
-        analyzeConflicts(cleanRows, uniqueIdentities);
-    };
-
-    const analyzeConflicts = (allRows: CsvRow[], identities: Set<string>) => {
-        const foundConflicts: ConflictItem[] = [];
-        const logs: string[] = [];
-
-        identities.forEach(identity => {
-            let matches: any[] = [];
-            let displayLabel = '';
-
-            if (identity.startsWith('ISRC:')) {
-                const isrcRaw = identity.split('ISRC:')[1];
-                displayLabel = `ISRC: ${isrcRaw}`;
-                const targetISRC = normalizeId(isrcRaw);
-                // So sánh dạng chuẩn hóa
-                matches = dbTracks.filter(t => normalizeId(t.isrc) === targetISRC);
-            } else {
-                const name = identity.split('NAME:')[1];
-                displayLabel = name;
-                matches = dbTracks.filter(t => t.name.toLowerCase().trim() === name.toLowerCase().trim());
-            }
-
-            if (matches.length > 1) {
-                foundConflicts.push({
-                    csvTrackName: displayLabel,
-                    candidates: matches,
-                    selectedTrackId: null
-                });
-            } else if (matches.length === 0) {
-                logs.push(`⚠️ Warning: Asset "${displayLabel}" not found in Database. Skipped.`);
-            }
-        });
-
-        setLog(logs);
-        setConflicts(foundConflicts);
-        setStep('RESOLVE');
-    };
-
-    const handleResolve = (csvName: string, trackId: number) => {
-        setConflicts(prev => prev.map(c =>
-            c.csvTrackName === csvName ? { ...c, selectedTrackId: trackId } : c
-        ));
-    };
-
-    const saveToDatabase = async () => {
-        setStep('SAVING');
-
-        const conflictMap = new Map<string, number>();
-        conflicts.forEach(c => {
-            if (c.selectedTrackId) conflictMap.set(c.csvTrackName, c.selectedTrackId);
-        });
-
-        const payload = parsedData.map(row => {
-            let trackInfo;
-            if (row.ISRC) {
-                const normRowIsrc = normalizeId(row.ISRC);
-                if (conflictMap.has(`ISRC: ${row.ISRC}`)) {
-                    const id = conflictMap.get(`ISRC: ${row.ISRC}`);
-                    trackInfo = dbTracks.find(t => t.id === id);
-                } else {
-                    trackInfo = dbTracks.find(t => normalizeId(t.isrc) === normRowIsrc);
-                }
-            }
-            if (!trackInfo) { // fallback
-                if (conflictMap.has(`NAME:${row.Track}`)) {
-                    const id = conflictMap.get(`NAME:${row.Track}`);
-                    trackInfo = dbTracks.find(t => t.id === id);
-                } else {
-                    trackInfo = dbTracks.find(t => t.name.toLowerCase().trim() === row.Track.toLowerCase().trim());
-                }
-            }
-
-            if (trackInfo) {
-                return {
-                    date: row.Date,
-                    track_id: trackInfo.id,
-                    uid: trackInfo.uid,
-                    count: row.Count,
-                    platform: row.Platform || 'OTHER',
-                    country_code: row.Country || 'GLOBAL',
-                    type: 'STREAM'
-                };
-            }
-            return null;
-        }).filter(Boolean);
-        if (payload.length === 0) {
-            alert("No valid records matched with Database. Nothing to import.");
-            setStep('RESOLVE');
+        if (!confirm(`Are you sure you want to process payouts for ${payoutMonth}?\n(${startDate} to ${endDate})\n\nThis action will generate Transactions for all users.`)) {
             return;
         }
-        const BATCH_SIZE = 1000;
+
+        setPayoutLoading(true);
+        setPayoutResult(null);
+
         try {
-            for (let i = 0; i < payload.length; i += BATCH_SIZE) {
-                const batch = payload.slice(i, i + BATCH_SIZE);
-                const { error } = await supabase.from('analytics_daily').insert(batch as any);
-                if (error) throw error;
+            // 2. Gọi hàm RPC "admin_process_monthly_payout"
+            const { data, error } = await supabase.rpc('admin_process_monthly_payout', {
+                p_month_start: startDate,
+                p_month_end: endDate
+            });
+
+            if (error) throw error;
+
+            // 3. Hiển thị kết quả (Hàm trả về mảng 1 dòng)
+            if (data && data.length > 0) {
+                setPayoutResult({
+                    count: data[0].processed_users,
+                    total: data[0].total_payout
+                });
+            } else {
+                alert("No unpaid royalties found for this period.");
             }
-            setLog(prev => [`✅ Successfully inserted ${payload.length} records.`, ...prev]);
-            setStep('DONE');
+
         } catch (err: any) {
-            alert("Error saving: " + err.message);
-            setStep('RESOLVE');
+            alert("Payout Error: " + err.message);
+        } finally {
+            setPayoutLoading(false);
         }
     };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
+        <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-20">
             <div className="border-b border-white/10 pb-4">
                 <h1 className="text-2xl font-black uppercase tracking-tight text-white">Data Ingestion Node</h1>
-                <p className="text-gray-500 text-xs font-mono uppercase">Import Reports</p>
+                <p className="text-gray-500 text-xs font-mono uppercase">Centralized Royalty Processing</p>
             </div>
-            <div className="space-y-6">
-                <State51Importer />
+
+            {/* --- Main Tabs --- */}
+            <div className="flex gap-2 bg-white/5 p-1 rounded-xl w-fit">
+                <button
+                    onClick={() => setActiveTab('State51')}
+                    className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition flex items-center gap-2 ${activeTab === 'State51' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                >
+                    <Database size={14} /> State51
+                </button>
+                <button
+                    onClick={() => setActiveTab('Revelator')}
+                    className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition flex items-center gap-2 ${activeTab === 'Revelator' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                >
+                    <Database size={14} /> Revelator
+                </button>
+                <div className="w-px h-6 bg-white/10 mx-2 self-center"></div>
+                <button
+                    onClick={() => setActiveTab('Payout')}
+                    className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition flex items-center gap-2 ${activeTab === 'Payout' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                >
+                    <Wallet size={14} /> Monthly Payout
+                </button>
             </div>
+
+            {/* --- Content Area --- */}
+            
+            {/* 1. State51 Importer */}
+            {activeTab === "State51" && (
+                <div className="animate-fade-in">
+                    <State51Importer />
+                </div>
+            )}
+
+            {/* 2. Revelator Importer */}
+            {activeTab === "Revelator" && (
+                <div className="animate-fade-in">
+                    <RevelatorImporter />
+                </div>
+            )}
+
+            {/* 3. Payout Manager (New) */}
+            {activeTab === "Payout" && (
+                <div className="animate-fade-in max-w-2xl">
+                    <div className="bg-[#111] border border-white/10 rounded-xl p-8 space-y-6">
+                        <div>
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <Wallet className="text-green-500" /> Settlement Manager
+                            </h3>
+                            <p className="text-gray-500 text-xs mt-2 leading-relaxed">
+                                This process will aggregate all <b>unpaid</b> raw analytics for the selected month,
+                                calculate the final amount (based on user rates), and generate 
+                                <b> Wallet Transactions</b> for each artist.
+                            </p>
+                        </div>
+
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg flex gap-3">
+                            <AlertCircle className="text-yellow-500 shrink-0" size={20} />
+                            <p className="text-xs text-yellow-200">
+                                <b>Warning:</b> Ensure all data sources (State51, Revelator, etc.) for the month are fully imported before running this. This action affects User Wallets immediately.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-400 uppercase">Select Month</label>
+                                <div className="relative">
+                                    <input 
+                                        type="month" 
+                                        value={payoutMonth}
+                                        onChange={(e) => setPayoutMonth(e.target.value)}
+                                        className="w-full bg-black border border-white/20 text-white text-sm rounded-lg px-4 py-3 outline-none focus:border-green-500 transition"
+                                    />
+                                    <Calendar className="absolute right-4 top-3.5 text-gray-500 pointer-events-none" size={16} />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handlePayout}
+                                disabled={!payoutMonth || payoutLoading}
+                                className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold uppercase text-xs tracking-widest rounded-lg transition shadow-lg flex items-center justify-center gap-2"
+                            >
+                                {payoutLoading ? <Loader2 className="animate-spin" /> : 'Process Payout'}
+                            </button>
+                        </div>
+
+                        {/* Result Display */}
+                        {payoutResult && (
+                            <div className="mt-6 bg-green-900/20 border border-green-500/30 rounded-xl p-6 text-center animate-fade-in">
+                                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-[0_0_15px_rgba(34,197,94,0.5)]">
+                                    <CheckCircle2 className="text-white" size={24} />
+                                </div>
+                                <h4 className="text-white font-bold text-lg">Settlement Complete!</h4>
+                                <div className="flex justify-center gap-8 mt-4">
+                                    <div>
+                                        <p className="text-gray-400 text-[10px] uppercase">Artists Paid</p>
+                                        <p className="text-2xl font-black text-white">{payoutResult.count}</p>
+                                    </div>
+                                    <div className="w-px bg-white/10"></div>
+                                    <div>
+                                        <p className="text-gray-400 text-[10px] uppercase">Total Distributed</p>
+                                        <p className="text-2xl font-black text-green-400">${payoutResult.total.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

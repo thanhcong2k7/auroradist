@@ -107,7 +107,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   }`}
               >
                 <item.icon size={18} className={isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-white'} />
-                <span className="font-mono uppercase text-xs tracking-widest">{item.label}</span>
+                <span className="uppercase text-xs tracking-wide font-bold">{item.label}</span>
                 {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />}
               </Link>
             );

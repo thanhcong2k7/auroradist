@@ -6,6 +6,7 @@ import FileUploader from '../components/FileUploader';
 import { PERFORMER_ROLES } from '../constants';
 import { useMusicPlayer } from '../components/MusicPlayerContext';
 import { getAudioDuration } from '@/services/utils';
+import { toast } from 'sonner';
 const MAP_LANGUAGE: Record<string, string> = {
   'English': 'English - eng',
   'Vietnamese': 'Vietnamese - vie',
@@ -79,7 +80,17 @@ const Tracks: React.FC = () => {
       await api.tracks.delete(track.id);
       await loadData();
     } catch (err: any) {
-      alert("Delete failed: " + err.message);
+      toast.error(err.message, {
+        description: new Date().toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        icon: <Music />
+      });
       setLoading(false);
     }
   };
@@ -314,7 +325,7 @@ const Tracks: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-400 font-medium">{track.artists?.[0]?.name}</td>
-                      <td className="px-6 py-4 text-gray-500 font-mono text-xs">{track.isrc || 'PENDING'}</td>
+                      <td className="px-6 py-4 text-gray-500 font-mono text-xs tracking-wide">{track.isrc ? <span className='text-gray-300'>{track.isrc}</span> : 'PENDING'}</td>
                       <td className="px-6 py-4 text-right text-gray-500 font-mono">{track.duration}</td>
                       <td className="px-6 py-4 text-right">
                         <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-100 group-hover:opacity-100">

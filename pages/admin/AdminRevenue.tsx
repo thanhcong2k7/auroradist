@@ -8,7 +8,6 @@ import {
 import State51Importer from '@/components/State51Importer';
 
 const AdminRevenue: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'INGEST' | 'WITHDRAWALS'>('WITHDRAWALS');
     const [ingestProvider, setIngestProvider] = useState<'STANDARD' | 'STATE51'>('STANDARD');
     const [processing, setProcessing] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
@@ -16,10 +15,6 @@ const AdminRevenue: React.FC = () => {
     const [withdrawals, setWithdrawals] = useState<any[]>([]);
     const [loadingW, setLoadingW] = useState(false);
     const [actionProcessing, setActionProcessing] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (activeTab === 'WITHDRAWALS') loadWithdrawals();
-    }, [activeTab]);
 
     const loadWithdrawals = async () => {
         setLoadingW(true);
@@ -112,104 +107,78 @@ const AdminRevenue: React.FC = () => {
             <div className="border-b border-white/10 pb-4 flex justify-between items-end">
                 <div>
                     <h1 className="text-2xl font-black uppercase tracking-tight text-white">Finance Central</h1>
-                    <p className="text-gray-500 text-xs font-mono uppercase">Revenue & Cashflow Management</p>
+                    <p className="text-gray-500 text-xs tracking-wide font-mono uppercase">Pending WITHDRAWAL: {withdrawals.length} request{withdrawals.length>1?'s':''}</p>
                 </div>
             </div>
 
-            {/* Main Tabs */}
-            <div className="flex gap-4">
-                <button
-                    onClick={() => setActiveTab('WITHDRAWALS')}
-                    className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition ${activeTab === 'WITHDRAWALS' ? 'bg-blue-600 text-white' : 'bg-[#111] text-gray-500 hover:text-white'}`}
-                >
-                    Withdrawal Requests ({withdrawals.length})
-                </button>
-                <button
-                    onClick={() => setActiveTab('INGEST')}
-                    className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition ${activeTab === 'INGEST' ? 'bg-green-600 text-white' : 'bg-[#111] text-gray-500 hover:text-white'}`}
-                >
-                    Royalty Ingestion
-                </button>
-            </div>
-
-            {/* === TAB 1: WITHDRAWALS === */}
-            {activeTab === 'WITHDRAWALS' && (
-                <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden min-h-[400px]">
-                    {loadingW ? (
-                        <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
-                    ) : withdrawals.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-gray-600 gap-2">
-                            <CheckCircle2 size={32} className="opacity-50" />
-                            <p className="text-xs font-mono uppercase">All Clear. No pending requests.</p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs">
-                                <thead className="bg-black/50 text-gray-500 font-mono uppercase">
-                                    <tr>
-                                        <th className="px-6 py-4">Request Date</th>
-                                        <th className="px-6 py-4">User Identity</th>
-                                        <th className="px-6 py-4">Amount</th>
-                                        <th className="px-6 py-4 text-right">Actions</th>
+            <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden min-h-[400px]">
+                {loadingW ? (
+                    <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
+                ) : withdrawals.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64 text-gray-600 gap-2">
+                        <CheckCircle2 size={32} className="opacity-50" />
+                        <p className="text-xs font-mono uppercase">All Clear. No pending requests.</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                            <thead className="bg-black/50 text-gray-500 font-mono uppercase">
+                                <tr>
+                                    <th className="px-6 py-4">Request Date</th>
+                                    <th className="px-6 py-4">User Identity</th>
+                                    <th className="px-6 py-4">Amount</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-gray-300">
+                                {withdrawals.map((tx) => (
+                                    <tr key={tx.id} className="hover:bg-white/[0.02] transition">
+                                        <td className="px-6 py-4 font-mono text-gray-500">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar size={12} />
+                                                {new Date(tx.date).toLocaleDateString()}
+                                            </div>
+                                            <div className="text-[10px] mt-1 opacity-50">{new Date(tx.date).toLocaleTimeString()}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="font-bold text-white flex items-center gap-2">
+                                                <User size={12} className="text-blue-500" />
+                                                {tx.profiles?.name || 'Unknown'}
+                                            </div>
+                                            <div className="text-[10px] text-gray-500 font-mono">{tx.profiles?.email}</div>
+                                            {tx.profiles?.legal_name && <div className="text-[10px] text-gray-600">Legal: {tx.profiles.legal_name}</div>}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-lg font-black text-white">${tx.amount?.toFixed(2)}</div>
+                                            <div className="text-[10px] text-yellow-500 font-mono uppercase tracking-wider">Pending Payout</div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {actionProcessing === tx.id ? (
+                                                <Loader2 className="animate-spin ml-auto" size={16} />
+                                            ) : (
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleProcessTxn(tx.id, 'REJECTED')}
+                                                        className="px-3 py-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg font-bold uppercase text-[10px] transition flex items-center gap-1"
+                                                    >
+                                                        <XCircle size={12} /> Reject
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleProcessTxn(tx.id, 'COMPLETED')}
+                                                        className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold uppercase text-[10px] transition flex items-center gap-1 shadow-lg"
+                                                    >
+                                                        <CheckCircle2 size={12} /> Paid
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5 text-gray-300">
-                                    {withdrawals.map((tx) => (
-                                        <tr key={tx.id} className="hover:bg-white/[0.02] transition">
-                                            <td className="px-6 py-4 font-mono text-gray-500">
-                                                <div className="flex items-center gap-2">
-                                                    <Calendar size={12} />
-                                                    {new Date(tx.date).toLocaleDateString()}
-                                                </div>
-                                                <div className="text-[10px] mt-1 opacity-50">{new Date(tx.date).toLocaleTimeString()}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="font-bold text-white flex items-center gap-2">
-                                                    <User size={12} className="text-blue-500" />
-                                                    {tx.profiles?.name || 'Unknown'}
-                                                </div>
-                                                <div className="text-[10px] text-gray-500 font-mono">{tx.profiles?.email}</div>
-                                                {tx.profiles?.legal_name && <div className="text-[10px] text-gray-600">Legal: {tx.profiles.legal_name}</div>}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-lg font-black text-white">${tx.amount?.toFixed(2)}</div>
-                                                <div className="text-[10px] text-yellow-500 font-mono uppercase tracking-wider">Pending Payout</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                {actionProcessing === tx.id ? (
-                                                    <Loader2 className="animate-spin ml-auto" size={16} />
-                                                ) : (
-                                                    <div className="flex justify-end gap-2">
-                                                        <button
-                                                            onClick={() => handleProcessTxn(tx.id, 'REJECTED')}
-                                                            className="px-3 py-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg font-bold uppercase text-[10px] transition flex items-center gap-1"
-                                                        >
-                                                            <XCircle size={12} /> Reject
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleProcessTxn(tx.id, 'COMPLETED')}
-                                                            className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold uppercase text-[10px] transition flex items-center gap-1 shadow-lg"
-                                                        >
-                                                            <CheckCircle2 size={12} /> Paid
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* === TAB 2: INGESTION === */}
-            {activeTab === 'INGEST' && (
-                <div className="space-y-6">
-                    <State51Importer />
-                </div>
-            )}
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

@@ -4,8 +4,11 @@ import { api } from '../services/api';
 import { Transaction, PayoutMethod } from '../types';
 import {
     DollarSign, Clock, Loader2, CheckCircle2, X,
-    CreditCard, Trash2, ChevronLeft, ChevronRight, Filter
+    CreditCard, Trash2, ChevronLeft, ChevronRight, Filter,
+    CircleX,
+    CheckCheck
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Wallet: React.FC = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
@@ -43,18 +46,58 @@ const Wallet: React.FC = () => {
     const handleWithdrawalSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const amount = parseFloat(withdrawAmount);
-        if (!amount || amount <= 0 || amount > (summary?.availableBalance || 0)) return alert("Invalid amount.");
-        if (!selectedMethod) return alert("Select a payout node.");
+        if (!amount || amount <= 0 || amount > (summary?.availableBalance || 0)) return toast.error("Invalid amount.", {
+            description: new Date().toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            icon: <CircleX />
+        });
+        if (!selectedMethod) return toast.error("Select a payout node.", {
+            description: new Date().toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            icon: <CircleX />
+        });
 
         setRequesting(true);
         try {
             await api.wallet.requestWithdrawal(amount, selectedMethod);
             setShowWithdrawModal(false);
             setWithdrawAmount('');
-            alert("Request sent successfully.");
+            toast.success("Request sent successfully.", {
+                description: new Date().toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                icon: <CheckCheck />
+            });
             loadData();
         } catch (e: any) {
-            alert(e.message);
+            toast.error(e.message, {
+                description: new Date().toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                icon: <CircleX />
+            });
         } finally {
             setRequesting(false);
         }
