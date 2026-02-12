@@ -31,7 +31,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             setDragActive(false);
         }
     }, []);
-    const processFile = async (file: File) => { // Make async
+    const processFile = async (file: File) => {
         setError('');
         if (file.size > maxSizeMB * 1024 * 1024) {
             setError(`File too large. Max ${maxSizeMB}MB.`);
