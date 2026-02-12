@@ -12,7 +12,7 @@ interface FileUploaderProps {
 
 const FileUploader: React.FC<FileUploaderProps> = ({
     accept,
-    maxSizeMB = 100,
+    maxSizeMB = 200,
     onUploadComplete,
     currentUrl,
     label,

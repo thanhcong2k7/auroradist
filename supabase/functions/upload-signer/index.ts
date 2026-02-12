@@ -1,6 +1,6 @@
-// FIX 1: Add '?target=deno' to imports to prevent 502 crashes
-import { S3Client, PutObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.454.0?target=deno";
-import { getSignedUrl } from "https://esm.sh/@aws-sdk/s3-request-presigner@3.454.0?target=deno";
+// FIX 1: Use npm: specifiers to prevent 502 boot crashes and dependency issues
+import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3.454.0";
+import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner@3.454.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +28,22 @@ Deno.serve(async (req) => {
     // FIX 3: clean the ID just in case (removes https:// if accidentally added)
     const cleanAccountId = accountId.replace("https://", "").replace("http://", "");
 
+    // FIX 4: Clean publicDomain aggressively to fix "https://domain.com/other.domain.com" issues
+    let cleanPublicDomain = publicDomain || "";
+    
+    // Attempt to parse as a URL and only keep the origin (protocol + host), discarding any path
+    try {
+      // If it doesn't start with http, add it for parsing
+      const urlStr = cleanPublicDomain.startsWith('http') ? cleanPublicDomain : `https://${cleanPublicDomain}`;
+      const url = new URL(urlStr);
+      cleanPublicDomain = url.origin; // This strips "/asset.koyrecords.com", "/account.r2...", etc.
+    } catch (e) {
+      // Fallback manual cleanup if URL parsing fails
+      cleanPublicDomain = cleanPublicDomain.replace(/\/$/, "");
+      const badSuffix = new RegExp(`/${cleanAccountId}\\.r2\\.cloudflarestorage\\.com`);
+      cleanPublicDomain = cleanPublicDomain.replace(badSuffix, "");
+    }
+
     const S3 = new S3Client({
       region: "auto",
       endpoint: `https://${cleanAccountId}.r2.cloudflarestorage.com`,
@@ -50,7 +66,7 @@ Deno.serve(async (req) => {
     });
 
     const uploadUrl = await getSignedUrl(S3, command, { expiresIn: 3600 });
-    const publicUrl = `${publicDomain}/${key}`;
+    const publicUrl = `${cleanPublicDomain}/${key}`;
 
     return new Response(JSON.stringify({ uploadUrl, publicUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

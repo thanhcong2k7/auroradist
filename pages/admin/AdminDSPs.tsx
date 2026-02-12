@@ -40,43 +40,43 @@ const AdminDSPs: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
-            <div className="border-b border-white/10 pb-4 flex justify-between items-end">
-                <div>
-                    <h1 className="text-2xl font-black uppercase tracking-tight">Store Connections</h1>
-                    <p className="text-gray-500 text-xs font-mono uppercase">Manage downstream endpoints</p>
+        <>
+            <div className="space-y-6 animate-fade-in">
+                <div className="border-b border-white/10 pb-4 flex justify-between items-end">
+                    <div>
+                        <h1 className="text-2xl font-black uppercase tracking-tight">Store Connections</h1>
+                        <p className="text-gray-500 text-xs font-mono uppercase">Manage downstream endpoints</p>
+                    </div>
+                    <button onClick={() => { setEditingDsp({ isEnabled: true }); setShowModal(true); }} className="px-4 py-2 bg-blue-600 text-white font-bold text-xs uppercase rounded-lg flex items-center gap-2">
+                        <Plus size={16} /> Add DSP
+                    </button>
                 </div>
-                <button onClick={() => { setEditingDsp({ isEnabled: true }); setShowModal(true); }} className="px-4 py-2 bg-blue-600 text-white font-bold text-xs uppercase rounded-lg flex items-center gap-2">
-                    <Plus size={16} /> Add DSP
-                </button>
+
+                {loading ? <Loader2 className="animate-spin mx-auto text-blue-500" /> : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {dsps.map(dsp => (
+                            <div key={dsp.id} className={`p-4 rounded-xl border transition flex items-center justify-between group ${dsp.isEnabled ? 'bg-[#111] border-white/10' : 'bg-red-900/5 border-red-500/20 opacity-75'}`}>
+                                <div className="flex items-center gap-4">
+                                    {/* Component Logo Mới */}
+                                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden">
+                                        <DSPLogo code={dsp.code} url={dsp.logoUrl} name={dsp.name} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-sm text-white">{dsp.name}</h3>
+                                        <p className="text-xs font-mono text-gray-500">{dsp.code}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => { setEditingDsp(dsp); setShowModal(true); }} className="p-2 text-gray-500 hover:text-white bg-white/5 rounded-lg"><Edit2 size={14} /></button>
+                                    <button onClick={() => handleToggle(dsp)} className={`p-2 rounded-lg transition ${dsp.isEnabled ? 'text-green-500 bg-green-500/10 hover:bg-green-500/20' : 'text-red-500 bg-red-500/10 hover:bg-red-500/20'}`}>
+                                        <Power size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
-
-            {loading ? <Loader2 className="animate-spin mx-auto text-blue-500" /> : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {dsps.map(dsp => (
-                        <div key={dsp.id} className={`p-4 rounded-xl border transition flex items-center justify-between group ${dsp.isEnabled ? 'bg-[#111] border-white/10' : 'bg-red-900/5 border-red-500/20 opacity-75'}`}>
-                            <div className="flex items-center gap-4">
-                                {/* Component Logo Mới */}
-                                <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden">
-                                    <DSPLogo code={dsp.code} url={dsp.logoUrl} name={dsp.name} />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-sm text-white">{dsp.name}</h3>
-                                    <p className="text-xs font-mono text-gray-500">{dsp.code}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button onClick={() => { setEditingDsp(dsp); setShowModal(true); }} className="p-2 text-gray-500 hover:text-white bg-white/5 rounded-lg"><Edit2 size={14} /></button>
-                                <button onClick={() => handleToggle(dsp)} className={`p-2 rounded-lg transition ${dsp.isEnabled ? 'text-green-500 bg-green-500/10 hover:bg-green-500/20' : 'text-red-500 bg-red-500/10 hover:bg-red-500/20'}`}>
-                                    <Power size={14} />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
                     <div className="bg-[#111] border border-white/10 rounded-xl w-full max-w-md p-6 space-y-4">
@@ -104,7 +104,7 @@ const AdminDSPs: React.FC = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 };
 
