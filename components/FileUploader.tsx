@@ -85,10 +85,10 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
             <div
                 className={`relative group border-2 border-dashed rounded-xl transition-all duration-200 overflow-hidden ${dragActive
-                        ? 'border-blue-500 bg-blue-500/10'
-                        : currentUrl
-                            ? 'border-green-500/30 bg-surface'
-                            : 'border-white/10 hover:border-white/30 bg-black'
+                    ? 'border-blue-500 bg-blue-500/10'
+                    : currentUrl
+                        ? 'border-green-500/30 bg-surface'
+                        : 'border-white/10 hover:border-white/30 bg-black'
                     } ${type === 'image' ? 'aspect-square' : 'p-8'}`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
