@@ -27,6 +27,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminDSPs from './pages/admin/AdminDSPs';
 import AdminSupport from './pages/admin/AdminSupport';
+import AdminLabels from './pages/admin/AdminLabels';
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
@@ -169,6 +170,7 @@ const App: React.FC = () => {
           <Route path="releases" element={<AdminReleases />} />
           <Route path="releases/:id" element={<AdminReleaseDetail />} />
           <Route path="dsps" element={<AdminDSPs />} />
+          <Route path="labels" element={<AdminLabels />}></Route>
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="revenue" element={<AdminRevenue />} />
           <Route path="support" element={<AdminSupport />} />
