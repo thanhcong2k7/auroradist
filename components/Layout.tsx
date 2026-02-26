@@ -51,7 +51,7 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
 
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/discography', icon: Disc, label: 'Discography' },
+    { path: '/discography', icon: Disc, label: 'My Release' },
     { path: '/artists', icon: Users, label: 'Artists' },
     { path: '/labels', icon: Tags, label: 'Labels' },
     { path: '/tracks', icon: Music, label: 'Tracks' },

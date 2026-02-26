@@ -22,6 +22,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState('');
+
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -31,7 +32,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             setDragActive(false);
         }
     }, []);
-    const processFile = async (file: File) => {
+
+    const processFile = async (file: File) => { // Make async
         setError('');
         if (file.size > maxSizeMB * 1024 * 1024) {
             setError(`File too large. Max ${maxSizeMB}MB.`);
@@ -41,8 +43,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         setUploading(true);
 
         try {
-            // CALL THE REAL API INSTEAD OF SIMULATION
-            // This triggers services/api.ts -> storage.upload -> Edge Function
             const { api } = await import('../services/api'); // Dynamic import to avoid cycles or standard import
             const publicUrl = await api.storage.upload(file);
 
@@ -83,10 +83,10 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
             <div
                 className={`relative group border-2 border-dashed rounded-xl transition-all duration-200 overflow-hidden ${dragActive
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : currentUrl
-                        ? 'border-green-500/30 bg-surface'
-                        : 'border-white/10 hover:border-white/30 bg-black'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : currentUrl
+                            ? 'border-green-500/30 bg-surface'
+                            : 'border-white/10 hover:border-white/30 bg-black'
                     } ${type === 'image' ? 'aspect-square' : 'p-8'}`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}

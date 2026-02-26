@@ -97,15 +97,30 @@ export const api = {
     upload: async (file: File): Promise<string> => {
       try {
         await getUserId(); // Ensure auth
-
+        /*
         const { data: signData, error: signError } = await supabase.functions.invoke('upload-signer', {
           body: {
             filename: file.name,
             fileType: file.type
           }
         });
-
-        if (signError) throw signError;
+        */
+        const response = await fetch(
+          `${supabaseUrl}/functions/v1/upload-signer`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              filename: file.name,
+              fileType: file.type
+            }),
+          }
+        );
+        const signData = await response.json();
+        //if (signError) throw signError;
 
         const uploadResponse = await fetch(signData.uploadUrl, {
           method: 'PUT',
@@ -271,23 +286,23 @@ export const api = {
   },
   catalog: {
     getReleases: async (page: number = 1, limit: number = 100000) => {
-    const userId = await getUserId();
-    
-    // Tính toán range cho Supabase
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+      const userId = await getUserId();
 
-    const { data, error } = await supabase
+      // Tính toán range cho Supabase
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      const { data, error } = await supabase
         .from('releases')
         .select('*')
         .eq('uid', userId)
         .order('created_at', { ascending: false })
         .range(from, to); // Thêm dòng này để chỉ lấy số lượng cần thiết
 
-    if (error) throw error;
+      if (error) throw error;
 
-    // Mapping giữ nguyên như code của bạn
-    return data.map(r => ({
+      // Mapping giữ nguyên như code của bạn
+      return data.map(r => ({
         ...r,
         labelId: r.label_id,
         releaseDate: r.release_date,
@@ -304,8 +319,8 @@ export const api = {
         format: r.format,
         territories: r.territories,
         rejectionReason: r.rejection_reason
-    })) as Release[];
-},
+      })) as Release[];
+    },
 
     createDraft: async () => {
       const userId = await getUserId();
@@ -676,8 +691,6 @@ export const api = {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 là lỗi không tìm thấy dòng nào
-
-      // Nếu không có dữ liệu, trả về 0
       if (!data) return { availableBalance: 0, pendingClearance: 0, lifetimeEarnings: 0 };
 
       // [FIX QUAN TRỌNG] Map từ snake_case (DB) sang camelCase (Frontend)
@@ -735,8 +748,6 @@ export const api = {
     },
 
     requestWithdrawal: async (amount: number, methodId: string) => {
-      // Không cần lấy userId ở đây nữa vì hàm SQL dùng auth.uid() để bảo mật tuyệt đối
-
       const { data, error } = await supabase.rpc('user_request_withdrawal', {
         p_amount: amount,
         p_method_id: methodId
@@ -815,11 +826,10 @@ export const api = {
     }
   },
   admin: {
-    // 1. Lấy toàn bộ Releases (cho trang Moderation)
     getAllReleases: async (statusFilter?: string) => {
       let query = supabase
         .from('releases')
-        .select('*, profiles(email, name)') // Join bảng profiles để biết ai upload
+        .select('*, profiles(email, name)')
         .order('created_at', { ascending: false });
 
       if (statusFilter) {
@@ -849,6 +859,46 @@ export const api = {
       return data;
     },
 
+    getLabels: async () => {
+      // 1. Fetch labels without join
+      const { data: labels, error: labelsError } = await supabase
+        .from('labels')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (labelsError) throw labelsError;
+
+      // 2. Extract UIDs
+      const userIds = Array.from(new Set(labels.map((l: any) => l.uid).filter((uid: any) => uid)));
+
+      if (userIds.length === 0) return labels;
+
+      // 3. Fetch profiles manually
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, name, legal_name')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // 4. Map profiles to labels
+      const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
+
+      return labels.map((l: any) => ({
+        ...l,
+        profiles: profileMap.get(l.uid) || null
+      }));
+    },
+
+    deleteLabel: async (id: number) => {
+        const { error } = await supabase
+            .from('labels')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        return { success: true };
+    },
+
     // 9. Xử lý rút tiền (Duyệt/Từ chối)
     processWithdrawal: async (txnId: string, status: 'COMPLETED' | 'REJECTED', note?: string) => {
       const { data, error } = await supabase.rpc('admin_process_withdrawal', {
@@ -874,9 +924,33 @@ export const api = {
         .single();
 
       if (error) throw error;
+
+      // [UPDATE] Fetch artist IDs for clickable popup
+      const artistNames = new Set<string>();
+      data.tracks.forEach((t: any) => {
+        if (Array.isArray(t.artists)) {
+          t.artists.forEach((a: any) => {
+            if (a.name) artistNames.add(a.name);
+          });
+        }
+      });
+
+      const artistMap = new Map<string, number>();
+      if (artistNames.size > 0 && data.uid) {
+        const { data: artistsData } = await supabase
+          .from('artists')
+          .select('id, name')
+          .eq('uid', data.uid)
+          .in('name', Array.from(artistNames));
+        
+        if (artistsData) {
+          artistsData.forEach((a: any) => artistMap.set(a.name, a.id));
+        }
+      }
+
       return {
         ...data,
-        coverArt: data.cover_art,       // [FIX QUAN TRỌNG]
+        coverArt: data.cover_art,
         releaseDate: data.release_date,
         labelId: data.label_id,
         selectedDsps: data.selected_dsps || [],
@@ -887,8 +961,11 @@ export const api = {
           audioUrl: t.audio_url,      // [FIX QUAN TRỌNG] Load Audio
           releaseId: t.release_id,
           isrc: t.isrc,
-          // Các trường artist/contributors thường lưu dạng JSONB nên không bị ảnh hưởng, 
-          // nhưng nếu cần thiết hãy check kỹ structure JSON
+          artists: Array.isArray(t.artists) ? t.artists.map((a: any) => ({
+            ...a,
+            id: artistMap.get(a.name) || a.id 
+          })) : [],
+          contributors: t.contributors || []
         }))
       };
     },
@@ -1104,6 +1181,27 @@ export const api = {
         .insert(payload);
       if (error) throw error;
       return { success: true };
+    },
+    getArtistDetail: async (artistId: number) => {
+      const { data, error } = await supabase
+        .from('artists')
+        .select('*')
+        .eq('id', artistId)
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        name: data.name,
+        legalName: data.legal_name,
+        email: data.email,
+        avatar: data.avatar,
+        spotifyId: data.spotify_id,
+        appleMusicId: data.apple_music_id,
+        soundcloudId: data.soundcloud_id,
+        address: data.address
+      } as Artist;
     },
     updateArtistRate: async (userId: string, newRate: number) => {
       // newRate nên là số thập phân, ví dụ 0.85 (85%)

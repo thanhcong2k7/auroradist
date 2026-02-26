@@ -150,7 +150,7 @@ const About: React.FC = () => {
                         <div className="pt-6 border-t border-white/5 text-[11px] text-gray-500 leading-relaxed">
                             <p>{COPYRIGHT_TEXT}</p>
                             <p className="mt-2">
-                                {APP_NAME} and the Aurora logo are trademarks of Aurora Music. Using this system implies agreement to the <span className="text-blue-500 underline cursor-pointer">Terms of Service</span> and <span className="text-blue-500 underline cursor-pointer">Privacy Policy</span>. This software is powered by <span className="text-white">Supabase</span> and secured by Google OAuth protocols.
+                                {APP_NAME} and the {APP_NAME} logo are trademarks of KOY Records. Using this system implies agreement to the <span className="text-blue-500 underline cursor-pointer">Terms of Service</span> and <span className="text-blue-500 underline cursor-pointer">Privacy Policy</span>. This software is powered by <span className="text-white">Supabase</span> and secured by Google OAuth protocols.
                             </p>
                         </div>
                     </div>

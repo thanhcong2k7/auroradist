@@ -12,8 +12,6 @@ const AdminUserDetail: React.FC = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [contractRate, setContractRate] = useState<number | string>(0.8);
-    const [updatingRate, setUpdatingRate] = useState(false);
 
     useEffect(() => {
         if (id) loadData(id);
@@ -24,11 +22,6 @@ const AdminUserDetail: React.FC = () => {
         try {
             const data = await api.admin.getUserProfileFull(userId);
             setUser(data);
-            if (data.contract_rate !== undefined && data.contract_rate !== null) {
-                setContractRate(data.contract_rate);
-            } else {
-                setContractRate(0.8);
-            }
         } catch (err) {
             console.error(err);
             alert("User not found");
@@ -61,19 +54,6 @@ const AdminUserDetail: React.FC = () => {
             navigate('/admin/users');
         } catch (e: any) {
             alert(e.message);
-        }
-    };
-
-    const handleUpdateRate = async () => {
-        if (!user) return;
-        setUpdatingRate(true);
-        try {
-            await api.admin.updateArtistRate(user.id, Number(contractRate));
-            alert("Contract rate updated successfully");
-        } catch (e: any) {
-            alert("Failed to update rate: " + e.message);
-        } finally {
-            setUpdatingRate(false);
         }
     };
 
@@ -137,38 +117,6 @@ const AdminUserDetail: React.FC = () => {
                             <div>
                                 <label className="block text-[10px] text-gray-500 font-mono uppercase">Date Joined</label>
                                 <div className="flex items-center gap-2 text-gray-400 font-mono text-xs"><Calendar size={12} /> {new Date(user.created_at).toLocaleDateString()}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-[#111] p-6 rounded-xl border border-white/5 space-y-4">
-                        <h3 className="text-xs font-black uppercase text-gray-500 tracking-widest flex items-center gap-2">
-                            <DollarSign size={14} /> Contract Settings
-                        </h3>
-                        <div className="space-y-3">
-                            <div>
-                                <label className="block text-[10px] text-gray-500 font-mono uppercase mb-1">Revenue Share (0.0 - 1.0)</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        max="1"
-                                        value={contractRate}
-                                        onChange={(e) => setContractRate(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                                        className="bg-black/50 border border-white/10 rounded px-2 py-1 text-white text-sm w-full focus:outline-none focus:border-blue-500"
-                                    />
-                                    <button
-                                        onClick={handleUpdateRate}
-                                        disabled={updatingRate}
-                                        className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold uppercase transition disabled:opacity-50"
-                                    >
-                                        {updatingRate ? '...' : 'Save'}
-                                    </button>
-                                </div>
-                                <p className="text-[10px] text-gray-600 mt-1">
-                                    Current: {(Number(contractRate || 0) * 100).toFixed(0)}% to Artist
-                                </p>
                             </div>
                         </div>
                     </div>

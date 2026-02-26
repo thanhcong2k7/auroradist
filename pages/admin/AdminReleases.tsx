@@ -161,7 +161,9 @@ const AdminReleases: React.FC = () => {
                         'LYRICIST(S)': pipe(getContributors('Lyricist')),
                         'PUBLISHER(S)': pipe(getContributors('Publisher')), 
                         'HAS INSTRUMENTS?': t.has_lyrics ? 'Y' : 'Y', 
-                        'HAS VOCALS/LANGUAGE?': t.has_lyrics ? (r.language || 'English') : 'No linguistic content - zxx'
+                        'HAS VOCALS/LANGUAGE?': t.has_lyrics ? (r.language || 'English') : 'No linguistic content - zxx',
+                        'TikTok Start Time': t.tiktok_clip_start_time ? Math.round(((t.tiktok_clip_start_time.split(':').reduce((acc, time) => (60 * acc) + +time)) || 0)) : "", //Not defined? Fallback to none.
+                        "Original Release Date": r.original_release_date?formatDate(r.original_release_date).replace("-","/"):"" //Fallback to none if not defined.
                     };
                     flatData.push(row);
                 });

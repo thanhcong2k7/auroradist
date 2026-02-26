@@ -111,7 +111,7 @@ const MAP_FORMAT: Record<string, string> = {
 };
 
 // --- CONSTANTS ---
-const RELEASE_FORMATS = ['SINGLE', 'EP', 'ALBUM'];
+const RELEASE_FORMATS = ['Single', 'EP', 'Album'];
 const LANGUAGES = Object.keys(MAP_LANGUAGE);
 const GENRES = Object.keys(MAP_GENRE);
 const ALTGENRES = Object.keys(MAP_ALT_GENRE);
