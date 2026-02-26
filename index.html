@@ -1,101 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/png" href="https://auroramusicvietnam.net/amvn.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#050505" />
     <meta name="description" content="Aurora Music Vietnam Dashboard" />
     <title>Aurora Music | The Next Frequency</title>
-    
     <!-- Fonts from adu.html -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&family=Courier+Prime&display=swap" rel="stylesheet">
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Montserrat', 'sans-serif'],
-              mono: ['"Courier Prime"', 'monospace'],
-            },
-            colors: {
-              background: '#050505',
-              surface: '#0A0A0A',
-              primary: '#3b82f6', // blue-500
-              secondary: '#64748b', // slate-500
-            },
-            animation: {
-              'pulse-slow': 'pulse 12s infinite alternate',
-              'ticker': 'ticker 30s linear infinite',
-              'fade-in': 'fadeIn 0.6s ease-out forwards',
-            },
-            keyframes: {
-              ticker: {
-                '0%': { transform: 'translateX(100%)' },
-                '100%': { transform: 'translateX(-100%)' },
-              },
-              fadeIn: {
-                'from': { opacity: '0', transform: 'translateY(10px)' },
-                'to': { opacity: '1', transform: 'translateY(0)' },
-              }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        mono: ['"Courier Prime"', 'monospace'],
+                    },
+                    colors: {
+                        background: '#050505',
+                        surface: '#0A0A0A',
+                        primary: '#3b82f6', // blue-500
+                        secondary: '#64748b', // slate-500
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 12s infinite alternate',
+                        'ticker': 'ticker 30s linear infinite',
+                        'fade-in': 'fadeIn 0.6s ease-out forwards',
+                    },
+                    keyframes: {
+                        ticker: {
+                            '0%': {
+                                transform: 'translateX(100%)'
+                            },
+                            '100%': {
+                                transform: 'translateX(-100%)'
+                            },
+                        },
+                        fadeIn: {
+                            'from': {
+                                opacity: '0',
+                                transform: 'translateY(10px)'
+                            },
+                            'to': {
+                                opacity: '1',
+                                transform: 'translateY(0)'
+                            },
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     </script>
     <style>
-      body {
-        background-color: #050505;
-        color: #ffffff;
-      }
-      
-      /* Scrollbar styling */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #050505; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #333; 
-        border-radius: 3px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #3b82f6; 
-      }
-
-      /* Background FX from adu.html */
-      .bg-pulse {
-        position: fixed;
-        top: -50%; left: -50%; width: 200%; height: 200%;
-        background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(5,5,5,0) 60%);
-        animation: pulse 12s infinite alternate;
-        z-index: -1;
-        pointer-events: none;
-      }
-      @keyframes pulse { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(1.1); opacity: 0.7; } }
+        body {
+            background-color: #050505;
+            color: #ffffff;
+        }
+        /* Scrollbar styling */
+        
+         ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+         ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        
+         ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        
+         ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+        /* Background FX from adu.html */
+        
+        .bg-pulse {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(5, 5, 5, 0) 60%);
+            animation: pulse 12s infinite alternate;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+        }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1"
-  }
-}
-</script>
+    <script type="importmap">
+        { "imports": { "recharts": "https://esm.sh/recharts@^3.6.0", "react/": "https://esm.sh/react@^19.2.3/", "react": "https://esm.sh/react@^19.2.3", "lucide-react": "https://esm.sh/lucide-react@^0.561.0", "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/", "react-router-dom": "https://esm.sh/react-router-dom@^7.10.1" } }
+    </script>
 </head>
-  <body>
+
+<body>
     <div id="root"></div>
     <div class="bg-pulse"></div>
     <script type="module" src="/index.tsx"></script>
-  </body>
+</body>
+
 </html>
