@@ -1,83 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import Papa from 'papaparse';
-import { api, supabase } from '@/services/api';
+import { api } from '@/services/api';
 import {
-    DollarSign, Upload, FileText, CheckCircle2, AlertTriangle,
-    Loader2, XCircle, ArrowRightLeft, User, Calendar, Layers
+    CheckCircle2, Loader2, XCircle,User, Calendar
 } from 'lucide-react';
-import State51Importer from '@/components/State51Importer';
 
 const AdminRevenue: React.FC = () => {
-    const [ingestProvider, setIngestProvider] = useState<'STANDARD' | 'STATE51'>('STANDARD');
-    const [processing, setProcessing] = useState(false);
-    const [logs, setLogs] = useState<string[]>([]);
-    const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
     const [withdrawals, setWithdrawals] = useState<any[]>([]);
     const [loadingW, setLoadingW] = useState(false);
     const [actionProcessing, setActionProcessing] = useState<string | null>(null);
 
-    const loadWithdrawals = async () => {
-        setLoadingW(true);
-        try {
-            const data = await api.admin.getPendingWithdrawals();
-            setWithdrawals(data as any);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoadingW(false);
-        }
-    };
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        Papa.parse(file, {
-            header: true, skipEmptyLines: true,
-            complete: async (results) => { await processRevenue(results.data); }
-        });
-    };
-
-    const processRevenue = async (rows: any[]) => {
-        const totalAmount = rows.reduce((sum, row) => sum + parseFloat(row['Net Revenue'] || row['Amount'] || 0), 0);
-        const reportingDate = new Date(reportMonth + "-01").toISOString();
-
-        if (!confirm(`Bulk Process Summary:\n- Records: ${rows.length}\n- Total Payout: $${totalAmount.toFixed(2)}\n\nProceed to distribute?`)) return;
-
-        setProcessing(true);
-        setLogs(["Preparing bulk payload..."]);
-        const payload = rows.map(row => ({
-            upc: row['UPC'].toString().trim(),
-            amount: parseFloat(row['To Label']),
-            platform: row['Music Service'] || "No service available"
-        })).filter(item => item.upc && item.amount > 0 && item.platform);
-        try {
-            const { data, error } = await supabase.rpc('admin_distribute_revenue_bulk', {
-                p_items: payload,
-                p_month: reportingDate
-            });
-
-            if (error) throw error;
-
-            setLogs(prev => [
-                `✅ BATCH COMPLETE`,
-                `Success: ${data.success_count} records`,
-                `Failed: ${data.error_count} records`,
-                ...prev
-            ]);
-
-            if (data.errors && data.errors.length > 0) {
-                setLogs(prev => [...data.errors, ...prev]);
+    useEffect(() => {
+        const fetchWithdrawals = async () => {
+            setLoadingW(true);
+            try {
+                const data = await api.admin.getPendingWithdrawals();
+                setWithdrawals(data || []);
+            } catch (err) {
+                console.error("Failed to fetch withdrawals:", err);
+            } finally {
+                setLoadingW(false);
             }
+        };
 
-            alert(`Distribution Complete!\nSuccess: ${data.success_count}\nFailed: ${data.error_count}`);
-
-        } catch (err: any) {
-            setLogs(prev => [`[CRITICAL ERROR] ${err.message}`, ...prev]);
-            alert("Batch processing failed. Check logs.");
-        } finally {
-            setProcessing(false);
-        }
-    };
-
+        fetchWithdrawals();
+    }, []);
     // --- LOGIC WITHDRAWAL ---
     const handleProcessTxn = async (txnId: string, status: 'COMPLETED' | 'REJECTED') => {
         let note = '';
@@ -127,6 +73,7 @@ const AdminRevenue: React.FC = () => {
                                     <th className="px-6 py-4">Request Date</th>
                                     <th className="px-6 py-4">User Identity</th>
                                     <th className="px-6 py-4">Amount</th>
+                                    <th className='px-6 py-4'>Method</th>
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -151,6 +98,42 @@ const AdminRevenue: React.FC = () => {
                                         <td className="px-6 py-4">
                                             <div className="text-lg font-black text-white">${tx.amount?.toFixed(2)}</div>
                                             <div className="text-[10px] text-yellow-500 font-mono uppercase tracking-wider">Pending Payout</div>
+                                        </td>
+                                        <td className='px-6 py-4'>
+                                        {(() => {
+                                            const PayoutMethodDetails = () => {
+                                                const [details, setDetails] = useState<any>(null);
+                                                const [loading, setLoading] = useState(true);
+
+                                                useEffect(() => {
+                                                    api.wallet.getPayoutMethods()
+                                                        .then((methods: any[]) => {
+                                                            const found = methods.find(m => m.id === tx.method || m.id === tx.payout_method_id);
+                                                            setDetails(found);
+                                                        })
+                                                        .catch(err => console.error("Error fetching payout methods", err))
+                                                        .finally(() => setLoading(false));
+                                                }, []);
+
+                                                if (loading) return <Loader2 className="animate-spin text-blue-500 mt-1" size={14} />;
+                                                if (!details) return <div className="text-[10px] text-gray-500 mt-1">Method ID: {tx.method || 'N/A'}</div>;
+
+                                                return (
+                                                    <div className="flex flex-col gap-1 mt-1 max-w-[250px]">
+                                                        {Object.entries(details).map(([key, value]) => {
+                                                            if (['id', 'user_id', 'created_at', 'updated_at'].includes(key) || !value || typeof value === 'object') return null;
+                                                            return (
+                                                                <div key={key} className="text-[10px] leading-tight">
+                                                                    <span className="text-gray-500 uppercase font-bold mr-1">{key.replace(/_/g, ' ')}:</span>
+                                                                    <span className="text-gray-300 font-mono break-all">{String(value)}</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            };
+                                            return <PayoutMethodDetails />;
+                                        })()}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             {actionProcessing === tx.id ? (

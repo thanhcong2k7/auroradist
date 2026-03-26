@@ -75,6 +75,13 @@ export interface TrackArtist {
   spotifyId?: string;
   appleMusicId?: string;
 }
+export interface ReleaseArtist {
+  id?: number;
+  name: string;
+  role: 'Primary' | 'Featured' | 'Remixer';
+  spotifyId?: string;
+  appleMusicId?: string;
+}
 
 export interface TrackContributor {
   id?: number;

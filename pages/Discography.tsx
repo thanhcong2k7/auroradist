@@ -185,6 +185,10 @@ const Discography: React.FC = () => {
           <Loader2 className="animate-spin text-blue-500" size={40} />
           <p className="text-xs font-mono text-gray-500 uppercase tracking-widest">Accessing Vault...</p>
         </div>
+      ) : filteredReleases.length === 0 ? (
+        <div className="h-64 flex items-center justify-center text-gray-500 text-sm font-mono">
+          There&apos;s no release yet :/
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredReleases.map((release) => (
@@ -205,7 +209,6 @@ const Discography: React.FC = () => {
                   >
                     <Eye size={14} />
                   </button>
-
                   {/* Edit Button - Hide if Checking */}
                   {release.status !== 'CHECKING' && (
                     <Link

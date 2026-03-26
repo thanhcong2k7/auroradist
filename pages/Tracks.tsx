@@ -246,7 +246,6 @@ const Tracks: React.FC = () => {
   };
 
   const handlePlayClick = (track: Track) => {
-    // Logic: Nếu đang play đúng bài này thì toggle, nếu khác thì play bài mới và set playlist là danh sách hiện tại (đã filter)
     playTrack(track, filtered);
   };
 
@@ -256,7 +255,7 @@ const Tracks: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tight">Master Recordings</h1>
-            <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Global Audio Catalog</p>
+            <p className="text-gray-400 font-mono text-xs uppercase tracking-widest opacity-60">Global Audio Catalog</p>
           </div>
           <button onClick={() => openEditor()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-lg flex items-center gap-2 text-xs">
             <Plus size={16} /> Ingest Master
@@ -371,7 +370,7 @@ const Tracks: React.FC = () => {
               {trackTab === 'GENERAL' && (
                 <div className="space-y-8">
                   <div className={errors.audioUrl ? "border border-red-500/50 rounded-xl p-1" : ""}>
-                    <FileUploader type="audio" accept="audio/wav" label="Master Recording (Lossless)" currentUrl={currentTrack.audioUrl} onUploadComplete={async (url, file) => setCurrentTrack({ ...currentTrack, audioUrl: url, duration: await getAudioDuration(file) })} />
+                    <FileUploader type="audio" accept="audio/wav" label="Master Recording (Lossless)" currentUrl={currentTrack.audioUrl} onUploadComplete={async (url, file) => setCurrentTrack({ ...currentTrack, audioUrl: url, duration: await getAudioDuration(file, url) })} />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

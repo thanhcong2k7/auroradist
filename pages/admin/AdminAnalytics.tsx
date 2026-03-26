@@ -31,7 +31,6 @@ const AdminAnalytics: React.FC = () => {
         setPayoutResult(null);
 
         try {
-            // 2. Gọi hàm RPC "admin_process_monthly_payout"
             const { data, error } = await supabase.rpc('admin_process_monthly_payout', {
                 p_month_start: startDate,
                 p_month_end: endDate
@@ -120,7 +119,7 @@ const AdminAnalytics: React.FC = () => {
                         <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg flex gap-3">
                             <AlertCircle className="text-yellow-500 shrink-0" size={20} />
                             <p className="text-xs text-yellow-200">
-                                <b>Warning:</b> Ensure all data sources (State51, Revelator, etc.) for the month are fully imported before running this. This action affects User Wallets immediately.
+                                <b>Warning:</b> Ensure all data sources for the month are fully imported before running this. This action affects User Wallets immediately.
                             </p>
                         </div>
 

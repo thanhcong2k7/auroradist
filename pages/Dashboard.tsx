@@ -71,7 +71,7 @@ const Dashboard: React.FC = () => {
       setProfileName(userProfile.name || 'Artist');
 
       // 1. Xử lý Wallet
-      setWallet(walletRes || { available_balance: 0, lifetime_earnings: 0 });
+      setWallet({ available_balance: walletRes.availableBalance, lifetime_earnings: walletRes.lifetimeEarnings });
 
       // 2. Xử lý Analytics (Tính tổng từ chart data luôn để khớp số liệu)
       if (trendRes) {
@@ -82,7 +82,7 @@ const Dashboard: React.FC = () => {
         setStats({
           streams: totalStreams,
           revenue: totalRev,
-          growth: 12.5 // Placeholder, tính sau nếu cần
+          growth: 0
         });
         setTrendData(trendRes);
       }
@@ -129,7 +129,7 @@ const Dashboard: React.FC = () => {
           loading={loading}
           label="Wallet Balance"
           // SỬA: dùng .availableBalance thay vì .available_balance
-          value={`$${wallet?.available_balance?.toLocaleString() || '0.00'}`}
+          value={`£${wallet?.available_balance?.toLocaleString() || '0.00'}`}
           subValue="Available for withdrawal"
           icon={Wallet}
           color="text-green-500"
@@ -139,7 +139,7 @@ const Dashboard: React.FC = () => {
         <StatCard
           loading={loading}
           label="Est. Earnings (30D)"
-          value={`$${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={`£${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           subValue="Based on raw analytics"
           icon={DollarSign}
           color="text-blue-500"
@@ -244,7 +244,7 @@ const Dashboard: React.FC = () => {
                     <p className="text-[10px] text-gray-500 font-mono truncate">{release.artist}</p>
                   </div>
                   <div className={`px-2 py-1 rounded text-[8px] font-black uppercase border ${release.status === 'ACCEPTED' ? 'text-green-500 border-green-500/20 bg-green-500/10' :
-                    release.status === 'REJECTED' ? 'text-red-500 border-red-500/20 bg-red-500/10' :
+                    release.status === 'REJECTED' ? 'text-red-500 border-red-500/20 bg-red-500/10' : release.status === 'DRAFT' ? 'border-gray-500/30 text-gray-300 bg-gray-900/50' :
                       'text-yellow-500 border-yellow-500/20 bg-yellow-500/10'
                     }`}>
                     {release.status}

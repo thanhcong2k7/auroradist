@@ -46,17 +46,8 @@ const Wallet: React.FC = () => {
     const handleWithdrawalSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const amount = parseFloat(withdrawAmount);
-        if (!amount || amount <= 0 || amount > (summary?.availableBalance || 0)) return toast.error("Invalid amount.", {
-            description: new Date().toLocaleString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }),
-            icon: <CircleX />
-        });
+        if (!amount || amount <= 0 || amount > (summary?.availableBalance || 10))
+            return toast.error("Invalid amount.");
         if (!selectedMethod) return toast.error("Select a payout node.", {
             description: new Date().toLocaleString('en-US', {
                 weekday: 'long',
@@ -71,20 +62,25 @@ const Wallet: React.FC = () => {
 
         setRequesting(true);
         try {
-            await api.wallet.requestWithdrawal(amount, selectedMethod);
+            const res = await api.wallet.requestWithdrawal(amount, selectedMethod);
             setShowWithdrawModal(false);
             setWithdrawAmount('');
-            toast.success("Request sent successfully.", {
-                description: new Date().toLocaleString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }),
-                icon: <CheckCheck />
-            });
+            
+            if (res.success){
+                toast.success("Request sent successfully.", {
+                    description: new Date().toLocaleString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    icon: <CheckCheck />
+                });
+            } else {
+                toast.error("Request failed: " + res.message);
+            }
             loadData();
         } catch (e: any) {
             toast.error(e.message, {
@@ -142,14 +138,14 @@ const Wallet: React.FC = () => {
                                 <div className="flex items-center gap-2 text-blue-400 font-sans font-black tracking-wide text-xs uppercase mb-3">
                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> Net Liquidity (Available)
                                 </div>
-                                <div className="text-6xl font-black text-white tracking-tighter">${summary?.availableBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                <div className="text-6xl font-black text-white tracking-tighter">£{summary?.availableBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                             </div>
                             <button
                                 onClick={() => setShowWithdrawModal(true)}
                                 disabled={!summary?.availableBalance || summary.availableBalance <= 0}
                                 className="mt-6 md:mt-0 px-8 py-4 bg-blue-600 text-white font-black uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all rounded-xl shadow-xl flex items-center gap-3 disabled:opacity-30 active:scale-[0.98]"
                             >
-                                <DollarSign size={18} /> Request Disbursement
+                                <DollarSign size={18} /> Request Payout
                             </button>
                         </div>
                     </div>
@@ -160,14 +156,14 @@ const Wallet: React.FC = () => {
                             <div className="p-3 bg-yellow-500/5 text-yellow-500 rounded-xl"><Clock size={24} /></div>
                             <div>
                                 <div className="text-xs text-gray-400 font-sans uppercase tracking-widest mb-0.5">Pending Clearance</div>
-                                <div className="text-2xl font-black tracking-tight">${summary?.pendingClearance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-black tracking-tight">£{summary?.pendingClearance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                             </div>
                         </div>
                         <div className="bg-surface border border-white/5 p-6 rounded-2xl flex items-center gap-5">
                             <div className="p-3 bg-green-500/5 text-green-500 rounded-xl"><CheckCircle2 size={24} /></div>
                             <div>
                                 <div className="text-xs text-gray-400 font-sans uppercase tracking-widest mb-0.5">Gross Lifetime</div>
-                                <div className="text-2xl font-black tracking-tight">${summary?.lifetimeEarnings?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-black tracking-tight">£{summary?.lifetimeEarnings?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                             </div>
                         </div>
                     </div>

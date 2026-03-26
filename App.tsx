@@ -169,8 +169,8 @@ const App: React.FC = () => {
           <Route index element={<AdminDashboard />} />
           <Route path="releases" element={<AdminReleases />} />
           <Route path="releases/:id" element={<AdminReleaseDetail />} />
+          <Route path="labels" element={<AdminLabels />} />
           <Route path="dsps" element={<AdminDSPs />} />
-          <Route path="labels" element={<AdminLabels />}></Route>
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="revenue" element={<AdminRevenue />} />
           <Route path="support" element={<AdminSupport />} />

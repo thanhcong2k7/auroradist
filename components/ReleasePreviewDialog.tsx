@@ -108,9 +108,10 @@ const ReleasePreviewDialog: React.FC<ReleasePreviewProps> = ({ isOpen, onClose, 
                                 <div className="space-y-1">
                                     {tracks.length > 0 ? tracks.map((t, i) => (
                                         <div key={i} className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-3 leading-none">
                                                 <span className="text-gray-500 font-mono text-xs w-4">{i + 1}</span>
-                                                <span className="font-bold text-sm">{t.name}</span>
+                                                <span className="font-bold text-sm leading-tight">{t.name}</span>
+                                                <span className='text-gray-500 font-mono text-sm leading-tight'>{t.isrc}</span>
                                             </div>
                                             <span className="text-xs font-mono text-gray-500">{t.duration}</span>
                                         </div>

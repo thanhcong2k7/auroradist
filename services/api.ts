@@ -235,6 +235,30 @@ export const api = {
       return data;
     },
     getAnalyticsTrend: async (startDate: string, endDate: string) => {
+      // DECLARE
+      //     v_rate NUMERIC;
+      // BEGIN
+      //     -- Lấy rate hiện tại của user
+      //     SELECT contract_rate INTO v_rate FROM profiles WHERE id = p_uid;
+          
+      //     -- Fallback nếu null thì lấy 0.8
+      //     IF v_rate IS NULL THEN v_rate := 0.8; END IF;
+
+      //     RETURN QUERY
+      //     SELECT 
+      //         TO_CHAR(ra.period_start, 'YYYY-MM-DD') as group_key,
+      //         SUM(ra.stream_quantity)::BIGINT as total_streams,
+      //         -- LOGIC QUAN TRỌNG: Nhân Doanh thu gốc * Rate
+      //         SUM(ra.revenue * v_rate) as total_revenue
+      //     FROM raw_analytics ra
+      //     JOIN tracks t ON t.isrc = ra.isrc
+      //     WHERE 
+      //         t.uid = p_uid
+      //         AND ra.period_start >= p_start_date 
+      //         AND ra.period_start <= p_end_date
+      //     GROUP BY group_key
+      //     ORDER BY group_key;
+      // END;
       const userId = await getUserId();
       const { data, error } = await supabase.rpc('get_artist_analytics_v3', {
         p_uid: userId,
@@ -572,10 +596,7 @@ export const api = {
         .from('tracks')
         .select('*')
         .eq('uid', userId);
-
       if (error) throw error;
-
-      // UPDATED: Manually map fields to ensure camelCase for frontend
       return data.map((t: any) => ({
         id: t.id,
         releaseId: t.release_id,
@@ -605,8 +626,6 @@ export const api = {
         .order('id', { ascending: true }); // Optional: order by ID or track number
 
       if (error) throw error;
-
-      // reuse the mapping logic to ensure camelCase matches your frontend types
       return data.map((t: any) => ({
         id: t.id,
         releaseId: t.release_id,
@@ -752,13 +771,11 @@ export const api = {
         p_amount: amount,
         p_method_id: methodId
       });
-
       if (error) {
         console.error("Withdrawal RPC Error:", error);
         throw new Error(error.message || "Failed to process withdrawal request.");
       }
-
-      return { success: true, data };
+      return data;
     },
   },
   support: {
@@ -840,10 +857,9 @@ export const api = {
       if (error) throw error;
       return data.map((r: any) => ({
         ...r,
-        coverArt: r.cover_art,        // Fix ảnh bìa
-        releaseDate: r.release_date,  // Fix ngày tháng
+        coverArt: r.cover_art,
+        releaseDate: r.release_date,
         labelId: r.label_id,
-        // Giữ lại các trường khác
       }));
     },
 
@@ -858,7 +874,6 @@ export const api = {
       if (error) throw error;
       return data;
     },
-
     getLabels: async () => {
       // 1. Fetch labels without join
       const { data: labels, error: labelsError } = await supabase
@@ -889,7 +904,6 @@ export const api = {
         profiles: profileMap.get(l.uid) || null
       }));
     },
-
     deleteLabel: async (id: number) => {
         const { error } = await supabase
             .from('labels')
@@ -898,8 +912,6 @@ export const api = {
         if (error) throw error;
         return { success: true };
     },
-
-    // 9. Xử lý rút tiền (Duyệt/Từ chối)
     processWithdrawal: async (txnId: string, status: 'COMPLETED' | 'REJECTED', note?: string) => {
       const { data, error } = await supabase.rpc('admin_process_withdrawal', {
         p_txn_id: txnId,
@@ -914,8 +926,6 @@ export const api = {
 
       return { success: true, data };
     },
-
-    // 2. Lấy chi tiết Release kèm Tracks (Admin View)
     getReleaseDetail: async (id: number) => {
       const { data, error } = await supabase
         .from('releases')
@@ -969,8 +979,6 @@ export const api = {
         }))
       };
     },
-
-    // 3. Hành động Moderation: Cập nhật UPC/Status
     updateReleaseMetadata: async (id: number, updates: {
       upc?: string,
       status?: string,
@@ -986,8 +994,6 @@ export const api = {
       if (error) throw error;
       return data;
     },
-
-    // 4. Hành động Tracks: Cập nhật ISRC
     updateTrackISRC: async (trackId: number, isrc: string) => {
       const { error } = await supabase
         .from('tracks')
@@ -997,8 +1003,6 @@ export const api = {
       if (error) throw error;
       return { success: true };
     },
-
-    // 5. User Management: Lấy danh sách user
     getUsers: async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -1008,8 +1012,6 @@ export const api = {
       if (error) throw error;
       return data;
     },
-
-    // 6. User Management: Xóa user (Admin only)
     deleteUser: async (userId: string) => {
       const { error } = await supabase
         .from('profiles')
@@ -1068,7 +1070,6 @@ export const api = {
       if (error) throw error;
       return data;
     },
-
     saveDSP: async (dsp: Partial<DspChannel>) => {
       const payload = {
         name: dsp.name,
@@ -1087,7 +1088,6 @@ export const api = {
       const { error } = await query;
       if (error) throw error;
     },
-
     toggleDSPStatus: async (id: number, isEnabled: boolean) => {
       const { error } = await supabase
         .from('dsp_channels')
@@ -1105,7 +1105,6 @@ export const api = {
       if (error) throw error;
       return data;
     },
-
     replyTicket: async (ticketId: string, content: string) => {
       const userId = await getUserId();
 
@@ -1129,7 +1128,6 @@ export const api = {
       // 3. Trả về dữ liệu mới nhất của ticket đó để update UI
       return api.admin.getTicketDetail(ticketId);
     },
-
     updateTicketStatus: async (ticketId: string, status: string) => {
       const { error } = await supabase
         .from('support_tickets')
@@ -1138,7 +1136,6 @@ export const api = {
 
       if (error) throw error;
     },
-
     getTicketDetail: async (ticketId: string) => {
       const { data, error } = await supabase
         .from('support_tickets')

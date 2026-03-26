@@ -127,7 +127,7 @@ const Labels: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tight">Record Imprints</h1>
-            <p className="text-gray-500 font-mono text-xs uppercase tracking-widest opacity-60">Distribution Entity Management</p>
+            <p className="text-gray-400 font-mono text-xs uppercase tracking-widest opacity-60">Distribution Entity Management</p>
           </div>
           <button aria-label="New Label" onClick={() => handleOpenModal()} className="px-5 py-2.5 bg-blue-600 text-white font-bold uppercase hover:bg-blue-500 transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)] flex items-center gap-2 text-xs">
             <Plus size={16} /> New Label

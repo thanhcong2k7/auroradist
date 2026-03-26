@@ -102,7 +102,10 @@ const Artists: React.FC = () => {
             toast.error("Official Artist Name is required.");
             return;
         }
-
+        if (artists.find(a => a.name === formData.name)){
+            toast.error("An artist with this name already exists.");
+            return;
+        }
         setLoading(true);
         setIsSubmitting(true);
         try {
@@ -130,8 +133,6 @@ const Artists: React.FC = () => {
             setLoading(false);
         }
     };
-
-    // MISSING FEATURE 2: Filter Logic
     const filteredArtists = artists.filter(artist =>
         artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (artist.email && artist.email.toLowerCase().includes(searchQuery.toLowerCase()))
