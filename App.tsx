@@ -28,7 +28,6 @@ import AdminUserDetail from './pages/admin/AdminUserDetail';
 import AdminDSPs from './pages/admin/AdminDSPs';
 import AdminSupport from './pages/admin/AdminSupport';
 import AdminLabels from './pages/admin/AdminLabels';
-
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
