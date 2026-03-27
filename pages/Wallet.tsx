@@ -138,7 +138,7 @@ const Wallet: React.FC = () => {
                                 <div className="flex items-center gap-2 text-blue-400 font-sans font-black tracking-wide text-xs uppercase mb-3">
                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> Net Liquidity (Available)
                                 </div>
-                                <div className="text-6xl font-black text-white tracking-tighter">£{summary?.availableBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                <div className="text-6xl font-black text-white tracking-tighter">${summary?.availableBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                             </div>
                             <button
                                 onClick={() => setShowWithdrawModal(true)}
@@ -156,14 +156,14 @@ const Wallet: React.FC = () => {
                             <div className="p-3 bg-yellow-500/5 text-yellow-500 rounded-xl"><Clock size={24} /></div>
                             <div>
                                 <div className="text-xs text-gray-400 font-sans uppercase tracking-widest mb-0.5">Pending Clearance</div>
-                                <div className="text-2xl font-black tracking-tight">£{summary?.pendingClearance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-black tracking-tight">${summary?.pendingClearance?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                             </div>
                         </div>
                         <div className="bg-surface border border-white/5 p-6 rounded-2xl flex items-center gap-5">
                             <div className="p-3 bg-green-500/5 text-green-500 rounded-xl"><CheckCircle2 size={24} /></div>
                             <div>
                                 <div className="text-xs text-gray-400 font-sans uppercase tracking-widest mb-0.5">Gross Lifetime</div>
-                                <div className="text-2xl font-black tracking-tight">£{summary?.lifetimeEarnings?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                <div className="text-2xl font-black tracking-tight">${summary?.lifetimeEarnings?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                             </div>
                         </div>
                     </div>

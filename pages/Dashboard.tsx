@@ -129,7 +129,7 @@ const Dashboard: React.FC = () => {
           loading={loading}
           label="Wallet Balance"
           // SỬA: dùng .availableBalance thay vì .available_balance
-          value={`£${wallet?.available_balance?.toLocaleString() || '0.00'}`}
+          value={`$${wallet?.available_balance?.toLocaleString() || '0.00'}`}
           subValue="Available for withdrawal"
           icon={Wallet}
           color="text-green-500"
@@ -139,7 +139,7 @@ const Dashboard: React.FC = () => {
         <StatCard
           loading={loading}
           label="Est. Earnings (30D)"
-          value={`£${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={`$${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           subValue="Based on raw analytics"
           icon={DollarSign}
           color="text-blue-500"

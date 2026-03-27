@@ -40,14 +40,12 @@ export default function State51Importer() {
   const parseDate2 = (val: any) => {
     if (!val) return null;
     try {
-      console.log("dau buoi");
       if (val instanceof Date) {
         // Tránh lỗi nếu Date không hợp lệ
         if (isNaN(val.getTime())) return null;
         const y = val.getUTCFullYear();
         const m = String(val.getUTCMonth() + 1).padStart(2, "0");
         const d = String(val.getUTCDate()).padStart(2, "0");
-        console.log("dau buoi_");
         return `${y}-${m}-${d}`;
       }
       const dateStr = String(val).trim();
@@ -77,6 +75,7 @@ export default function State51Importer() {
       return null;
     }
   };
+  //Given DD-MM-YYYY fixed input for parseDate function, now convert it to 
   const parseDate = (val: any) => {
     if (!val) return null;
     try {
@@ -142,7 +141,7 @@ export default function State51Importer() {
         const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
         const sheetName = workbook.SheetNames[0];
         jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
-          raw: false,
+          raw: true,
         });
       } else {
         await new Promise((resolve) => {

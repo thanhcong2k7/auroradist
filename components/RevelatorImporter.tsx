@@ -115,6 +115,8 @@ export default function RevelatorImporter() {
 
         if (payload.length > 0) {
             await uploadToSupabase(payload, batchId);
+            //console.log('Assumes that uploaded');
+            //console.log(payload);
         } else {
             setLogs(prev => ["⚠️ No valid data rows found to import.", ...prev]);
             setStep('IDLE');

@@ -99,7 +99,7 @@ const Analytics: React.FC = () => {
                 <div className="bg-black/90 border border-white/10 p-3 rounded-lg shadow-xl backdrop-blur-md z-50">
                     <p className="text-gray-400 text-[10px] mb-1 font-mono">{label}</p>
                     <p className="text-white font-bold text-sm">
-                        {viewMode === 'REVENUE' ? '£' : ''}
+                        {viewMode === 'REVENUE' ? '$' : ''}
                         {Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                         {viewMode === 'STREAMS' ? ' streams' : ''}
                     </p>
@@ -178,7 +178,7 @@ const Analytics: React.FC = () => {
                 <KpiCard
                     loading={loading}
                     title="Est. Revenue"
-                    value={`£${kpis.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    value={`$${kpis.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     icon={DollarSign}
                     color="text-green-500"
                 />
@@ -238,7 +238,7 @@ const Analytics: React.FC = () => {
                                         tick={{ fontSize: 10, fill: '#666' }}
                                         axisLine={false}
                                         tickLine={false}
-                                        tickFormatter={(val) => viewMode === 'REVENUE' ? `£${val}` : `${(val / 1000).toFixed(0)}k`}
+                                        tickFormatter={(val) => viewMode === 'REVENUE' ? `$${val}` : `${(val / 1000).toFixed(0)}k`}
                                         width={40}
                                     />
                                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} />
