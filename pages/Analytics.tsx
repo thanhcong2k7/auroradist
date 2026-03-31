@@ -148,19 +148,18 @@ const Analytics: React.FC = () => {
 
                     {/* Custom Date Picker */}
                     <div className="flex items-center gap-2 bg-black border border-white/10 px-3 py-1.5 rounded-lg">
-                        <Calendar size={14} className="text-gray-500" />
                         <input
                             type="date"
                             value={dateRange.start}
                             onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
-                            className="bg-transparent text-white text-[10px] font-mono outline-none w-20 appearance-none"
+                            className="bg-transparent text-white text-[10px] font-mono outline-none w-30 appearance-none [color-scheme:dark]"
                         />
                         <span className="text-gray-600">-</span>
                         <input
                             type="date"
                             value={dateRange.end}
                             onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
-                            className="bg-transparent text-white text-[10px] font-mono outline-none w-20 appearance-none"
+                            className="bg-transparent text-white text-[10px] font-mono outline-none w-30 appearance-none [color-scheme:dark]"
                         />
                     </div>
                 </div>

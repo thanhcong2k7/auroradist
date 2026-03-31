@@ -1,0 +1,6 @@
+{
+    "status": {
+        "code": 3016,
+        "msg": "the file you upload is too large, we sugguest you cut large file to smaller file, 10-20 seconds audio data is enough to identify"
+    }
+}

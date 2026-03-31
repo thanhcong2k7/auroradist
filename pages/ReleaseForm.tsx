@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Map,
   Download,
+  Copy,
 } from "lucide-react";
 import {
   Label as LabelType,
@@ -140,6 +141,56 @@ const LANGUAGES = Object.keys(MAP_LANGUAGE);
 const GENRES = Object.keys(MAP_GENRE);
 const ALTGENRES = Object.keys(MAP_ALT_GENRE);
 
+const ArtistInput: React.FC<{ value: string; onChange: (v: string) => void; availableArtists: Artist[]; placeholder?: string; id?: string }> = ({ value, onChange, availableArtists, placeholder, id }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [wrapperRef]);
+
+  const filtered = availableArtists.filter((a) => a.name.toLowerCase().includes((value || '').toLowerCase())).slice(0, 10);
+
+  return (
+    <div className="flex-1 relative" ref={wrapperRef}>
+      <input
+        id={id}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none"
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      {isOpen && filtered.length > 0 && (
+        <ul className="absolute z-50 w-full bg-[#111] border border-white/10 rounded mt-1 max-h-40 overflow-y-auto shadow-xl">
+          {filtered.map((artist) => (
+            <li
+              key={artist.id}
+              className="px-3 py-2 text-sm hover:bg-blue-600 cursor-pointer text-white"
+              onClick={() => {
+                onChange(artist.name);
+                setIsOpen(false);
+              }}
+            >
+              {artist.name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const ReleaseForm: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -202,6 +253,7 @@ const ReleaseForm: React.FC = () => {
   const [format, setFormat] = useState("SINGLE");
   const [territories, setTerritories] = useState<string[]>(["WORLDWIDE"]);
   const [isWorldwide, setIsWorldwide] = useState(true);
+  const [isAsap, setIsAsap] = useState(false);
 
   const [releaseTracks, setReleaseTracks] = useState<Track[]>([]);
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
@@ -283,6 +335,11 @@ const ReleaseForm: React.FC = () => {
       setFormat(r.format || "SINGLE");
       setIsWorldwide(r.territories?.includes("WORLDWIDE") ?? true);
       setTerritories(r.territories || ["WORLDWIDE"]);
+      
+      const today = new Date().toISOString().split('T')[0];
+      if (release.releaseDate && release.releaseDate === today) {
+        setIsAsap(true);
+      }
 
       if (release.selectedDsps && release.selectedDsps.length > 0) {
         setSelectedStores(release.selectedDsps);
@@ -307,6 +364,7 @@ const ReleaseForm: React.FC = () => {
 
   const handleSave = async (newStatus: Release["status"]) => {
     if (newStatus === "CHECKING") {
+      verifyAlbumMetadata();
       if (!validateForDistribution()) {
         window.scrollTo(0, 0);
         return;
@@ -390,6 +448,26 @@ const ReleaseForm: React.FC = () => {
     if (!genre) errors.push("Primary Genre");
     if (!language) errors.push("Metadata Language");
     if (!copyrightLine) errors.push("Copyright Owner");
+    
+    // Validate album artists
+    const hasPrimaryArtist = artists.some((a) => a.role === "Primary" && a.name.trim() !== "");
+    if (!hasPrimaryArtist) errors.push("At least one Primary Artist");
+
+    // Format validation
+    if (format === "Single" || format === "SINGLE") {
+      if (releaseTracks.length > 3) {
+        errors.push("A Single cannot have more than 3 tracks.");
+      }
+      if (releaseTracks.length > 0) {
+        // Find main track
+        const relArtistNames = artists.map(a => a.name.trim().toLowerCase()).sort().join("|");
+        const trackArtistNames = releaseTracks[0].artists.map(a => a.name.trim().toLowerCase()).sort().join("|");
+        if (relArtistNames !== trackArtistNames) {
+          errors.push("Single release artists must match the first track's artists exactly.");
+        }
+      }
+    }
+
     if (releaseTracks.length === 0) errors.push("At least one track");
     if (selectedStores.length === 0) errors.push("At least one store");
 
@@ -509,8 +587,15 @@ const ReleaseForm: React.FC = () => {
     const hasProducer = t.contributors?.some(
       (c) => c.role === "Producer" && c.name.trim() !== "",
     );
+    const hasLyricist = t.contributors?.some(
+      (c) => c.role === "Lyricist" && c.name.trim() !== "",
+    );
     if (!hasComposer || !hasProducer) {
       newErrors.contributors = "Composer & Producer are mandatory.";
+      isValid = false;
+      if (isValid) setTrackTab("CREDITS");
+    } else if (t.hasLyrics && !hasLyricist) {
+      newErrors.contributors = "A Lyricist credit is required when lyrics are present.";
       isValid = false;
       if (isValid) setTrackTab("CREDITS");
     }
@@ -794,189 +879,94 @@ const ReleaseForm: React.FC = () => {
                   </div>
                 </div>
                 <div className="lg:col-span-8 space-y-6">
-                  <div className="bg-surface border border-white/5 p-8 rounded-xl space-y-6">
-                    {/* Metadata Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                          Album Title <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
-                          className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold text-lg"
-                          placeholder="e.g. Neon Horizon"
-                        />
+                  {/* Prefill Artists */}
+                  {releaseTracks.length > 0 && (
+                    <div className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center text-blue-500">
+                          <Copy size={16} />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-white">Prefill Release Artists</h3>
+                          <p className="text-xs text-gray-400">Copy artist lineup from an existing track</p>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                          Version
-                        </label>
-                        <input
-                          type="text"
-                          value={version}
-                          onChange={(e) => setVersion(e.target.value)}
-                          className="w-full bg-black border border-white/10 rounded px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold"
-                          placeholder="e.g. Remix"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                          Format <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          value={format}
-                          onChange={(e) => setFormat(e.target.value)}
-                          className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition"
-                        >
-                          {RELEASE_FORMATS.map((f) => (
-                            <option key={f} value={f}>
-                              {f}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                          Label Imprint
-                        </label>
-                        <select
-                          value={labelId}
-                          onChange={(e) => setLabelId(Number(e.target.value))}
-                          className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition"
-                        >
-                          <option value="">-- Independent --</option>
-                          {labels.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div
-                      className={
-                        errors.artists
-                          ? "p-3 border border-red-500/30 bg-red-500/5 rounded-xl"
-                          : ""
-                      }
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="text-xs uppercase font-bold text-blue-500">
-                          Performing Artists{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <button
-                          onClick={() => {
-                            setArtists([
-                              ...artists,
-                              { name: "", role: "Primary" },
-                            ]);
-                          }}
-                          className="text-[10px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition uppercase"
-                        >
-                          + Add
-                        </button>
-                      </div>
-                      <div className="space-y-2">
-                        {artists?.map((a, i) => (
-                          <div key={i} className="flex gap-2">
-                            <select
-                              value={a.role}
-                              onChange={(e) => {
-                                const newArtists = [...artists];
-                                newArtists[i] = { ...newArtists[i], role: e.target.value as any };
-                                setArtists(newArtists);
-                              }}
-                              className="w-24 bg-black border border-white/10 rounded px-2 py-2 text-xs outline-none"
-                            >
-                              <option value="Primary">Primary</option>
-                              <option value="Featured">Featured</option>
-                              <option value="Remixer">Remixer</option>
-                            </select>
-                            <div className="flex-1 relative">
-                              <input
-                                list={`release-artist-suggestions-${i}`}
-                                value={a.name}
-                                onChange={(e) => {
-                                  const newArtists = [...artists];
-                                  newArtists[i] = { ...newArtists[i], name: e.target.value };
-                                  setArtists(newArtists);
-                                }}
-                                className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none"
-                                placeholder="Artist Name"
-                              />
-                              <datalist id={`release-artist-suggestions-${i}`}>
-                                {availableArtists.map((artist) => (
-                                  <option key={artist.id} value={artist.name} />
-                                ))}
-                              </datalist>
-                            </div>
-                            <button
-                              onClick={() => {
-                                const copy = artists.filter((_, idx) => idx !== i);
-                                setArtists(copy);
-                              }}
-                              className="p-2 text-gray-500 hover:text-red-500"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
+                      <select
+                        className="bg-black border border-white/10 rounded px-3 py-2 text-xs outline-none focus:border-blue-500 min-w-[200px]"
+                        onChange={(e) => {
+                          if (!e.target.value) return;
+                          const source = releaseTracks.find(t => t.id === parseInt(e.target.value));
+                          if (source && source.artists) {
+                            setArtists(JSON.parse(JSON.stringify(source.artists)));
+                            toast.success("Artists copied from track!");
+                          }
+                          e.target.value = "";
+                        }}
+                      >
+                        <option value="">-- Select a track --</option>
+                        {releaseTracks.map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
-                        {errors.artists && (
-                          <p className="text-xs text-red-400 mt-1">{errors.artists}</p>
-                        )}
-                      </div>
+                      </select>
                     </div>
-                    <div className="p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  )}
+
+                  <div className="bg-surface border border-white/5 p-8 rounded-xl space-y-8">
+                    {/* SECTION 1: General Information */}
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-blue-500 mb-4 border-b border-white/5 pb-2">1. General Information</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            Release Title <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold text-lg"
+                            placeholder="e.g. Neon Horizon"
+                          />
+                        </div>
                         <div>
-                          <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                            Primary Genre{" "}
-                            <span className="text-red-500">*</span>
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            Version
+                          </label>
+                          <input
+                            type="text"
+                            value={version}
+                            onChange={(e) => setVersion(e.target.value)}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition font-bold"
+                            placeholder="e.g. Remix, Live"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                        <div>
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            Format <span className="text-red-500">*</span>
                           </label>
                           <select
-                            value={genre}
-                            onChange={(e) => setGenre(e.target.value)}
-                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
+                            value={format}
+                            onChange={(e) => setFormat(e.target.value)}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition"
                           >
-                            <option value="">Select Genre</option>
-                            {GENRES.map((g) => (
-                              <option key={g} value={g}>
-                                {g}
+                            {RELEASE_FORMATS.map((f) => (
+                              <option key={f} value={f}>
+                                {f}
                               </option>
                             ))}
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                            Alternate Genre{" "}
-                            <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={subGenre}
-                            onChange={(e) => setSubGenre(e.target.value)}
-                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
-                          >
-                            <option value="">Select Genre</option>
-                            {ALTGENRES.map((g) => (
-                              <option key={g} value={g}>
-                                {g}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                            Language <span className="text-red-500">*</span>
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            Metadata Language <span className="text-red-500">*</span>
                           </label>
                           <select
                             value={language}
                             onChange={(e) => setLanguage(e.target.value)}
-                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
                           >
                             {LANGUAGES.map((l) => (
                               <option key={l} value={l}>
@@ -985,98 +975,232 @@ const ReleaseForm: React.FC = () => {
                             ))}
                           </select>
                         </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                          Release Date <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="date"
-                          value={releaseDate}
-                          onChange={(e) => setReleaseDate(e.target.value)}
-                          className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                          Orig. Release Date
-                        </label>
-                        <input
-                          type="date"
-                          value={originalReleaseDate}
-                          onChange={(e) =>
-                            setOriginalReleaseDate(e.target.value)
-                          }
-                          className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition text-gray-300"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2">
-                        <span className="text-lg">©</span> Copyright{" "}
-                        <span className="text-red-500">*</span>
-                      </h3>
-                      <div className="flex gap-4">
-                        <div className="w-24">
-                          <input
-                            type="text"
-                            value={copyrightYear}
-                            onChange={(e) => setCopyrightYear(e.target.value)}
-                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center"
-                            placeholder="Year"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={copyrightLine}
-                            onChange={(e) => setCopyrightLine(e.target.value)}
-                            className="w-full bg-black border border-white/10 rounded px-4 py-2"
-                            placeholder="Owner"
-                          />
+                        <div>
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            Label Imprint
+                          </label>
+                          <select
+                            value={labelId}
+                            onChange={(e) => setLabelId(Number(e.target.value))}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition"
+                          >
+                            <option value="">-- Independent --</option>
+                            {labels.map((l) => (
+                              <option key={l.id} value={l.id}>
+                                {l.name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-2 mt-4">
-                      <h3 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2">
-                        <span className="text-lg">℗</span> Phonogram{" "}
-                        <span className="text-red-500">*</span>
-                      </h3>
-                      <div className="flex gap-4">
-                        <div className="w-24">
+
+                    {/* SECTION 2: Artists */}
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-blue-500 mb-4 border-b border-white/5 pb-2">2. Performing Artists</h3>
+                      <div
+                        className={`p-4 rounded-xl ${errors.artists ? "border border-red-500/30 bg-red-500/5" : "bg-black/20 border border-white/5"}`}
+                      >
+                        <div className="flex justify-between items-center mb-4">
+                          <label className="text-xs uppercase font-bold text-gray-400">
+                            Lineup <span className="text-red-500">*</span>
+                          </label>
+                          <button
+                            onClick={() => {
+                              setArtists([
+                                ...artists,
+                                { name: "", role: "Primary" },
+                              ]);
+                            }}
+                            className="text-[10px] bg-white/10 px-3 py-1.5 rounded-lg hover:bg-white/20 transition uppercase tracking-widest font-bold"
+                          >
+                            + Add Artist
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {artists?.map((a, i) => (
+                            <div key={i} className="flex gap-3 items-center">
+                              <select
+                                value={a.role}
+                                onChange={(e) => {
+                                  const newArtists = [...artists];
+                                  newArtists[i] = { ...newArtists[i], role: e.target.value as any };
+                                  setArtists(newArtists);
+                                }}
+                                className="w-28 bg-black border border-white/10 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500"
+                              >
+                                <option value="Primary">Primary</option>
+                                <option value="Featured">Featured</option>
+                                <option value="Remixer">Remixer</option>
+                              </select>
+                              <div className="flex-1">
+                                <ArtistInput
+                                  value={a.name}
+                                  onChange={(val) => {
+                                    const newArtists = [...artists];
+                                    newArtists[i] = { ...newArtists[i], name: val };
+                                    setArtists(newArtists);
+                                  }}
+                                  availableArtists={availableArtists}
+                                  placeholder="Type artist name..."
+                                />
+                              </div>
+                              <button
+                                onClick={() => {
+                                  const copy = artists.filter((_, idx) => idx !== i);
+                                  setArtists(copy);
+                                }}
+                                className="p-2 text-gray-500 hover:text-red-500 bg-white/5 rounded-lg transition"
+                                title="Remove Artist"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                          {errors.artists && (
+                            <p className="text-xs text-red-400 mt-2 font-mono">{errors.artists}</p>
+                          )}
+                          {artists.length >= 5 && (
+                            <div className="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-lg flex items-center gap-3 mt-3">
+                              <AlertTriangle size={16} className="text-yellow-500 shrink-0" />
+                              <span className="text-yellow-400 text-xs font-bold leading-relaxed">
+                                Releases with 5 or more primary artists should use "Various Artists" as the Primary Artist.
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION 3: Genres */}
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-blue-500 mb-4 border-b border-white/5 pb-2">3. Genres</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black/20 p-4 rounded-xl border border-white/5">
+                        <div>
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            Primary Genre <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={genre}
+                            onChange={(e) => setGenre(e.target.value)}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+                          >
+                            <option value="">-- Select --</option>
+                            {GENRES.map((g) => (
+                              <option key={g} value={g}>
+                                {g}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            Alternate Genre <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            value={subGenre}
+                            onChange={(e) => setSubGenre(e.target.value)}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500"
+                          >
+                            <option value="">-- Select --</option>
+                            {ALTGENRES.map((g) => (
+                              <option key={g} value={g}>
+                                {g}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION 4: Dates & IDs */}
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-blue-500 mb-4 border-b border-white/5 pb-2">4. Identifiers & Original Date</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black/20 p-4 rounded-xl border border-white/5">
+                        <div>
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            Orig. Release Date
+                          </label>
                           <input
-                            type="text"
-                            value={phonogramYear}
-                            onChange={(e) => setPhonogramYear(e.target.value)}
-                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-center"
-                            placeholder="Year"
+                            type="date"
+                            value={originalReleaseDate}
+                            onChange={(e) =>
+                              setOriginalReleaseDate(e.target.value)
+                            }
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition text-gray-300 text-sm [color-scheme:dark]"
                           />
                         </div>
-                        <div className="flex-1">
+                        <div>
+                          <label className="block text-xs font-mono text-gray-400 mb-1 uppercase tracking-widest">
+                            UPC / Barcode
+                          </label>
                           <input
                             type="text"
-                            value={phonogramLine}
-                            onChange={(e) => setPhonogramLine(e.target.value)}
-                            className="w-full bg-black border border-white/10 rounded px-4 py-2"
-                            placeholder="Owner"
+                            value={upc}
+                            onChange={(e) => setUpc(e.target.value)}
+                            maxLength={12}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm font-mono uppercase focus:outline-none focus:border-blue-500 transition"
+                            placeholder="Auto-assigned if empty"
                           />
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-2 mt-4">
-                      <label className="block text-xs font-sans text-gray-500 mb-1 uppercase">
-                        UPC / Barcode
-                      </label>
-                      <input
-                        type="text"
-                        value={upc}
-                        onChange={(e) => setUpc(e.target.value)}
-                        maxLength={12}
-                        className="w-full bg-black border border-white/10 rounded px-4 py-2 focus:outline-none focus:border-blue-500 transition"
-                        placeholder="Auto-assigned if empty"
-                      />
+
+                    {/* SECTION 5: Copyright */}
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-blue-500 mb-4 border-b border-white/5 pb-2">5. Ownership</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-black/20 p-4 rounded-xl border border-white/5">
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2">
+                            <span className="text-lg">©</span> Copyright <span className="text-red-500">*</span>
+                          </h4>
+                          <div className="flex gap-2">
+                            <div className="w-24">
+                              <input
+                                type="text"
+                                value={copyrightYear}
+                                onChange={(e) => setCopyrightYear(e.target.value)}
+                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-3 text-center text-sm font-mono"
+                                placeholder="Year"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                type="text"
+                                value={copyrightLine}
+                                onChange={(e) => setCopyrightLine(e.target.value)}
+                                className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm"
+                                placeholder="Owner Name"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold uppercase text-gray-400 flex items-center gap-2">
+                            <span className="text-lg">℗</span> Phonogram <span className="text-red-500">*</span>
+                          </h4>
+                          <div className="flex gap-2">
+                            <div className="w-24">
+                              <input
+                                type="text"
+                                value={phonogramYear}
+                                onChange={(e) => setPhonogramYear(e.target.value)}
+                                className="w-full bg-black border border-white/10 rounded-lg px-3 py-3 text-center text-sm font-mono"
+                                placeholder="Year"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                type="text"
+                                value={phonogramLine}
+                                onChange={(e) => setPhonogramLine(e.target.value)}
+                                className="w-full bg-black border border-white/10 rounded-lg px-4 py-3 text-sm"
+                                placeholder="Owner Name"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1159,6 +1283,85 @@ const ReleaseForm: React.FC = () => {
             {/* STEP 3: PLATFORMS */}
             {currentStep === 3 && (
               <div className="lg:col-span-12 space-y-6">
+                {/* Release Date */}
+                <div className="bg-surface border border-white/5 rounded-xl p-6 md:p-8">
+                  <h3 className="font-bold uppercase tracking-wider text-sm mb-6 flex items-center gap-2">
+                    <Clock size={16} /> Distribution Details
+                  </h3>
+
+                  <div className="flex flex-col lg:flex-row gap-8">
+                    <div className="flex-1 space-y-6">
+                      <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 p-4 rounded-xl flex gap-3 text-sm">
+                        <div className="mt-0.5 shrink-0"><AlertCircle size={16} /></div>
+                        <p>How long does distribution take? Deliveries usually take a few hours to process, but stores may take 24-48 hours to make it live.</p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">When do you want to distribute your release? <span className="text-red-500">*</span></p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition ${isAsap ? "bg-blue-600/10 border-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.15)]" : "bg-black/40 border-white/10 text-gray-400 hover:border-white/30"}`}>
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${isAsap ? "border-blue-500" : "border-gray-500"}`}>
+                              {isAsap && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                            </div>
+                            <span className="font-bold text-sm">As soon as possible</span>
+                            <input
+                              type="radio"
+                              name="releaseDateType"
+                              checked={isAsap}
+                              onChange={() => {
+                                setIsAsap(true);
+                                setReleaseDate(new Date().toISOString().split("T")[0]);
+                              }}
+                              className="hidden"
+                            />
+                          </label>
+
+                          <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition ${!isAsap ? "bg-blue-600/10 border-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.15)]" : "bg-black/40 border-white/10 text-gray-400 hover:border-white/30"}`}>
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${!isAsap ? "border-blue-500" : "border-gray-500"}`}>
+                              {!isAsap && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                            </div>
+                            <span className="font-bold text-sm">On a specific date</span>
+                            <input
+                              type="radio"
+                              name="releaseDateType"
+                              checked={!isAsap}
+                              onChange={() => setIsAsap(false)}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      {!isAsap && (
+                        <div className="animate-fade-in space-y-2">
+                          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">
+                            Date <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            value={releaseDate}
+                            onChange={(e) => setReleaseDate(e.target.value)}
+                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition text-gray-300 text-sm [color-scheme:dark]"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="w-full lg:w-1/3 bg-black/40 border border-white/5 p-6 rounded-xl text-xs text-gray-400 space-y-3">
+                      <h4 className="font-bold text-white uppercase tracking-wider text-sm mb-4">Release start date:</h4>
+                      <p className="leading-relaxed">
+                        We deliver your release to music services within a few minutes to a few hours. After delivery, most services take around 24 hours to make your release live.
+                      </p>
+                      <p className="leading-relaxed">
+                        For this reason, you can only select a release date that is at least 24 hours later than the current date.
+                      </p>
+                      <p className="leading-relaxed">
+                        Please note that this timeline assumes your release is approved on the same day it is sent for distribution. If approval takes longer, expect additional delays.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Territory */}
                 <div className="bg-surface border border-white/5 rounded-xl p-6">
                   <h3 className="font-bold uppercase tracking-wider text-sm mb-4 flex items-center gap-2">
@@ -1402,56 +1605,37 @@ const ReleaseForm: React.FC = () => {
               ) : (
                 <div className="space-y-6 animate-fade-in">
                   <div className="mb-4">
-                    {/* <button
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase rounded text-xs shadow flex items-center gap-2"
-                      onClick={() => {
-                      // Find other tracks in the same album (release)
-                      const otherTracks = releaseTracks.filter(
-                        (t) => t.id !== currentTrack.id
-                      );
-                      if (otherTracks.length === 0) {
-                        toast.info("No other tracks in this release to copy from.");
-                        return;
-                      }
-                      // Pick the first other track as source
-                      const source = otherTracks[0];
-                      if (!source) return;
-
-                      // Only copy fields that are blank in currentTrack
-                      const fieldsToCopy: (keyof Track)[] = [
-                        "isrc",
-                        "artists",
-                        "contributors",
-                        "hasLyrics",
-                        "lyricsLanguage",
-                        "lyricsText",
-                        "isExplicit",
-                      ];
-                      let updated: any = { ...currentTrack };
-                      let copied = false;
-                      fieldsToCopy.forEach((field) => {
-                        if (
-                        (updated[field] === undefined ||
-                          updated[field] === "" ||
-                          (Array.isArray(updated[field]) && updated[field].length === 0)) &&
-                        source[field] !== undefined &&
-                        source[field] !== "" &&
-                        (!Array.isArray(source[field]) || source[field].length > 0)
-                        ) {
-                        updated[field] = source[field];
-                        copied = true;
-                        }
-                      });
-                      if (copied) {
-                        setCurrentTrack(updated);
-                        toast.success("Copied metadata from another track.");
-                      } else {
-                        toast.info("No empty fields to copy.");
-                      }
-                      }}
-                    >
-                      <Download size={14} /> Copy Metadata from Album Track
-                    </button> */}
+                    {releaseTracks.filter(t => t.id !== currentTrack.id).length > 0 && (
+                      <div className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row items-center gap-4">
+                        <span className="text-xs font-bold uppercase text-gray-400 whitespace-nowrap"><Copy size={14} className="inline mr-1" /> Copy metadata from:</span>
+                        <select
+                          className="w-full sm:flex-1 bg-black border border-white/10 rounded px-3 py-2 text-xs outline-none focus:border-blue-500"
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const source = releaseTracks.find(t => t.id === parseInt(e.target.value));
+                            if (source) {
+                              setCurrentTrack(prev => ({
+                                ...prev,
+                                name: source.name,
+                                artists: JSON.parse(JSON.stringify(source.artists || [])),
+                                contributors: JSON.parse(JSON.stringify(source.contributors || [])),
+                                hasLyrics: source.hasLyrics,
+                                lyricsLanguage: source.lyricsLanguage,
+                                lyricsText: source.lyricsText,
+                                isExplicit: source.isExplicit,
+                              }));
+                              toast.success("Metadata copied!");
+                            }
+                            e.target.value = "";
+                          }}
+                        >
+                          <option value="">-- Select a track --</option>
+                          {releaseTracks.filter(t => t.id !== currentTrack.id).map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                   {trackTab === "GENERAL" && (
                     <div className="space-y-6">
@@ -1587,25 +1771,12 @@ const ReleaseForm: React.FC = () => {
                                 <option value="Featured">Featured</option>
                                 <option value="Remixer">Remixer</option>
                               </select>
-                              <div className="flex-1 relative">
-                                <input
-                                  list={`artist-suggestions-${i}`}
-                                  value={a.name}
-                                  onChange={(e) =>
-                                    updateArtist(i, "name", e.target.value)
-                                  }
-                                  className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none"
-                                  placeholder="Artist Name"
-                                />
-                                <datalist id={`artist-suggestions-${i}`}>
-                                  {availableArtists.map((artist) => (
-                                    <option
-                                      key={artist.id}
-                                      value={artist.name}
-                                    />
-                                  ))}
-                                </datalist>
-                              </div>
+                              <ArtistInput
+                                value={a.name}
+                                onChange={(val) => updateArtist(i, "name", val)}
+                                availableArtists={availableArtists}
+                                placeholder="Artist Name"
+                              />
                               <button
                                 onClick={() => {
                                   const copy = currentTrack.artists!.filter(
@@ -1623,6 +1794,14 @@ const ReleaseForm: React.FC = () => {
                             </div>
                           ))}
                         </div>
+                        {currentTrack.artists && currentTrack.artists.length >= 5 && (
+                          <div className="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-lg flex items-center gap-3 mt-4">
+                            <AlertTriangle size={16} className="text-yellow-500 shrink-0" />
+                            <span className="text-yellow-400 text-xs font-bold leading-relaxed">
+                              Tracks with 5 or more primary artists should use "Various Artists" as the Primary Artist.
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div
                         className={

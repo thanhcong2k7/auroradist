@@ -82,16 +82,25 @@ const AdminReleases: React.FC = () => {
             rawData.forEach((r: any) => {
                 const sortedTracks = r.tracks ? r.tracks.sort((a: any, b: any) => a.id - b.id) : [];
                 const isReleaseExplicit = sortedTracks.some((t: any) => t.is_explicit) ? 'Y' : 'N';
-                // Bước 1: Lấy danh sách tên tất cả Primary Artist từ tất cả các track
+                // Bước 1: Lấy danh sách tên tất cả Primary Artist từ tất cả các track (Dùng làm fallback)
                 const allTrackArtists = sortedTracks.flatMap((t: any) => 
                     t.artists?.filter((a: any) => a.role === 'Primary').map((a: any) => a.name) || []
                 );
                 const allTrackArtists_dis = sortedTracks.flatMap((t: any) => 
                     t.artists?.filter((a: any) => a.role != 'Primary').map((a: any) => a.name) || []
                 );
-                // Bước 2: Dùng Set để loại bỏ trùng lặp, sau đó join lại
-                const uniqueReleaseArtists = [...new Set(allTrackArtists)].join('|');
-                const uniqueReleaseArtists2 = [...new Set(allTrackArtists_dis)].join('|'); // display artist
+
+                // Bước 2: Dùng release-level artists nếu có, ngược lại fallback về gom từ track
+                const releaseArtistsList = Array.isArray(r.artists) ? r.artists : [];
+                const releasePrimaryArtists = releaseArtistsList.filter((a: any) => a.role === 'Primary').map((a: any) => a.name);
+                const releaseDisplayArtists = releaseArtistsList.filter((a: any) => a.role !== 'Primary').map((a: any) => a.name);
+
+                const uniqueReleaseArtists = releaseArtistsList.length > 0 
+                    ? releasePrimaryArtists.join('|') 
+                    : [...new Set(allTrackArtists)].join('|');
+                const uniqueReleaseArtists2 = releaseArtistsList.length > 0 
+                    ? releaseDisplayArtists.join('|') 
+                    : [...new Set(allTrackArtists_dis)].join('|'); // display artist
 
                 if (sortedTracks.length === 0) return;
 

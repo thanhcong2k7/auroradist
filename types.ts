@@ -13,6 +13,7 @@ export interface Release {
   title: string;
   version?: string;
   artist: string; 
+  artists?: any[];
   labelId?: number;
   status: 'DRAFT' | 'DELIVERED' | 'ERROR' | 'CHECKING' | 'ACCEPTED' | 'REJECTED' | 'TAKENDOWN';
   releaseDate: string;
@@ -110,6 +111,7 @@ export interface Track {
   isExplicit: boolean;
   hasExplicitVersion: boolean;
   tiktokClipStartTime?: string;
+  scanres?: any;
 }
 
 export interface Transaction {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Track, TrackArtist, TrackContributor, Artist } from '../types';
-import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2, ListPlus, FilePen, Check, Clock } from 'lucide-react';
+import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2, ListPlus, FilePen, Check, Clock, AlertTriangle } from 'lucide-react';
 import FileUploader from '../components/FileUploader';
 import { PERFORMER_ROLES } from '../constants';
 import { useMusicPlayer } from '../components/MusicPlayerContext';
@@ -22,6 +22,57 @@ const MAP_LANGUAGE: Record<string, string> = {
   'Russian': 'Russian - rus',
   'Instrumental': 'No linguistic content - zxx'
 };
+
+const ArtistInput: React.FC<{ value: string; onChange: (v: string) => void; availableArtists: Artist[]; placeholder?: string; id?: string }> = ({ value, onChange, availableArtists, placeholder, id }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [wrapperRef]);
+
+  const filtered = availableArtists.filter((a) => a.name.toLowerCase().includes((value || '').toLowerCase())).slice(0, 10);
+
+  return (
+    <div className="flex-1 relative" ref={wrapperRef}>
+      <input
+        id={id}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none"
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      {isOpen && filtered.length > 0 && (
+        <ul className="absolute z-50 w-full bg-[#111] border border-white/10 rounded mt-1 max-h-40 overflow-y-auto shadow-xl">
+          {filtered.map((artist) => (
+            <li
+              key={artist.id}
+              className="px-3 py-2 text-sm hover:bg-blue-600 cursor-pointer text-white"
+              onClick={() => {
+                onChange(artist.name);
+                setIsOpen(false);
+              }}
+            >
+              {artist.name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const Tracks: React.FC = () => {
   const [artistList, setArtistList] = useState<Artist[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -464,20 +515,12 @@ const Tracks: React.FC = () => {
                             <option value="Featured">Featured</option>
                             <option value="Remixer">Remixer</option>
                           </select>
-                          <div className="flex-1 relative">
-                            <input
-                              list={`track-artist-suggestions-${i}`}
-                              value={a.name}
-                              onChange={e => updateArtist(i, 'name', e.target.value)}
-                              className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm outline-none"
-                              placeholder="Artist Name"
-                            />
-                            <datalist id={`track-artist-suggestions-${i}`}>
-                              {availableArtists.map(artist => (
-                                <option key={artist.id} value={artist.name} />
-                              ))}
-                            </datalist>
-                          </div>
+                          <ArtistInput
+                            value={a.name}
+                            onChange={(val) => updateArtist(i, 'name', val)}
+                            availableArtists={availableArtists}
+                            placeholder="Artist Name"
+                          />
 
                           <button onClick={() => {
                             const copy = currentTrack.artists!.filter((_, idx) => idx !== i);
@@ -486,6 +529,14 @@ const Tracks: React.FC = () => {
                         </div>
                       ))}
                     </div>
+                    {currentTrack.artists && currentTrack.artists.length >= 5 && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-lg flex items-center gap-3 mt-4">
+                        <AlertTriangle size={16} className="text-yellow-500 shrink-0" />
+                        <span className="text-yellow-400 text-xs font-bold leading-relaxed">
+                          Tracks with 5 or more primary artists should use "Various Artists" as the Primary Artist.
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className={errors.contributors ? "p-4 border border-red-500/20 bg-red-500/5 rounded-xl" : ""}>

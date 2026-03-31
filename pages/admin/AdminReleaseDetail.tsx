@@ -22,8 +22,10 @@ import {
   Loader2,
   Save,
   CircleUser,
+  Play,
 } from "lucide-react";
 import DSPLogo from "@/components/DSPLogo";
+import { ACRScanner } from "@/services/utils";
 
 const AdminReleaseDetail: React.FC = () => {
   const { id } = useParams();
@@ -38,6 +40,37 @@ const AdminReleaseDetail: React.FC = () => {
   // Artist Preview
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [isArtistPreviewOpen, setIsArtistPreviewOpen] = useState(false);
+
+  // Audio Check
+  const [isAudioCheckOpen, setIsAudioCheckOpen] = useState(false);
+  const [scanningTrackIds, setScanningTrackIds] = useState<Record<number, boolean>>({});
+
+  const startAudioScan = async (track: any) => {
+    if (!track.audio_url) {
+      alert("No audio URL found for this track.");
+      return;
+    }
+    setScanningTrackIds(prev => ({ ...prev, [track.id]: true }));
+    try {
+      const response = await fetch(track.audio_url);
+      const blob = await response.blob();
+      const file = new File([blob], track.filename || 'audio.wav', { type: blob.type });
+      
+      const resultString = await ACRScanner(file);
+      const parsedResult = JSON.parse(resultString);
+
+      // Update in DB
+      await api.tracks.updateScanRes(track.id, parsedResult);
+      
+      // Update locally
+      setTracks(prev => prev.map(t => (t as any).id === track.id ? { ...t, scanres: parsedResult } : t));
+    } catch (error) {
+      console.error("Audio scan failed", error);
+      alert("Audio scan failed. See console for details.");
+    } finally {
+      setScanningTrackIds(prev => ({ ...prev, [track.id]: false }));
+    }
+  };
 
   // Form State cho Moderation
   const [upcInput, setUpcInput] = useState("");
@@ -461,12 +494,47 @@ const AdminReleaseDetail: React.FC = () => {
                   <CircleUser size={14} /> Album-level Artists
                 </span>
                 <span className="text-[10px] font-mono text-gray-300">
-                  {/* Artist count? */}
+                  {release.artists?.length || 0} Artists
                 </span>
               </div>
 
               <div className="divide-y divide-white/5">
-                {/* Show album-level artists */}
+                {release.artists && release.artists.length > 0 ? (
+                  release.artists.map((a: any, i: number) => (
+                    <div
+                      key={i}
+                      className="p-5 hover:bg-white/[0.02] transition flex justify-between items-center group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-gray-400 uppercase">
+                          {a.name?.charAt(0)}
+                        </div>
+                        <div>
+                          {a.id ? (
+                            <button
+                              onClick={() => handleArtistClick(a.id)}
+                              className="font-bold text-sm text-white hover:text-blue-400 hover:underline transition text-left"
+                              title="Click to view artist details"
+                            >
+                              {a.name}
+                            </button>
+                          ) : (
+                            <div className="font-bold text-sm text-white">
+                              {a.name}
+                            </div>
+                          )}
+                          <div className="text-[10px] font-mono text-gray-500 uppercase mt-0.5">
+                            {a.role || "Primary"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-5 text-sm text-gray-500 font-mono text-center">
+                    No album-level artists found.
+                  </div>
+                )}
               </div>
             </div>
             <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden">
@@ -474,9 +542,12 @@ const AdminReleaseDetail: React.FC = () => {
                 <span className="text-xs font-black uppercase tracking-widest text-blue-500 flex items-center gap-2">
                   <Music2 size={14} /> Assets & Metadata
                 </span>
-                <span className="text-[11px] font-mono text-gray-300">
+                <button
+                  onClick={() => setIsAudioCheckOpen(true)}
+                  className="text-[11px] font-mono text-gray-300 hover:text-white hover:underline transition-colors focus:outline-none"
+                >
                   {tracks.length} Tracks • Audio Check
-                </span>
+                </button>
               </div>
 
               <div className="divide-y divide-white/5">
@@ -687,6 +758,105 @@ const AdminReleaseDetail: React.FC = () => {
         onClose={() => setIsArtistPreviewOpen(false)}
         artist={selectedArtist}
       />
+
+      {isAudioCheckOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/[0.02]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                  <Music2 size={20} className="text-blue-500" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-tight">Audio Check</h2>
+                  <p className="text-sm text-gray-400 font-mono mt-1">ACR Cloud Scanner</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAudioCheckOpen(false)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {tracks.map((track: any, idx) => {
+                const isScanning = scanningTrackIds[track.id];
+                const hasScanRes = track.scanres && track.scanres.status;
+                const scanSuccess = hasScanRes && track.scanres.status.code === 0;
+
+                return (
+                  <div key={track.id} className="bg-black/40 border border-white/5 rounded-xl p-5 relative group transition-all hover:border-white/10">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center font-mono text-xs text-gray-400 font-bold">
+                          {String(idx + 1).padStart(2, "0")}
+                        </div>
+                        <div>
+                          <div className="font-bold text-white flex items-center gap-2">
+                            {track.name}
+                            {track.is_explicit && (
+                              <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-500 text-[10px] font-black tracking-wider">E</span>
+                            )}
+                          </div>
+                          <div className="text-xs font-mono text-gray-500 mt-1 flex items-center gap-3">
+                            <span className="flex items-center gap-1"><Clock size={12} /> {track.duration}</span>
+                            <span className="flex items-center gap-1"><Hash size={12} /> {track.isrc}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => startAudioScan(track)}
+                        disabled={isScanning || !track.audio_url}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+                          isScanning
+                            ? "bg-white/10 text-white/50 cursor-not-allowed"
+                            : "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]"
+                        }`}
+                      >
+                        {isScanning ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" />
+                            Scanning...
+                          </>
+                        ) : (
+                          <>
+                            <Play size={14} />
+                            Trigger Scan
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Result Area */}
+                    {hasScanRes ? (
+                      <div className={`mt-4 rounded-lg border p-4 ${scanSuccess ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+                        <div className="flex items-center gap-2 mb-3">
+                          {scanSuccess ? <CheckCircle size={16} className="text-green-500" /> : <AlertOctagon size={16} className="text-red-500" />}
+                          <span className={`text-sm font-bold ${scanSuccess ? 'text-green-400' : 'text-red-400'}`}>
+                            {scanSuccess ? 'Match Found' : 'No Match Found'}
+                          </span>
+                        </div>
+                        <div className="bg-black/50 rounded p-3 font-mono text-[11px] text-gray-300 overflow-x-auto">
+                          <pre>{JSON.stringify(track.scanres, null, 2)}</pre>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-lg border border-dashed border-white/10 p-6 flex flex-col items-center justify-center text-center bg-white/[0.02]">
+                        <Mic2 size={24} className="text-gray-500 mb-2" />
+                        <p className="text-sm font-mono text-gray-400">No previous scan results</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

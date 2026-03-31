@@ -15,6 +15,8 @@ import {
   MessageSquare,
   BadgeInfo,
   ShieldUser,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { UserProfile } from "@/types";
 import { api } from "@/services/api";
@@ -29,6 +31,10 @@ interface LayoutProps {
 const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem("sidebarCollapsed");
+    return saved === "true";
+  });
   const location = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -47,6 +53,12 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
   const loadData = async () => {
     const [prof] = await Promise.all([api.auth.getProfile()]);
     setProfile(prof);
+  };
+
+  const toggleSidebar = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem("sidebarCollapsed", String(newState));
   };
 
   const navItems = [
@@ -72,65 +84,83 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-surface border-r border-white/10 transform transition-transform duration-300 lg:transform-none flex flex-col ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed lg:static inset-y-0 left-0 z-50 ${isCollapsed ? "w-20" : "w-64"} bg-surface border-r border-white/10 transform transition-all duration-300 lg:transform-none flex flex-col ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            {APP_LOGO_URL ? (
-              <img
-                src={APP_LOGO_URL}
-                alt={APP_NAME}
-                className="h-8 w-auto object-contain"
-              />
-            ) : (
-              <div className="text-xl font-black tracking-tighter uppercase text-white">
-                {APP_NAME}
-                <span className="text-blue-500">.</span>
-              </div>
-            )}
-            <div className="text-xl font-black tracking-tighter uppercase text-white">
-              {APP_NAME}
-              <span className="text-blue-500">.</span>
+        <div className={`p-6 border-b border-white/10 flex items-center justify-between`}>
+          {!isCollapsed && (
+            <div className="flex items-center gap-2 overflow-hidden">
+              {APP_LOGO_URL ? (
+                <img
+                  src={APP_LOGO_URL}
+                  alt={APP_NAME}
+                  className="h-8 w-auto object-contain"
+                />
+              ) : (
+                <div className="text-xl font-black tracking-tighter uppercase text-white truncate">
+                  {APP_NAME}
+                  <span className="text-blue-500">.</span>
+                </div>
+              )}
+              {APP_LOGO_URL && (
+                <div className="text-xl font-black tracking-tighter uppercase text-white truncate">
+                  {APP_NAME}
+                  <span className="text-blue-500">.</span>
+                </div>
+              )}
             </div>
+          )}
+          <div className={`flex items-center gap-2 ${isCollapsed ? "w-full justify-center" : ""}`}>
+            <button
+              onClick={toggleSidebar}
+              className="hidden lg:flex text-gray-400 hover:text-white transition"
+              title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+            </button>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden text-gray-400 hover:text-white"
+            >
+              <X size={20} />
+            </button>
           </div>
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-white"
-          >
-            <X size={20} />
-          </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-          <div className="px-2 mb-2 text-xs font-mono text-blue-500 uppercase tracking-widest">
-            Modules
-          </div>
+        <nav className={`flex-1 overflow-y-auto py-6 space-y-1 ${isCollapsed ? "px-2" : "px-4"}`}>
+          {!isCollapsed && (
+            <div className="px-2 mb-2 text-xs font-mono text-blue-500 uppercase tracking-widest">
+              Modules
+            </div>
+          )}
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
+                title={isCollapsed ? item.label : undefined}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                className={`flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isCollapsed ? "justify-center px-0" : "px-4"} ${
                   isActive
                     ? "bg-blue-600/10 text-blue-400 border border-blue-600/20"
                     : "text-gray-400 hover:bg-white/5 hover:text-white border border-transparent"
                 }`}
               >
                 <item.icon
-                  size={18}
+                  size={isCollapsed ? 22 : 18}
                   className={
                     isActive
                       ? "text-blue-400"
                       : "text-gray-500 group-hover:text-white"
                   }
                 />
-                <span className="uppercase text-xs tracking-wide font-bold">
-                  {item.label}
-                </span>
-                {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                {!isCollapsed && (
+                  <span className="uppercase text-xs tracking-wide font-bold whitespace-nowrap">
+                    {item.label}
+                  </span>
+                )}
+                {isActive && !isCollapsed && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)] shrink-0" />
                 )}
               </Link>
             );
@@ -140,16 +170,19 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
               <Link
                 key="/admin"
                 to="/admin"
+                title={isCollapsed ? "Go to /Admin!" : undefined}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group text-gray-400 hover:bg-white/5 hover:text-white border border-transparent`}
+                className={`flex items-center gap-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group text-gray-400 hover:bg-white/5 hover:text-white border border-transparent ${isCollapsed ? "justify-center px-0 mt-4" : "px-4 mt-2"}`}
               >
                 <ShieldUser
-                  size={18}
+                  size={isCollapsed ? 22 : 18}
                   className="text-red-500 group-hover:text-red-700"
                 />
-                <span className="uppercase text-xs tracking-wide font-bold">
-                  Go to /Admin!
-                </span>
+                {!isCollapsed && (
+                  <span className="uppercase text-xs tracking-wide font-bold whitespace-nowrap">
+                    Go to /Admin!
+                  </span>
+                )}
               </Link>
             </div>
           ) : (
@@ -158,9 +191,9 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
         </nav>
 
         {profile && (
-          <div className="p-4 border-t border-white/10 bg-black/20">
-            <div className="flex items-center gap-3 px-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-xs">
+          <div className={`border-t border-white/10 bg-black/20 ${isCollapsed ? "p-3 flex justify-center" : "p-4"}`}>
+            <div className={`flex items-center gap-3 ${isCollapsed ? "justify-center" : "px-2"}`}>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center font-bold text-xs shrink-0 cursor-pointer" title={isCollapsed ? profile.name : undefined} onClick={isCollapsed ? onLogout : undefined}>
                 <div className="w-full h-full rounded-full bg-black flex items-center justify-center overflow-hidden">
                   {profile.avatar ? (
                     <img
@@ -175,18 +208,23 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
                   )}
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate">{profile.name}</p>
-                <p className="text-xs text-gray-500 truncate font-mono">
-                  Role: {profile.role}
-                </p>
-              </div>
-              <button
-                onClick={onLogout}
-                className="text-gray-500 hover:text-red-400 transition"
-              >
-                <LogOut size={16} />
-              </button>
+              {!isCollapsed && (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate">{profile.name}</p>
+                    <p className="text-xs text-gray-500 truncate font-mono">
+                      Role: {profile.role}
+                    </p>
+                  </div>
+                  <button
+                    onClick={onLogout}
+                    className="text-gray-500 hover:text-red-400 transition"
+                    title="Logout"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

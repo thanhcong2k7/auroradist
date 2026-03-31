@@ -342,6 +342,7 @@ export const api = {
         language: r.language,
         format: r.format,
         territories: r.territories,
+        artists: r.artists,
         rejectionReason: r.rejection_reason
       })) as Release[];
     },
@@ -390,6 +391,7 @@ export const api = {
         language: release.language,
         format: release.format,
         territories: release.territories,
+        artists: release.artists || [],
         uid: userId
       };
 
@@ -613,6 +615,7 @@ export const api = {
         isExplicit: t.is_explicit,
         hasExplicitVersion: t.has_explicit_version,
         tiktokClipStartTime: t.tiktok_clip_start_time,
+        scanres: t.scanres,
         artists: t.artists || [],
         contributors: t.contributors || []
       })) as Track[];
@@ -642,6 +645,7 @@ export const api = {
         isExplicit: t.is_explicit,
         hasExplicitVersion: t.has_explicit_version,
         tiktokClipStartTime: t.tiktok_clip_start_time,
+        scanres: t.scanres,
         artists: t.artists || [],
         contributors: t.contributors || []
       })) as Track[];
@@ -666,6 +670,7 @@ export const api = {
         is_explicit: track.isExplicit,
         has_explicit_version: track.hasExplicitVersion,
         tiktok_clip_start_time: track.tiktokClipStartTime,
+        scanres: track.scanres,
         artists: track.artists,
         contributors: track.contributors,
 
@@ -687,6 +692,16 @@ export const api = {
         artists: data.artists,
         contributors: data.contributors
       } as unknown as Track;
+    },
+    updateScanRes: async (id: number, scanres: any) => {
+      const { data, error } = await supabase
+        .from('tracks')
+        .update({ scanres })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
     },
     delete: async (id: number) => {
       const userId = await getUserId();
@@ -937,6 +952,13 @@ export const api = {
 
       // [UPDATE] Fetch artist IDs for clickable popup
       const artistNames = new Set<string>();
+      
+      if (Array.isArray(data.artists)) {
+        data.artists.forEach((a: any) => {
+          if (a.name) artistNames.add(a.name);
+        });
+      }
+
       data.tracks.forEach((t: any) => {
         if (Array.isArray(t.artists)) {
           t.artists.forEach((a: any) => {
@@ -965,6 +987,10 @@ export const api = {
         labelId: data.label_id,
         selectedDsps: data.selected_dsps || [],
         labelName: data.labels ? data.labels.name : 'Independent',
+        artists: Array.isArray(data.artists) ? data.artists.map((a: any) => ({
+          ...a,
+          id: artistMap.get(a.name) || a.id
+        })) : [],
         // Map mảng tracks bên trong
         tracks: data.tracks.map((t: any) => ({
           ...t,
