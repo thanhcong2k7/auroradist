@@ -102,58 +102,172 @@ export class APIError extends Error {
     this.statusCode = statusCode;
   }
 }
-export const ACRScanner = (file: File): Promise<string> => {
-  return new Promise((resolve) => {
-    const objectUrl = URL.createObjectURL(file);
-    const audio = new Audio(objectUrl);
+// Giữ nguyên hàm xử lý Audio Buffer
+function audioBufferToWav(buffer: AudioBuffer): Blob {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const buffer_ = new ArrayBuffer(length);
+  const view = new DataView(buffer_);
+  const channels = [];
+  let i;
+  let sample;
+  let offset = 0;
+  let pos = 0;
 
-    audio.onloadedmetadata = async () => {
-      try {
-        const arrayBuffer = await fetch(objectUrl).then(r => r.arrayBuffer());
-        const timestamp = Math.floor(Date.now() / 1000).toString();
-        const method = 'POST';
-        const httpUrlPath = '/v1/identify';
-        const sigVersion = '1';
-        const accessKey = process.env.REACT_APP_ACR_ACCESS_KEY || '';
-        const accessSecret = process.env.REACT_APP_ACR_ACCESS_SECRET || '';
-        const host = process.env.REACT_APP_ACR_HOST || '';
+  // write WAVE header
+  setUint32(0x46464952); // "RIFF"
+  setUint32(length - 8); // file length - 8
+  setUint32(0x45564157); // "WAVE"
 
-        const sigStr = `${method}\n${httpUrlPath}\n${accessKey}\naudio\n${sigVersion}\n${timestamp}`;
-        const signature = await generateSignature(sigStr, accessSecret);
+  setUint32(0x20746d66); // "fmt " chunk
+  setUint32(16); // length = 16
+  setUint16(1); // PCM (uncompressed)
+  setUint16(numOfChan);
+  setUint32(buffer.sampleRate);
+  setUint32(buffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
+  setUint16(numOfChan * 2); // block-align
+  setUint16(16); // 16-bit
+  setUint32(0x61746164); // "data" - chunk
+  setUint32(length - pos - 4); // chunk length
 
-        const formData = new FormData();
-        formData.append('access_key', accessKey);
-        formData.append('sample_bytes', arrayBuffer.byteLength.toString());
-        formData.append('sample', new Blob([arrayBuffer]));
-        formData.append('timestamp', timestamp);
-        formData.append('signature', signature);
-        formData.append('data_type', 'audio');
-        formData.append('signature_version', sigVersion);
+  // write interleaved data
+  for (i = 0; i < buffer.numberOfChannels; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
 
-        const response = await fetch(`http://${host}/v1/identify`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        const result = await response.text();
-        URL.revokeObjectURL(objectUrl);
-        resolve(result);
-      } catch (error) {
-        URL.revokeObjectURL(objectUrl);
-        resolve(JSON.stringify({ status: { msg: 'Failed', code: 0 } }));
-      }
-    };
-
-    async function generateSignature(data: string, key: string): Promise<string> {
-      const encoder = new TextEncoder();
-      const keyBuffer = encoder.encode(key);
-      const dataBuffer = encoder.encode(data);
-      const cryptoKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
-      const signature = await crypto.subtle.sign('HMAC', cryptoKey, dataBuffer);
-      return btoa(String.fromCharCode(...new Uint8Array(signature)));
+  while (pos < length) {
+    for (i = 0; i < numOfChan; i++) {
+      // interleave channels
+      sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+      sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0; // scale to 16-bit signed int
+      view.setInt16(pos, sample, true); // write 16-bit sample
+      pos += 2;
     }
-  });
+    offset++; // next source sample
+  }
+
+  return new Blob([view], { type: "audio/wav" });
+
+  function setUint16(data: number) {
+    view.setUint16(pos, data, true);
+    pos += 2;
+  }
+
+  function setUint32(data: number) {
+    view.setUint32(pos, data, true);
+    pos += 4;
+  }
 }
+
+// Đã sửa đổi để gửi lên Backend PHP thay vì ACRCloud
+async function scanSingleFile(file: File | Blob): Promise<string> {
+  const formData = new FormData();
+  formData.append('audio', file, "chunk.wav");
+
+  // Trong Vite, dùng import.meta.env thay vì process.env
+  // Trỏ tới đường dẫn file PHP của bạn (ví dụ: http://localhost/api/acr-proxy.php)
+  const proxyUrl = import.meta.env.VITE_ACR_PROXY_URL || '/api/acr-proxy.php';
+
+  const response = await fetch(proxyUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Proxy error! status: ${response.status}`);
+  }
+
+  return await response.text();
+}
+
+export const ACRScanner = async (file: File): Promise<string> => {
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    const totalDuration = audioBuffer.duration;
+    const minChunkDuration = 20;
+    const maxChunkDuration = 90;
+    
+    const chunks: { start: number; duration: number }[] = [];
+    let currentTime = 0;
+
+    // Chunking logic
+    while (currentTime < totalDuration) {
+      const remainingDuration = totalDuration - currentTime;
+      if (remainingDuration <= minChunkDuration) {
+        if (chunks.length > 0) {
+            chunks[chunks.length - 1].duration += remainingDuration
+        } else {
+            chunks.push({ start: currentTime, duration: remainingDuration });
+        }
+        currentTime = totalDuration;
+      } else if (remainingDuration > maxChunkDuration) {
+        if (remainingDuration - maxChunkDuration < minChunkDuration) {
+          const splitDuration = remainingDuration / 2;
+          chunks.push({ start: currentTime, duration: splitDuration });
+          chunks.push({ start: currentTime + splitDuration, duration: splitDuration });
+          currentTime = totalDuration;
+        } else {
+          chunks.push({ start: currentTime, duration: maxChunkDuration });
+          currentTime += maxChunkDuration;
+        }
+      } else {
+        chunks.push({ start: currentTime, duration: remainingDuration });
+        currentTime = totalDuration; 
+      }
+    }
+
+    const scanPromises = chunks.map(async (chunkInfo) => {
+        const frameOffset = Math.floor(chunkInfo.start * audioBuffer.sampleRate);
+        const frameCount = Math.floor(chunkInfo.duration * audioBuffer.sampleRate);
+
+        const realFrameCount = Math.min(frameCount, audioBuffer.length - frameOffset);
+        if (realFrameCount <= 0) return null;
+
+        const chunkAudioBuffer = audioContext.createBuffer(
+            audioBuffer.numberOfChannels,
+            realFrameCount,
+            audioBuffer.sampleRate
+        );
+
+        for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+            const channelData = audioBuffer.getChannelData(i);
+            const chunkChannelData = chunkAudioBuffer.getChannelData(i);
+            chunkChannelData.set(channelData.subarray(frameOffset, frameOffset + realFrameCount));
+        }
+
+        const wavBlob = audioBufferToWav(chunkAudioBuffer);
+        
+        return scanSingleFile(wavBlob);
+    }).filter(p => p !== null) as Promise<string>[];
+
+    const settledResults = await Promise.allSettled(scanPromises);
+    const results = settledResults.map(res => {
+        if (res.status === 'fulfilled') {
+            try {
+                return JSON.parse(res.value);
+            } catch (e) {
+                return { status: { msg: 'Failed to parse result JSON', code: -2 } };
+            }
+        } else {
+            return { status: { msg: 'Scan request failed', code: -1, reason: res.reason?.toString() } };
+        }
+    });
+    
+    return JSON.stringify(results);
+
+  } catch (error: any) {
+      console.error("Error in ACRScanner:", error);
+      return JSON.stringify([{ status: { msg: 'Failed to process audio file', code: -1, error: error.toString() } }]);
+  } finally {
+      if (audioContext.state !== 'closed') {
+        await audioContext.close();
+      }
+  }
+};
 
 
 // using System;

@@ -23,6 +23,7 @@ import {
   Save,
   CircleUser,
   Play,
+  X,
 } from "lucide-react";
 import DSPLogo from "@/components/DSPLogo";
 import { ACRScanner } from "@/services/utils";
@@ -43,32 +44,40 @@ const AdminReleaseDetail: React.FC = () => {
 
   // Audio Check
   const [isAudioCheckOpen, setIsAudioCheckOpen] = useState(false);
-  const [scanningTrackIds, setScanningTrackIds] = useState<Record<number, boolean>>({});
+  const [scanningTrackIds, setScanningTrackIds] = useState<
+    Record<number, boolean>
+  >({});
 
   const startAudioScan = async (track: any) => {
     if (!track.audio_url) {
       alert("No audio URL found for this track.");
       return;
     }
-    setScanningTrackIds(prev => ({ ...prev, [track.id]: true }));
+    setScanningTrackIds((prev) => ({ ...prev, [track.id]: true }));
     try {
       const response = await fetch(track.audio_url);
       const blob = await response.blob();
-      const file = new File([blob], track.filename || 'audio.wav', { type: blob.type });
-      
+      const file = new File([blob], track.filename || "audio.wav", {
+        type: blob.type,
+      });
+
       const resultString = await ACRScanner(file);
       const parsedResult = JSON.parse(resultString);
 
       // Update in DB
       await api.tracks.updateScanRes(track.id, parsedResult);
-      
+
       // Update locally
-      setTracks(prev => prev.map(t => (t as any).id === track.id ? { ...t, scanres: parsedResult } : t));
+      setTracks((prev) =>
+        prev.map((t) =>
+          (t as any).id === track.id ? { ...t, scanres: parsedResult } : t,
+        ),
+      );
     } catch (error) {
       console.error("Audio scan failed", error);
       alert("Audio scan failed. See console for details.");
     } finally {
-      setScanningTrackIds(prev => ({ ...prev, [track.id]: false }));
+      setScanningTrackIds((prev) => ({ ...prev, [track.id]: false }));
     }
   };
 
@@ -542,12 +551,18 @@ const AdminReleaseDetail: React.FC = () => {
                 <span className="text-xs font-black uppercase tracking-widest text-blue-500 flex items-center gap-2">
                   <Music2 size={14} /> Assets & Metadata
                 </span>
-                <button
-                  onClick={() => setIsAudioCheckOpen(true)}
-                  className="text-[11px] font-mono text-gray-300 hover:text-white hover:underline transition-colors focus:outline-none"
-                >
-                  {tracks.length} Tracks • Audio Check
-                </button>
+                <div className="flex items-center gap-4">
+                  <span className="text-[11px] font-mono text-gray-300">
+                    {tracks.length} Tracks
+                  </span>
+                  <button
+                    onClick={() => setIsAudioCheckOpen(true)}
+                    className="text-[11px] font-mono text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1 rounded-full transition-colors focus:outline-none flex items-center gap-1.5"
+                  >
+                    <Mic2 size={12} />
+                    Audio Check
+                  </button>
+                </div>
               </div>
 
               <div className="divide-y divide-white/5">
@@ -763,33 +778,39 @@ const AdminReleaseDetail: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
             {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/[0.02]">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-400 text-xs font-black uppercase tracking-widest">
                   <Music2 size={20} className="text-blue-500" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">Audio Check</h2>
-                  <p className="text-sm text-gray-400 font-mono mt-1">ACR Cloud Scanner</p>
+                  Audio Check
                 </div>
               </div>
               <button
                 onClick={() => setIsAudioCheckOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
+                className="p-2 hover:bg-white/10 rounded-full transition"
               >
-                <XCircle size={24} />
+                <X size={20} />
               </button>
             </div>
-
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {tracks.map((track: any, idx) => {
                 const isScanning = scanningTrackIds[track.id];
-                const hasScanRes = track.scanres && track.scanres.status;
-                const scanSuccess = hasScanRes && track.scanres.status.code === 0;
+                const hasScanRes =
+                  track.scanres &&
+                  Array.isArray(track.scanres) &&
+                  track.scanres.length > 0;
+                const scanSuccess =
+                  hasScanRes &&
+                  track.scanres.some(
+                    (r: any) => r.status && r.status.code === 0,
+                  );
 
                 return (
-                  <div key={track.id} className="bg-black/40 border border-white/5 rounded-xl p-5 relative group transition-all hover:border-white/10">
+                  <div
+                    key={track.id}
+                    className="bg-black/40 border border-white/5 rounded-xl p-5 relative group transition-all hover:border-white/10"
+                  >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-4">
                         <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center font-mono text-xs text-gray-400 font-bold">
@@ -799,12 +820,18 @@ const AdminReleaseDetail: React.FC = () => {
                           <div className="font-bold text-white flex items-center gap-2">
                             {track.name}
                             {track.is_explicit && (
-                              <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-500 text-[10px] font-black tracking-wider">E</span>
+                              <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-500 text-[10px] font-black tracking-wider">
+                                E
+                              </span>
                             )}
                           </div>
                           <div className="text-xs font-mono text-gray-500 mt-1 flex items-center gap-3">
-                            <span className="flex items-center gap-1"><Clock size={12} /> {track.duration}</span>
-                            <span className="flex items-center gap-1"><Hash size={12} /> {track.isrc}</span>
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} /> {track.duration}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Hash size={12} /> {track.isrc}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -833,11 +860,19 @@ const AdminReleaseDetail: React.FC = () => {
 
                     {/* Result Area */}
                     {hasScanRes ? (
-                      <div className={`mt-4 rounded-lg border p-4 ${scanSuccess ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+                      <div
+                        className={`mt-4 rounded-lg border p-4 ${scanSuccess ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20"}`}
+                      >
                         <div className="flex items-center gap-2 mb-3">
-                          {scanSuccess ? <CheckCircle size={16} className="text-green-500" /> : <AlertOctagon size={16} className="text-red-500" />}
-                          <span className={`text-sm font-bold ${scanSuccess ? 'text-green-400' : 'text-red-400'}`}>
-                            {scanSuccess ? 'Match Found' : 'No Match Found'}
+                          {scanSuccess ? (
+                            <CheckCircle size={16} className="text-green-500" />
+                          ) : (
+                            <AlertOctagon size={16} className="text-red-500" />
+                          )}
+                          <span
+                            className={`text-sm font-bold ${scanSuccess ? "text-green-400" : "text-red-400"}`}
+                          >
+                            {scanSuccess ? "Match Found" : "No Match Found"}
                           </span>
                         </div>
                         <div className="bg-black/50 rounded p-3 font-mono text-[11px] text-gray-300 overflow-x-auto">
@@ -847,7 +882,9 @@ const AdminReleaseDetail: React.FC = () => {
                     ) : (
                       <div className="mt-4 rounded-lg border border-dashed border-white/10 p-6 flex flex-col items-center justify-center text-center bg-white/[0.02]">
                         <Mic2 size={24} className="text-gray-500 mb-2" />
-                        <p className="text-sm font-mono text-gray-400">No previous scan results</p>
+                        <p className="text-sm font-mono text-gray-400">
+                          No previous scan results
+                        </p>
                       </div>
                     )}
                   </div>
