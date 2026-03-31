@@ -460,8 +460,8 @@ const AdminReleaseDetail: React.FC = () => {
                 <span className="text-xs font-black uppercase tracking-widest text-yellow-500 flex items-center gap-2">
                   <CircleUser size={14} /> Album-level Artists
                 </span>
-                <span className="text-[10px] font-mono text-gray-500">
-                  {tracks.length} Artists
+                <span className="text-[10px] font-mono text-gray-300">
+                  {/* Artist count? */}
                 </span>
               </div>
 
