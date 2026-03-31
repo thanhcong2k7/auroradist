@@ -2,8 +2,6 @@
 
 A modern music distribution management platform built with React and TypeScript. Aurora provides artists and labels with a comprehensive dashboard to manage releases, track analytics, handle royalties, and engage with digital streaming platforms.
 
-**Live Demo**: [auroradist.vercel.app](https://auroradist.vercel.app)
-
 ## Overview
 
 Aurora Music Distribution (AuroraX) is a full-featured client dashboard designed for music distributors, artists, and labels. It offers intuitive tools for managing music releases, monitoring performance metrics, managing artist relationships, and tracking financial data.
