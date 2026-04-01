@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, supabase } from '@/services/api';
 import { Release } from '@/types';
-import { Eye, Filter, Loader2, Search, Calendar, User, Download, CheckSquare, Square } from 'lucide-react';
+import { Eye, Filter, Loader2, Search, Calendar, User, Download, CheckSquare, Square, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const AdminReleases: React.FC = () => {
@@ -12,10 +12,17 @@ const AdminReleases: React.FC = () => {
     const [search, setSearch] = useState('');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [isExporting, setIsExporting] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number | 'ALL'>(16);
 
     useEffect(() => {
         loadData();
     }, [statusFilter]);
+
+    // Reset pagination to first page when search or filter changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, statusFilter]);
 
     const loadData = async () => {
         setLoading(true);
@@ -37,11 +44,18 @@ const AdminReleases: React.FC = () => {
         r.upc?.includes(search) ||
         r.profiles?.email?.toLowerCase().includes(search.toLowerCase())
     );
+
+    const paginatedReleases = itemsPerPage === 'ALL'
+        ? filtered
+        : filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const totalPages = itemsPerPage === 'ALL' ? 1 : Math.ceil(filtered.length / itemsPerPage);
+
     const handleSelectAll = () => {
-        if (selectedIds.length === filtered.length) {
+        if (selectedIds.length === paginatedReleases.length) {
             setSelectedIds([]); // Deselect all
         } else {
-            setSelectedIds(filtered.map(r => r.id)); // Select all VISIBLE items
+            setSelectedIds(paginatedReleases.map(r => r.id)); // Select all VISIBLE items
         }
     };
 
@@ -281,13 +295,13 @@ const AdminReleases: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden">
-                <table className="w-full text-left text-xs">
+            <div className="bg-[#111] border border-white/5 rounded-xl overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[800px]">
                     <thead className="bg-black/50 text-gray-500 font-mono uppercase">
                         <tr>
                             <th className="px-6 py-4 w-10">
                                 <button onClick={handleSelectAll} className="text-gray-400 hover:text-white">
-                                    {selectedIds.length > 0 && selectedIds.length === filtered.length ? <CheckSquare size={16} /> : <Square size={16} />}
+                                    {selectedIds.length > 0 && selectedIds.length === paginatedReleases.length ? <CheckSquare size={16} /> : <Square size={16} />}
                                 </button>
                             </th>
                             <th className="px-6 py-4">Release</th>
@@ -299,8 +313,8 @@ const AdminReleases: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-white/5 text-gray-300">
                         {loading ? (
-                            <tr><td colSpan={5} className="p-8 text-center"><Loader2 className="animate-spin mx-auto text-red-500" /></td></tr>
-                        ) : filtered.map(release => (
+                            <tr><td colSpan={6} className="p-8 text-center"><Loader2 className="animate-spin mx-auto text-red-500" /></td></tr>
+                        ) : paginatedReleases.map(release => (
                             <tr key={release.id} className="hover:bg-white/5 transition group">
                                 <td className="px-6 py-4">
                                     <button onClick={() => handleSelectRow(release.id)} className={`transition ${selectedIds.includes(release.id) ? 'text-blue-500' : 'text-gray-600 group-hover:text-gray-400'}`}>
@@ -341,6 +355,79 @@ const AdminReleases: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination Controls */}
+            {!loading && filtered.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#111] p-4 rounded-xl border border-white/5">
+                    <div className="flex items-center gap-4">
+                        <span className="text-gray-500 text-xs font-mono uppercase">Items per page:</span>
+                        <div className="flex gap-2">
+                            {[8, 16, 32, 'ALL'].map(limit => (
+                                <button
+                                    key={limit}
+                                    onClick={() => {
+                                        setItemsPerPage(limit as number | 'ALL');
+                                        setCurrentPage(1);
+                                    }}
+                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors border ${itemsPerPage === limit
+                                        ? 'bg-red-500 text-white border-red-500'
+                                        : 'bg-black text-gray-500 border-white/10 hover:border-white/30 hover:text-white'
+                                        }`}
+                                >
+                                    {limit}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {itemsPerPage !== 'ALL' && totalPages > 1 && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            
+                            <div className="flex gap-1">
+                                {Array.from({ length: totalPages }).map((_, i) => {
+                                    const page = i + 1;
+                                    // simple logic to show limited pages
+                                    if (totalPages > 7) {
+                                        if (page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                                            if (page === 2 || page === totalPages - 1) return <span key={page} className="text-gray-600 self-end">...</span>;
+                                            return null;
+                                        }
+                                    }
+                                    
+                                    return (
+                                        <button
+                                            key={page}
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all border ${
+                                                currentPage === page
+                                                    ? 'bg-white text-black border-white'
+                                                    : 'bg-black text-gray-500 border-white/10 hover:border-white/30 hover:text-white'
+                                            }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

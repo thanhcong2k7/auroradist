@@ -270,8 +270,8 @@ const Discography: React.FC = () => {
                 <div className="bg-surface border border-white/10 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                     <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
                         <div>
-                            <h3 className="font-bold uppercase text-lg">Batch Importer Queue</h3>
-                            <p className="text-xs text-gray-400 font-mono mt-1">Paste links to auto-fetch metadata and upscale artwork to 3000px</p>
+                            <h3 className="font-bold uppercase text-lg">Release Importer</h3>
+                            <p className="text-xs text-gray-400 font-mono mt-1">Paste links to fetch metadata and import directly</p>
                         </div>
                         <button onClick={() => setShowImporter(false)} className="text-gray-500 hover:text-white transition" disabled={isProcessingQueue}>
                             <X size={20} />
