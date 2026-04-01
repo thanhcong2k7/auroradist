@@ -262,7 +262,7 @@ const Discography: React.FC = () => {
             className="px-6 py-2 bg-transparent border border-white/20 text-white font-bold uppercase hover:bg-white/10 transition flex items-center gap-2 text-sm"
           >
             <LibraryBigIcon size={16} />
-            Import Queue
+            Import Release
           </button>
           
           {showImporter && (
