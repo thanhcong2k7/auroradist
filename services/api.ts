@@ -309,6 +309,144 @@ export const api = {
     }
   },
   catalog: {
+    importFromSpotify: async (spotifyId: string) => {
+      // 1. Fetch metadata from your proxy endpoint
+      const res = await fetch(`https://auroramusicvietnam.net/api/spotify-md/?id=${spotifyId}`);
+      if (!res.ok) throw new Error("Failed to fetch data from Spotify.");
+      const data = await res.json();
+      
+      if (data.error) throw new Error(data.error.message || "Spotify API Error");
+
+      // 2. Create a blank draft in the database
+      const draft = await api.catalog.createDraft();
+
+      // 3. Prepare and save the Release metadata
+      const releaseYear = data.release_date ? data.release_date.substring(0, 4) : '';
+      const releasePayload = {
+        id: draft.id,
+        title: data.name,
+        releaseDate: data.release_date,
+        originalReleaseDate: data.release_date,
+        upc: data.external_ids?.upc || null,
+        coverArt: data.images?.[0]?.url || null,
+        status: 'DRAFT', // Keep as draft so the user can review before submitting
+        copyrightYear: releaseYear,
+        copyrightLine: data.copyrights?.[0]?.text || '',
+        phonogramYear: releaseYear,
+        phonogramLine: data.copyrights?.[0]?.text || '',
+        artists: data.artists?.map((a: any) => ({ name: a.name })) || [],
+        selectedDsps: [],
+      };
+
+      await api.catalog.save(releasePayload);
+
+      // 4. Loop through and save all Tracks
+      if (data.tracks && data.tracks.items) {
+        for (const track of data.tracks.items) {
+          await api.tracks.save({
+            releaseId: draft.id,
+            name: track.name,
+            duration: track.duration_ms ? Math.floor(track.duration_ms / 1000) : 0, // Convert ms to seconds
+            status: 'DRAFT',
+            isExplicit: track.explicit,
+            artists: track.artists?.map((a: any) => ({ name: a.name })) || [],
+          });
+        }
+      }
+
+      return draft.id; // Return the new ID so we can redirect the user
+    },
+    upscaleAndUploadImage: async (imageUrl: string, fileName: string): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous"; // Required for Canvas export
+        // Route through a free CORS proxy so Canvas doesn't get tainted by Spotify's CDN
+        img.src = `${imageUrl}`;
+        
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const TARGET_SIZE = 3000;
+          canvas.width = TARGET_SIZE;
+          canvas.height = TARGET_SIZE;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return reject("Failed to get canvas context");
+          
+          // Enable high-quality upscaling
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          
+          // Draw the 640px image stretched to 3000px
+          ctx.drawImage(img, 0, 0, TARGET_SIZE, TARGET_SIZE);
+          
+          // Export to Blob
+          canvas.toBlob(async (blob) => {
+            if (!blob) return reject("Canvas to Blob failed");
+            
+            // Convert Blob to File to use your existing upload method
+            const file = new File([blob], `${fileName}-upscaled.jpg`, { type: 'image/jpeg' });
+            
+            try {
+              // Call your existing storage upload function
+              const uploadedUrl = await api.storage.upload(file);
+              resolve(uploadedUrl);
+            } catch (err) {
+              reject(err);
+            }
+          }, 'image/jpeg', 0.95); // 95% JPEG quality
+        };
+        
+        img.onerror = () => reject("Failed to load image for upscaling");
+      });
+    },
+
+    importFromMicrolink: async (url: string) => {
+      // 1. Fetch metadata from Microlink
+      const res = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
+      if (!res.ok) throw new Error("Failed to fetch data from Microlink.");
+      const json = await res.json();
+      
+      if (json.status !== "success") throw new Error("Microlink failed to parse the URL.");
+      const data = json.data;
+
+      // 2. Extract Data
+      const title = data.title;
+      // Handle "Pitbull, Sensato" -> [{name: "Pitbull"}, {name: "Sensato"}]
+      const artists = data.author ? data.author.split(',').map((name: string) => ({ name: name.trim() })) : [];
+      const releaseDate = data.date ? data.date.split('T')[0] : null;
+      const releaseYear = releaseDate ? releaseDate.substring(0, 4) : '';
+      const originalImageUrl = data.image?.url;
+
+      // 3. Upscale and Upload Artwork
+      let finalArtworkUrl = null;
+      if (originalImageUrl) {
+        const safeFileName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        finalArtworkUrl = await api.catalog.upscaleAndUploadImage(originalImageUrl, safeFileName);
+      }
+
+      // 4. Create a blank draft
+      const draft = await api.catalog.createDraft();
+
+      // 5. Update the Release metadata
+      const releasePayload = {
+        id: draft.id,
+        title: title,
+        releaseDate: releaseDate,
+        originalReleaseDate: releaseDate,
+        coverArt: finalArtworkUrl, // This is now your 3000x3000px R2/Supabase URL
+        status: 'DRAFT',
+        copyrightYear: releaseYear,
+        copyrightLine: artists.length > 0 ? `${artists[0].name}` : '',
+        phonogramYear: releaseYear,
+        phonogramLine: artists.length > 0 ? `${artists[0].name}` : '',
+        artists: artists,
+        selectedDsps: [],
+      };
+
+      await api.catalog.save(releasePayload);
+
+      return draft.id; 
+    },
     getReleases: async (page: number = 1, limit: number = 100000) => {
       const userId = await getUserId();
 
