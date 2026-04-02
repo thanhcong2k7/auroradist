@@ -1,5 +1,7 @@
 import placeholderImage from "@/components/undefined.png";
 import { supabase } from './api';
+// @ts-ignore
+import * as lamejs from 'lamejs';
 export const getResizedImage = (url: string | undefined, size: number = 200) => {
   if (!url) return placeholderImage;
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
@@ -104,60 +106,51 @@ export class APIError extends Error {
   }
 }
 // Giữ nguyên hàm xử lý Audio Buffer
-function audioBufferToWav(buffer: AudioBuffer): Blob {
-  const numOfChan = buffer.numberOfChannels;
-  const length = buffer.length * numOfChan * 2 + 44;
-  const buffer_ = new ArrayBuffer(length);
-  const view = new DataView(buffer_);
-  const channels = [];
-  let i;
-  let sample;
-  let offset = 0;
-  let pos = 0;
+function audioBufferToMp3(buffer: AudioBuffer): Blob {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  
+  // Initialize Mp3Encoder (channels, sampleRate, kbps)
+  const mp3encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 128); 
+  const mp3Data: Int8Array[] = [];
 
-  // write WAVE header
-  setUint32(0x46464952); // "RIFF"
-  setUint32(length - 8); // file length - 8
-  setUint32(0x45564157); // "WAVE"
+  const left = new Int16Array(buffer.length);
+  const right = new Int16Array(buffer.length);
 
-  setUint32(0x20746d66); // "fmt " chunk
-  setUint32(16); // length = 16
-  setUint16(1); // PCM (uncompressed)
-  setUint16(numOfChan);
-  setUint32(buffer.sampleRate);
-  setUint32(buffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
-  setUint16(numOfChan * 2); // block-align
-  setUint16(16); // 16-bit
-  setUint32(0x61746164); // "data" - chunk
-  setUint32(length - pos - 4); // chunk length
-
-  // write interleaved data
-  for (i = 0; i < buffer.numberOfChannels; i++) {
-    channels.push(buffer.getChannelData(i));
-  }
-
-  while (pos < length) {
-    for (i = 0; i < numOfChan; i++) {
-      // interleave channels
-      sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
-      sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0; // scale to 16-bit signed int
-      view.setInt16(pos, sample, true); // write 16-bit sample
-      pos += 2;
+  // Convert float32 to Int16
+  for (let i = 0; i < numChannels; i++) {
+    const channelData = buffer.getChannelData(i);
+    const targetArray = i === 0 ? left : right;
+    for (let j = 0; j < channelData.length; j++) {
+      let sample = channelData[j] * 32767.5;
+      sample = Math.max(-32768, Math.min(32767, sample)) | 0;
+      targetArray[j] = sample;
     }
-    offset++; // next source sample
   }
 
-  return new Blob([view], { type: "audio/wav" });
-
-  function setUint16(data: number) {
-    view.setUint16(pos, data, true);
-    pos += 2;
+  const sampleBlockSize = 1152; 
+  for (let i = 0; i < buffer.length; i += sampleBlockSize) {
+    const leftChunk = left.subarray(i, i + sampleBlockSize);
+    
+    let mp3buf;
+    if (numChannels === 2) {
+      const rightChunk = right.subarray(i, i + sampleBlockSize);
+      mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+    } else {
+      mp3buf = mp3encoder.encodeBuffer(leftChunk);
+    }
+    
+    if (mp3buf.length > 0) {
+      mp3Data.push(mp3buf);
+    }
   }
 
-  function setUint32(data: number) {
-    view.setUint32(pos, data, true);
-    pos += 4;
+  const mp3buf = mp3encoder.flush();
+  if (mp3buf.length > 0) {
+    mp3Data.push(mp3buf);
   }
+
+  return new Blob(mp3Data as unknown as BlobPart[], { type: 'audio/mp3' });
 }
 
 // HMAC-SHA1 encryption for ACRCloud signature
@@ -288,9 +281,9 @@ export const ACRScanner = async (file: File): Promise<string> => {
             chunkChannelData.set(channelData.subarray(frameOffset, frameOffset + realFrameCount));
         }
 
-        const wavBlob = audioBufferToWav(chunkAudioBuffer);
+        const mp3Blob = audioBufferToMp3(chunkAudioBuffer);
         
-        return scanSingleFile(wavBlob, keys.host, keys.key, keys.secret);
+        return scanSingleFile(mp3Blob, keys.host, keys.key, keys.secret);
     }).filter(p => p !== null) as Promise<string>[];
 
     const settledResults = await Promise.allSettled(scanPromises);

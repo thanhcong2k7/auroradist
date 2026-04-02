@@ -1904,7 +1904,6 @@ const ReleaseForm: React.FC = () => {
                                   <option value="Composer">Composer</option>
                                   <option value="Producer">Producer</option>
                                   <option value="Lyricist">Lyricist</option>
-                                  <option value="Performer">Performer</option>
                                   {PERFORMER_ROLES.map((r) => (
                                     <option key={r} value={r}>
                                       {r}
