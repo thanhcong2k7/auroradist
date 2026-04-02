@@ -93,6 +93,7 @@ const Tracks: React.FC = () => {
     isExplicit: false,
     status: 'READY'
   });
+  const [viewScanResult, setViewScanResult] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -302,7 +303,7 @@ const Tracks: React.FC = () => {
       if (field === 'name') {
         const role = newContributors[index].role;
         if (writerRoles.includes(role)) {
-           processedValue = value.replace(/[^\p{L}\s]/gu, '');
+          processedValue = value.replace(/[^\p{L}\s]/gu, '');
         }
       }
 
@@ -332,7 +333,47 @@ const Tracks: React.FC = () => {
   const handlePlayClick = (track: Track) => {
     playTrack(track, filtered);
   };
+  const renderParsedScanResults = (scanresArray: any[]) => {
+    if (!Array.isArray(scanresArray)) return null;
 
+    return scanresArray.map((res, i) => {
+      // Check if there's a successful match with music metadata
+      if (res.status?.code === 0 && res.metadata?.music) {
+        return (
+          <div key={i} className="space-y-3 mt-2">
+            {res.metadata.music.map((m: any, j: number) => (
+              <div key={j} className="bg-black p-4 rounded-lg border border-white/10 flex flex-col gap-3 shadow-md">
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-white leading-tight">{m.title}</h4>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {m.artists?.map((a: any) => a.name).join(', ')}
+                    </p>
+                  </div>
+                  <div className={`px-2 py-1 rounded-md text-[10px] font-black border tracking-wider shrink-0
+                  ${m.score >= 80 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'}`}>
+                    {m.score}% MATCH
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-gray-400 bg-white/5 p-2 rounded">
+                  <div><span className="text-gray-500">ISRC:</span> <span className="text-gray-200">{m.external_ids?.isrc || 'N/A'}</span></div>
+                  <div><span className="text-gray-500">UPC:</span> <span className="text-gray-200">{m.external_ids?.upc || 'N/A'}</span></div>
+                  <div className="col-span-2"><span className="text-gray-500">Label:</span> <span className="text-gray-200">{m.label || 'N/A'}</span></div>
+                </div>
+
+                {m.external_metadata?.spotify?.track && (
+                  <div className="text-[10px] text-[#1DB954] font-bold flex items-center gap-1">
+                    Spotify Link: {m.external_metadata.spotify.track.name}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      }
+    });
+  };
   return (
     <>
       <div className="space-y-6">
@@ -410,7 +451,16 @@ const Tracks: React.FC = () => {
                       <td className="px-6 py-4 text-gray-400 font-medium">{track.artists?.[0]?.name}</td>
                       <td className="px-6 py-4 text-gray-500 font-mono text-xs tracking-wide">{track.isrc ? <span className='text-gray-300'>{track.isrc}</span> : 'PENDING'}</td>
                       <td className="px-6 py-4 text-right text-gray-500 font-mono">{track.duration}</td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 flex justify-end gap-2 items-center">
+                        {track.scanres && track.scanres.length > 0 && track.scanres[0].status?.code === 0 && (
+                          <button
+                            onClick={() => setViewScanResult(track.scanres)}
+                            className="p-1.5 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded transition"
+                            title="View Audio Scan Results"
+                          >
+                            <AlertTriangle size={14} />
+                          </button>
+                        )}
                         <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-100 group-hover:opacity-100">
                           <FilePen size={16} />
                         </button>
@@ -659,6 +709,22 @@ const Tracks: React.FC = () => {
               <button onClick={handleSaveTrack} disabled={isSubmitting} className="px-10 py-3 bg-blue-600 text-white font-bold uppercase text-xs tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-2">
                 {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <><Save size={14} /> Synchronize</>}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {viewScanResult && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+              <h3 className="font-bold uppercase tracking-widest text-xs flex items-center gap-2">
+                <AlertTriangle size={16} className="text-red-500" />
+                Copyright Scan Results
+              </h3>
+              <button onClick={() => setViewScanResult(null)}><X size={18} className="text-gray-500 hover:text-white" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 bg-[#080808]">
+              {renderParsedScanResults(viewScanResult)}
             </div>
           </div>
         </div>

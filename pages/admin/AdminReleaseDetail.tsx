@@ -24,13 +24,14 @@ import {
   CircleUser,
   Play,
   X,
+  ExternalLink,
 } from "lucide-react";
 import DSPLogo from "@/components/DSPLogo";
 import { ACRScanner } from "@/services/utils";
 
 const WRITER_ROLES = [
-  "Composer", "Lyricist", "Arranger", "Writer", 
-  "Translator", "Adaptor", "Composer & Lyricist", 
+  "Composer", "Lyricist", "Arranger", "Writer",
+  "Translator", "Adaptor", "Composer & Lyricist",
   "Sub Arranger", "Sub-Author", "Income Participant"
 ];
 
@@ -277,7 +278,64 @@ const AdminReleaseDetail: React.FC = () => {
       )}
     </div>
   );
+  const renderParsedScanResults = (scanresArray: any[]) => {
+    if (!Array.isArray(scanresArray)) return null;
 
+    return scanresArray.map((res, i) => {
+      // Check if there's a successful match with music metadata
+      if (res.status?.code === 0 && res.metadata?.music) {
+        return (
+          <div key={i} className="space-y-3 mt-2">
+            {res.metadata.music.map((m: any, j: number) => (
+              <div key={j} className="bg-black p-4 rounded-lg border border-white/10 flex flex-col gap-3 shadow-md">
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-white leading-tight">{m.title}</h4>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {m.artists?.map((a: any) => a.name).join(', ')}
+                    </p>
+                  </div>
+                  <div className={`px-2 py-1 rounded-md text-[10px] font-black border tracking-wider shrink-0
+                  ${m.score >= 80 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'}`}>
+                    {m.score}% MATCH
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-gray-400 bg-white/5 p-2 rounded">
+                  <div><span className="text-gray-500">ISRC:</span> <span className="text-gray-200">{m.external_ids?.isrc || 'N/A'}</span></div>
+                  <div><span className="text-gray-500">UPC:</span> <span className="text-gray-200">{m.external_ids?.upc || 'N/A'}</span></div>
+                  <div className="col-span-2"><span className="text-gray-500">Label:</span> <span className="text-gray-200">{m.label || 'N/A'}</span></div>
+                </div>
+
+                {m.external_metadata?.spotify?.track && (
+                  <div className="text-[10px] text-[#1DB954] font-bold flex items-center gap-1">
+                    Spotify Link: 
+                    <a href={"https://open.spotify.com/track/" + m.external_metadata.spotify.track.id} target="_blank" rel="noopener noreferrer">
+                      {m.external_metadata.spotify.track.name}
+                    </a>
+                  </div>
+                )}{m.external_metadata?.deezer?.track && (
+                  <div className="text-[10px] text-[#1DB954] font-bold flex items-center gap-1">
+                    Deezer Link: 
+                    <a href={"https://www.deezer.com/track/" + m.external_metadata.deezer.track.id} target="_blank" rel="noopener noreferrer">
+                      {m.external_metadata.deezer.track.name}
+                    </a>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      // Fallback for failed/no match or unparseable JSON
+      return (
+        <div key={i} className="bg-black/50 rounded p-3 font-mono text-[10px] text-gray-500 overflow-x-auto border border-white/5 mt-2">
+          <pre>{JSON.stringify(res, null, 2)}</pre>
+        </div>
+      );
+    });
+  };
   return (
     <>
       <div className="max-w-6xl mx-auto space-y-6 animate-fade-in pb-20">
@@ -650,7 +708,7 @@ const AdminReleaseDetail: React.FC = () => {
                                 ))}
                               </div>
                             )}
-                            
+
                             {/* Writers */}
                             {track.contributors?.some((c: any) => WRITER_ROLES.includes(c.role)) && (
                               <div className="flex flex-wrap gap-1 items-center mt-1">
@@ -869,11 +927,10 @@ const AdminReleaseDetail: React.FC = () => {
                       <button
                         onClick={() => startAudioScan(track)}
                         disabled={isScanning || !track.audio_url}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
-                          isScanning
+                        className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${isScanning
                             ? "bg-white/10 text-white/50 cursor-not-allowed"
                             : "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:shadow-[0_0_20px_rgba(37,99,235,0.5)]"
-                        }`}
+                          }`}
                       >
                         {isScanning ? (
                           <>
@@ -906,9 +963,7 @@ const AdminReleaseDetail: React.FC = () => {
                             {scanSuccess ? "Match Found" : "No Match Found"}
                           </span>
                         </div>
-                        <div className="bg-black/50 rounded p-3 font-mono text-[11px] text-gray-300 overflow-x-auto">
-                          <pre>{JSON.stringify(track.scanres, null, 2)}</pre>
-                        </div>
+                        {renderParsedScanResults(track.scanres)}
                       </div>
                     ) : (
                       <div className="mt-4 rounded-lg border border-dashed border-white/10 p-6 flex flex-col items-center justify-center text-center bg-white/[0.02]">

@@ -311,7 +311,6 @@ export const ACRScanner = async (file: File): Promise<string> => {
   }
 };
 
-
 // using System;
 // using System.Collections.Generic;
 // using System.IO;
