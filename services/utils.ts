@@ -231,7 +231,7 @@ export const ACRScanner = async (file: File): Promise<string> => {
 
     const totalDuration = audioBuffer.duration;
     const minChunkDuration = 10;
-    const maxChunkDuration = 90;
+    const maxChunkDuration = 240;
     
     const chunks: { start: number; duration: number }[] = [];
     let currentTime = 0;
