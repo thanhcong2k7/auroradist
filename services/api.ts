@@ -91,6 +91,13 @@ export const api = {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       return { success: true };
+    },
+    resetPassword: async (email: string) => {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/#/update-password`,
+      });
+      if (error) throw error;
+      return { success: true };
     }
   },
   storage: {
@@ -1014,6 +1021,21 @@ export const api = {
         releaseDate: r.release_date,
         labelId: r.label_id,
       }));
+    },
+
+    getAllTracks: async (statusFilter?: string) => {
+      let query = supabase
+        .from('tracks')
+        .select('*, releases(title, cover_art, status, profiles(email, name))')
+        .order('id', { ascending: false });
+
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
     },
 
     getPendingWithdrawals: async () => {

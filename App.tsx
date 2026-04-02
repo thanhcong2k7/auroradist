@@ -14,11 +14,13 @@ import Settings from './pages/Settings';
 import Support from './pages/Support';
 import Login from './pages/Login';
 import About from './pages/About';
-import UpdatePassword from './pages/UpdatePassword'; // Import new page
+import UpdatePassword from './pages/UpdatePassword';
+import ResetPassword from './pages/ResetPassword';
 import { api, supabase } from './services/api';
 import { Toaster } from 'sonner';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminReleases from './pages/admin/AdminReleases';
+import AdminTracks from './pages/admin/AdminTracks';
 import AdminReleaseDetail from './pages/admin/AdminReleaseDetail';
 import AdminLayout from './components/AdminLayout';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
@@ -51,6 +53,13 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (loading) return <div className="h-screen bg-black text-white flex items-center justify-center">Verifying Clearance...</div>;
 
   return isAdmin ? <>{children}</> : <Navigate to="/" replace />;
+};
+
+const ExternalLanding: React.FC = () => {
+  useEffect(() => {
+    window.location.href = '/landing.html';
+  }, []);
+  return null;
 };
 
 const App: React.FC = () => {
@@ -123,10 +132,6 @@ const App: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
-  }
-
   return (
     <Router>
       <MaintenanceBar 
@@ -138,8 +143,17 @@ const App: React.FC = () => {
       {maintenanceActive && <div className="h-[52px]"></div>}
       <Toaster position="bottom-right" richColors theme="dark" />
       <Routes>
-        {/* NEW ROUTE: Password Update (Standalone, authenticated) */}
-        <Route path="/update-password" element={<UpdatePassword />} />
+        {!isAuthenticated ? (
+          <>
+            <Route path="/" element={<ExternalLanding />} />
+            <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)} />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        ) : (
+          <>
+            {/* NEW ROUTE: Password Update (Standalone, authenticated) */}
+            <Route path="/update-password" element={<UpdatePassword />} />
 
         {/* === GROUP 1: USER ROUTES === */}
         <Route element={<Layout onLogout={() => supabase.auth.signOut()}><Outlet /></Layout>}>
@@ -167,6 +181,7 @@ const App: React.FC = () => {
         }>
           <Route index element={<AdminDashboard />} />
           <Route path="releases" element={<AdminReleases />} />
+          <Route path="tracks" element={<AdminTracks />} />
           <Route path="releases/:id" element={<AdminReleaseDetail />} />
           <Route path="labels" element={<AdminLabels />} />
           <Route path="dsps" element={<AdminDSPs />} />
@@ -178,6 +193,8 @@ const App: React.FC = () => {
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        )}
       </Routes>
     </Router>
   );

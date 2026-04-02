@@ -196,7 +196,14 @@ const Tracks: React.FC = () => {
     if (!hasPrimary) {
       newErrors.artists = "At least one Primary Artist is required.";
       isValid = false;
-      if (isValid) setTrackTab('CREDITS');
+      if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc) setTrackTab("CREDITS");
+    }
+
+    const artistNames = currentTrack.artists?.map(a => a.name.trim().toLowerCase()).filter(n => n !== "") || [];
+    if (artistNames.length !== new Set(artistNames).size) {
+      newErrors.artists = "Each artist can only be added once on this track.";
+      isValid = false;
+      if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc) setTrackTab("CREDITS");
     }
 
     // 4. Validate Contributors
@@ -207,11 +214,19 @@ const Tracks: React.FC = () => {
     if (!hasComposer || !hasProducer) {
       newErrors.contributors = "Both Composer and Producer credits are mandatory.";
       isValid = false;
-      if (isValid) setTrackTab('CREDITS');
+      if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc && !newErrors.artists) setTrackTab('CREDITS');
     } else if (currentTrack.hasLyrics && !hasLyricist) {
       newErrors.contributors = "A Lyricist credit is required when lyrics are present.";
       isValid = false;
-      setTrackTab('CREDITS');
+      if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc && !newErrors.artists) setTrackTab('CREDITS');
+    } else {
+      const writerRoles = ["Composer", "Lyricist", "Arranger", "Writer", "Translator", "Adaptor", "Composer & Lyricist", "Sub Arranger", "Sub-Author"];
+      const invalidWriters = currentTrack.contributors?.filter(c => writerRoles.includes(c.role) && c.name.trim().split(/\s+/).length < 2);
+      if (invalidWriters && invalidWriters.length > 0) {
+        newErrors.contributors = `Writer positions (${invalidWriters[0].role}) must include first name and last name.`;
+        isValid = false;
+        if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc && !newErrors.artists) setTrackTab("CREDITS");
+      }
     }
     const tkTime = currentTrack.tiktokClipStartTime;
     if (tkTime && tkTime.trim() !== '' && !isValidTimeFormat(tkTime)) {
@@ -219,6 +234,9 @@ const Tracks: React.FC = () => {
       isValid = false;
     }
     setErrors(newErrors);
+    if (!isValid) {
+      Object.values(newErrors).forEach(err => toast.error(err));
+    }
     return isValid;
   };
 
@@ -278,10 +296,25 @@ const Tracks: React.FC = () => {
   const updateContributor = (index: number, field: keyof TrackContributor, value: string) => {
     setCurrentTrack(prev => {
       const newContributors = [...(prev.contributors || [])];
-      const updatedItem = { ...newContributors[index], [field]: value };
+      let processedValue = value;
+      const writerRoles = ["Composer", "Lyricist", "Arranger", "Writer", "Translator", "Adaptor", "Composer & Lyricist", "Sub Arranger", "Sub-Author", "Producer"];
 
-      if (field === 'role' && value !== 'Performer') {
-        delete updatedItem.instrument;
+      if (field === 'name') {
+        const role = newContributors[index].role;
+        if (writerRoles.includes(role)) {
+           processedValue = value.replace(/[^\p{L}\s]/gu, '');
+        }
+      }
+
+      const updatedItem = { ...newContributors[index], [field]: processedValue };
+
+      if (field === 'role') {
+        if (processedValue !== 'Performer') {
+          delete updatedItem.instrument;
+        }
+        if (writerRoles.includes(processedValue)) {
+          updatedItem.name = updatedItem.name.replace(/[^\p{L}\s]/gu, '');
+        }
       }
 
       newContributors[index] = updatedItem;

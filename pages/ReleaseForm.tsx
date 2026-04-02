@@ -434,6 +434,12 @@ const ReleaseForm: React.FC = () => {
       isValid = false;
     }
 
+    const artistNames = artists.map((a) => a.name.trim().toLowerCase()).filter(n => n !== "");
+    if (artistNames.length !== new Set(artistNames).size) {
+      newErrors.artists = "Each artist can only be added once.";
+      isValid = false;
+    }
+
     // Placeholder: Add more verification logic here as needed
 
     setErrors(newErrors);
@@ -452,6 +458,9 @@ const ReleaseForm: React.FC = () => {
     // Validate album artists
     const hasPrimaryArtist = artists.some((a) => a.role === "Primary" && a.name.trim() !== "");
     if (!hasPrimaryArtist) errors.push("At least one Primary Artist");
+
+    const artistNames = artists.map((a) => a.name.trim().toLowerCase()).filter(n => n !== "");
+    if (artistNames.length !== new Set(artistNames).size) errors.push("Duplicate artists found");
 
     // Format validation
     if (format === "Single" || format === "SINGLE") {
@@ -579,7 +588,14 @@ const ReleaseForm: React.FC = () => {
     if (!hasPrimary) {
       newErrors.artists = "At least one Primary Artist is required.";
       isValid = false;
-      if (isValid) setTrackTab("CREDITS");
+      if (!newErrors.name) setTrackTab("CREDITS");
+    }
+
+    const artistNames = t.artists?.map(a => a.name.trim().toLowerCase()).filter(n => n !== "") || [];
+    if (artistNames.length !== new Set(artistNames).size) {
+      newErrors.artists = "Each artist can only be added once.";
+      isValid = false;
+      if (!newErrors.name) setTrackTab("CREDITS");
     }
     const hasComposer = t.contributors?.some(
       (c) => c.role === "Composer" && c.name.trim() !== "",
@@ -593,11 +609,19 @@ const ReleaseForm: React.FC = () => {
     if (!hasComposer || !hasProducer) {
       newErrors.contributors = "Composer & Producer are mandatory.";
       isValid = false;
-      if (isValid) setTrackTab("CREDITS");
+      if (!newErrors.name && !newErrors.artists) setTrackTab("CREDITS");
     } else if (t.hasLyrics && !hasLyricist) {
       newErrors.contributors = "A Lyricist credit is required when lyrics are present.";
       isValid = false;
-      if (isValid) setTrackTab("CREDITS");
+      if (!newErrors.name && !newErrors.artists) setTrackTab("CREDITS");
+    } else {
+      const writerRoles = ["Composer", "Lyricist", "Arranger", "Writer", "Translator", "Adaptor", "Composer & Lyricist", "Sub Arranger", "Sub-Author"];
+      const invalidWriters = t.contributors?.filter(c => writerRoles.includes(c.role) && c.name.trim().split(/\s+/).length < 2);
+      if (invalidWriters && invalidWriters.length > 0) {
+        newErrors.contributors = `Writer positions (${invalidWriters[0].role}) must include first name and last name.`;
+        isValid = false;
+        if (!newErrors.name && !newErrors.artists) setTrackTab("CREDITS");
+      }
     }
     const tkTime = currentTrack.tiktokClipStartTime;
     if (tkTime && tkTime.trim() !== "" && !isValidTimeFormat(tkTime)) {
@@ -606,6 +630,9 @@ const ReleaseForm: React.FC = () => {
     }
 
     setTrackErrors(newErrors);
+    if (!isValid) {
+      Object.values(newErrors).forEach(err => toast.error(err));
+    }
     return isValid;
   };
 
@@ -664,7 +691,14 @@ const ReleaseForm: React.FC = () => {
     if (!hasPrimary) {
       newErrors.artists = "At least one Primary Artist is required.";
       isValid = false;
-      if (isValid) setTrackTab("CREDITS");
+      if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc) setTrackTab("CREDITS");
+    }
+
+    const artistNames = currentTrack.artists?.map(a => a.name.trim().toLowerCase()).filter(n => n !== "") || [];
+    if (artistNames.length !== new Set(artistNames).size) {
+      newErrors.artists = "Each artist can only be added once.";
+      isValid = false;
+      if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc) setTrackTab("CREDITS");
     }
 
     // 4. Validate Contributors
@@ -682,12 +716,20 @@ const ReleaseForm: React.FC = () => {
       newErrors.contributors =
         "Both Composer and Producer credits are mandatory.";
       isValid = false;
-      if (isValid) setTrackTab("CREDITS");
+      if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc && !newErrors.artists) setTrackTab("CREDITS");
     } else if (currentTrack.hasLyrics && !hasLyricist) {
       newErrors.contributors =
         "A Lyricist credit is required when lyrics are present.";
       isValid = false;
-      setTrackTab("CREDITS");
+      if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc && !newErrors.artists) setTrackTab("CREDITS");
+    } else {
+      const writerRoles = ["Composer", "Lyricist", "Arranger", "Writer", "Translator", "Adaptor", "Composer & Lyricist", "Sub Arranger", "Sub-Author"];
+      const invalidWriters = currentTrack.contributors?.filter(c => writerRoles.includes(c.role) && c.name.trim().split(/\s+/).length < 2);
+      if (invalidWriters && invalidWriters.length > 0) {
+        newErrors.contributors = `Writer positions (${invalidWriters[0].role}) must include a full name (at least 2 words).`;
+        isValid = false;
+        if (!newErrors.name && !newErrors.audioUrl && !newErrors.isrc && !newErrors.artists) setTrackTab("CREDITS");
+      }
     }
     const tkTime = currentTrack.tiktokClipStartTime;
     if (tkTime && tkTime.trim() !== "" && !isValidTimeFormat(tkTime)) {
@@ -695,6 +737,9 @@ const ReleaseForm: React.FC = () => {
       isValid = false;
     }
     setErrors(newErrors);
+    if (!isValid) {
+      Object.values(newErrors).forEach(err => toast.error(err));
+    }
     return isValid;
   };
 
@@ -711,10 +756,25 @@ const ReleaseForm: React.FC = () => {
   ) => {
     setCurrentTrack((prev) => {
       const newContributors = [...(prev.contributors || [])];
-      const updatedItem = { ...newContributors[index], [field]: value };
+      let processedValue = value;
+      const writerRoles = ["Composer", "Lyricist", "Arranger", "Writer", "Translator", "Adaptor", "Composer & Lyricist", "Sub Arranger", "Sub-Author", "Producer"];
 
-      if (field === "role" && value !== "Performer") {
-        delete updatedItem.instrument;
+      if (field === 'name') {
+        const role = newContributors[index].role;
+        if (writerRoles.includes(role)) {
+           processedValue = value.replace(/[^\p{L}\s]/gu, '');
+        }
+      }
+
+      const updatedItem = { ...newContributors[index], [field]: processedValue };
+
+      if (field === "role") {
+        if (processedValue !== "Performer") {
+          delete updatedItem.instrument;
+        }
+        if (writerRoles.includes(processedValue)) {
+          updatedItem.name = updatedItem.name.replace(/[^\p{L}\s]/gu, '');
+        }
       }
 
       newContributors[index] = updatedItem;

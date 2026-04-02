@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, ShieldCheck, Users,
     DollarSign, FileAudio, LogOut, Menu, X,
-    Globe, MessageSquare,
+    Globe, MessageSquare, Music,
     Tags, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { supabase } from '@/services/api';
@@ -35,7 +35,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
     const navItems = [
         { path: '/admin', icon: LayoutDashboard, label: 'Overview' },
-        { path: '/admin/releases', icon: ShieldCheck, label: 'Moderation' },
+        { path: '/admin/releases', icon: ShieldCheck, label: 'Release Moderation' },
+        { path: '/admin/tracks', icon: Music, label: 'Track Moderation' },
         { path: '/admin/labels', icon: Tags, label: 'Label Manager' },
         { path: '/admin/dsps', icon: Globe, label: 'Store Manager' },
         { path: '/admin/analytics', icon: FileAudio, label: 'Analytics' },

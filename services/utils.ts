@@ -166,7 +166,7 @@ async function scanSingleFile(file: File | Blob): Promise<string> {
 
   // Trong Vite, dùng import.meta.env thay vì process.env
   // Trỏ tới đường dẫn file PHP của bạn (ví dụ: http://localhost/api/acr-proxy.php)
-  const proxyUrl = import.meta.env.VITE_ACR_PROXY_URL || '/api/acr-proxy.php';
+  const proxyUrl = (import.meta.env.VITE_ACR_PROXY_URL || 'https://aurora.viiic.net/api/koyacr/index.php');
 
   const response = await fetch(proxyUrl, {
     method: 'POST',
