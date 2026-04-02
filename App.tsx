@@ -57,7 +57,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const ExternalLanding: React.FC = () => {
   useEffect(() => {
-    window.location.href = '/landing.html';
+    window.location.href = '/#/login';
   }, []);
   return null;
 };
