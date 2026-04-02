@@ -28,6 +28,12 @@ import {
 import DSPLogo from "@/components/DSPLogo";
 import { ACRScanner } from "@/services/utils";
 
+const WRITER_ROLES = [
+  "Composer", "Lyricist", "Arranger", "Writer", 
+  "Translator", "Adaptor", "Composer & Lyricist", 
+  "Sub Arranger", "Sub-Author", "Income Participant"
+];
+
 const AdminReleaseDetail: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -599,10 +605,12 @@ const AdminReleaseDetail: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-gray-400 mt-1 flex flex-wrap gap-1 items-center">
-                            <div className="flex flex-wrap gap-1">
+                          <div className="text-xs mt-2 space-y-1">
+                            {/* Performers */}
+                            <div className="flex flex-wrap gap-1 items-center">
+                              <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest mr-1">Performers:</span>
                               {track.artists?.map((a: any, i: number) => (
-                                <React.Fragment key={i}>
+                                <React.Fragment key={`artist-${i}`}>
                                   {a.id ? (
                                     <button
                                       onClick={() => handleArtistClick(a.id)}
@@ -616,26 +624,40 @@ const AdminReleaseDetail: React.FC = () => {
                                       {a.name}
                                     </span>
                                   )}
-                                  {i < track.artists.length - 1 && (
+                                  <span className="text-gray-600 ml-0.5">({a.role})</span>
+                                  {(i < track.artists.length - 1 || (track.contributors?.filter((c: any) => !WRITER_ROLES.includes(c.role)).length > 0)) && (
                                     <span className="text-gray-600">,</span>
                                   )}
                                 </React.Fragment>
                               ))}
+                              {track.contributors?.filter((c: any) => !WRITER_ROLES.includes(c.role)).map((c: any, i: number, arr: any[]) => (
+                                <span
+                                  key={`perf-${i}`}
+                                  className="text-gray-400"
+                                  title={c.role}
+                                >
+                                  {c.name} ({c.role})
+                                  {i < arr.length - 1 ? ", " : ""}
+                                </span>
+                              ))}
                             </div>
-                            {track.artists?.length > 0 && (
-                              <span className="text-gray-600">•</span>
+                            
+                            {/* Writers */}
+                            {track.contributors?.some((c: any) => WRITER_ROLES.includes(c.role)) && (
+                              <div className="flex flex-wrap gap-1 items-center mt-1">
+                                <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest mr-1">Writers:</span>
+                                {track.contributors?.filter((c: any) => WRITER_ROLES.includes(c.role)).map((c: any, i: number, arr: any[]) => (
+                                  <span
+                                    key={`writer-${i}`}
+                                    className="text-gray-400"
+                                    title={c.role}
+                                  >
+                                    {c.name} ({c.role})
+                                    {i < arr.length - 1 ? ", " : ""}
+                                  </span>
+                                ))}
+                              </div>
                             )}
-                            {/* Contributors */}
-                            {track.contributors?.map((c: any, i: number) => (
-                              <span
-                                key={i}
-                                className="text-gray-500"
-                                title={c.role}
-                              >
-                                {c.name} ({c.role})
-                                {i < track.contributors.length - 1 ? ", " : ""}
-                              </span>
-                            ))}
                           </div>
                         </div>
                       </div>
