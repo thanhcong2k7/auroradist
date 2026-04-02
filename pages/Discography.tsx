@@ -25,6 +25,7 @@ import { toast } from "sonner";
 const STATUS_OPTIONS = [
   "DRAFT",
   "CHECKING",
+  "PROCESSING",
   "ACCEPTED",
   "REJECTED",
   "TAKENDOWN",
@@ -196,7 +197,7 @@ const Discography: React.FC = () => {
         setReleases((prev) =>
           prev.map((r) =>
             r.id === confirmModal.release?.id
-              ? { ...r, status: "CHECKING" }
+              ? { ...r, status: "PROCESSING" }
               : r,
           ),
         );
@@ -493,8 +494,8 @@ const Discography: React.FC = () => {
                   >
                     <Eye size={14} />
                   </button>
-                  {/* Edit Button - Hide if Checking */}
-                  {release.status !== "CHECKING" && (
+                  {/* Edit Button - Hide if Checking or Processing */}
+                  {release.status !== "CHECKING" && release.status !== "PROCESSING" && (
                     <Link
                       to={`/discography/edit/${release.id}`}
                       className="p-1.5 bg-black/80 text-white hover:text-green-400 rounded backdrop-blur-sm border border-white/10"
@@ -515,8 +516,8 @@ const Discography: React.FC = () => {
                   >
                     <PieChart size={14} />
                   </button>
-                  {/* Delete/Takedown Button - Hide if Checking */}
-                  {release.status !== "CHECKING" && (
+                  {/* Delete/Takedown Button - Hide if Checking or Processing */}
+                  {release.status !== "CHECKING" && release.status !== "PROCESSING" && (
                     <button
                       onClick={() => handleActionClick(release)}
                       className="p-1.5 bg-black/80 text-white hover:text-red-400 rounded backdrop-blur-sm border border-white/10"
@@ -532,8 +533,10 @@ const Discography: React.FC = () => {
                       ? "border-green-500/30 text-green-400 bg-green-900/50"
                       : release.status === "CHECKING"
                         ? "border-yellow-500/30 text-yellow-400 bg-yellow-900/50"
-                        : release.status === "ERROR" ||
-                          release.status === "REJECTED"
+                      : release.status === "PROCESSING"
+                        ? "border-orange-500/30 text-orange-400 bg-orange-900/50"
+                      : release.status === "ERROR" ||
+                        release.status === "REJECTED"
                           ? "border-red-500/30 text-red-400 bg-red-900/50"
                           : "border-gray-500/30 text-gray-300 bg-gray-900/50"
                       }`}
@@ -602,6 +605,8 @@ const Discography: React.FC = () => {
                         ? "border-green-500/30 text-green-400 bg-green-900/10"
                         : release.status === "CHECKING"
                           ? "border-yellow-500/30 text-yellow-400 bg-yellow-900/10"
+                        : release.status === "PROCESSING"
+                          ? "border-orange-500/30 text-orange-400 bg-orange-900/10"
                           : release.status === "ERROR" || release.status === "REJECTED"
                             ? "border-red-500/30 text-red-400 bg-red-900/10"
                             : "border-gray-500/30 text-gray-400 bg-gray-900/10"
@@ -633,7 +638,7 @@ const Discography: React.FC = () => {
                 >
                   <Eye size={16} />
                 </button>
-                {release.status !== "CHECKING" && (
+                {release.status !== "CHECKING" && release.status !== "PROCESSING" && (
                   <Link
                     to={`/discography/edit/${release.id}`}
                     className="p-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-green-400 rounded-lg transition"
@@ -654,7 +659,7 @@ const Discography: React.FC = () => {
                 >
                   <PieChart size={16} />
                 </button>
-                {release.status !== "CHECKING" && (
+                {release.status !== "CHECKING" && release.status !== "PROCESSING" && (
                   <button
                     onClick={() => handleActionClick(release)}
                     className="p-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-red-400 rounded-lg transition"
@@ -758,7 +763,7 @@ const Discography: React.FC = () => {
               </h3>
               <p className="text-gray-400 text-sm font-mono leading-relaxed">
                 {confirmModal.type === "TAKEDOWN"
-                  ? `You are about to request a professional takedown for "${confirmModal.release?.title}". This will notify all DSPs and move the status to CHECKING for admin review.`
+                  ? `You are about to request a professional takedown for "${confirmModal.release?.title}". This will notify all DSPs and move the status to PROCESSING for admin review.`
                   : `This will permanently delete the draft "${confirmModal.release?.title}" and all associated metadata. This action is irreversible.`}
               </p>
             </div>

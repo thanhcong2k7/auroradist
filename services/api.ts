@@ -579,7 +579,7 @@ export const api = {
       const userId = await getUserId();
       const { error } = await supabase
         .from('releases')
-        .update({ status: 'TAKENDOWN' })
+        .update({ status: 'PROCESSING', takedownStatus: true })
         .eq('id', id)
         .eq('uid', userId);
 
@@ -1164,6 +1164,14 @@ export const api = {
           contributors: t.contributors || []
         }))
       };
+    },
+    confirmTakedown: async (id: number) => {
+      const { error } = await supabase
+        .from('releases')
+        .update({ status: 'TAKENDOWN', takedownStatus: false })
+        .eq('id', id);
+      if (error) throw error;
+      return { success: true };
     },
     updateReleaseMetadata: async (id: number, updates: {
       upc?: string,

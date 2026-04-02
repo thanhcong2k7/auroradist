@@ -606,41 +606,50 @@ const AdminReleaseDetail: React.FC = () => {
                             )}
                           </div>
                           <div className="text-xs mt-2 space-y-1">
+                            {/* Main Artists */}
+                            {track.artists?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 items-center">
+                                <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest mr-1">Artists:</span>
+                                {track.artists?.map((a: any, i: number) => (
+                                  <React.Fragment key={`artist-${i}`}>
+                                    {a.id ? (
+                                      <button
+                                        onClick={() => handleArtistClick(a.id)}
+                                        className="font-bold text-gray-200 hover:text-blue-400 hover:underline transition"
+                                        title="Click to view artist details"
+                                      >
+                                        {a.name}
+                                      </button>
+                                    ) : (
+                                      <span className="font-bold text-gray-200">
+                                        {a.name}
+                                      </span>
+                                    )}
+                                    <span className="text-gray-400 font-medium ml-0.5">({a.role})</span>
+                                    {i < track.artists.length - 1 && (
+                                      <span className="text-gray-600">,</span>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </div>
+                            )}
+
                             {/* Performers */}
-                            <div className="flex flex-wrap gap-1 items-center">
-                              <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest mr-1">Performers:</span>
-                              {track.artists?.map((a: any, i: number) => (
-                                <React.Fragment key={`artist-${i}`}>
-                                  {a.id ? (
-                                    <button
-                                      onClick={() => handleArtistClick(a.id)}
-                                      className="font-bold text-white hover:text-blue-400 hover:underline transition"
-                                      title="Click to view artist details"
-                                    >
-                                      {a.name}
-                                    </button>
-                                  ) : (
-                                    <span className="font-bold text-white">
-                                      {a.name}
-                                    </span>
-                                  )}
-                                  <span className="text-gray-600 ml-0.5">({a.role})</span>
-                                  {(i < track.artists.length - 1 || (track.contributors?.filter((c: any) => !WRITER_ROLES.includes(c.role)).length > 0)) && (
-                                    <span className="text-gray-600">,</span>
-                                  )}
-                                </React.Fragment>
-                              ))}
-                              {track.contributors?.filter((c: any) => !WRITER_ROLES.includes(c.role)).map((c: any, i: number, arr: any[]) => (
-                                <span
-                                  key={`perf-${i}`}
-                                  className="text-gray-400"
-                                  title={c.role}
-                                >
-                                  {c.name} ({c.role})
-                                  {i < arr.length - 1 ? ", " : ""}
-                                </span>
-                              ))}
-                            </div>
+                            {track.contributors?.some((c: any) => !WRITER_ROLES.includes(c.role)) && (
+                              <div className="flex flex-wrap gap-1 items-center mt-1">
+                                <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest mr-1">Performers:</span>
+                                {track.contributors?.filter((c: any) => !WRITER_ROLES.includes(c.role)).map((c: any, i: number, arr: any[]) => (
+                                  <span
+                                    key={`perf-${i}`}
+                                    className="text-gray-300"
+                                    title={c.role}
+                                  >
+                                    {c.name} <span className="text-gray-500 font-medium">({c.role})</span>
+                                    {i < arr.length - 1 && <span className="text-gray-600">, </span>}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                             
                             {/* Writers */}
                             {track.contributors?.some((c: any) => WRITER_ROLES.includes(c.role)) && (
@@ -649,11 +658,11 @@ const AdminReleaseDetail: React.FC = () => {
                                 {track.contributors?.filter((c: any) => WRITER_ROLES.includes(c.role)).map((c: any, i: number, arr: any[]) => (
                                   <span
                                     key={`writer-${i}`}
-                                    className="text-gray-400"
+                                    className="text-gray-300"
                                     title={c.role}
                                   >
-                                    {c.name} ({c.role})
-                                    {i < arr.length - 1 ? ", " : ""}
+                                    {c.name} <span className="text-gray-500 font-medium">({c.role})</span>
+                                    {i < arr.length - 1 && <span className="text-gray-600">, </span>}
                                   </span>
                                 ))}
                               </div>

@@ -15,7 +15,7 @@ export interface Release {
   artist: string; 
   artists?: any[];
   labelId?: number;
-  status: 'DRAFT' | 'DELIVERED' | 'ERROR' | 'CHECKING' | 'ACCEPTED' | 'REJECTED' | 'TAKENDOWN';
+  status: 'DRAFT' | 'DELIVERED' | 'ERROR' | 'CHECKING' | 'PROCESSING' | 'ACCEPTED' | 'REJECTED' | 'TAKENDOWN';
   releaseDate: string;
   originalReleaseDate?: string;
   coverArt: string;

@@ -65,6 +65,17 @@ const AdminReleases: React.FC = () => {
         );
     };
 
+    const handleConfirmTakedown = async (id: number) => {
+        if (!window.confirm("Complete takedown for this release?")) return;
+        try {
+            await api.admin.confirmTakedown(id);
+            setReleases(prev => prev.map(r => r.id === id ? { ...r, status: 'TAKENDOWN' } : r));
+        } catch (err: any) {
+            console.error(err);
+            alert("Failed to confirm takedown: " + err.message);
+        }
+    };
+
     // --- EXPORT LOGIC ---
     const handleExport = async () => {
         if (selectedIds.length === 0) return alert("Select at least one release.");
@@ -235,6 +246,7 @@ const AdminReleases: React.FC = () => {
     const getStatusBadge = (status: string) => {
         const colors: Record<string, string> = {
             'CHECKING': 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30',
+            'PROCESSING': 'bg-orange-500/20 text-orange-500 border-orange-500/30',
             'ACCEPTED': 'bg-green-500/20 text-green-500 border-green-500/30',
             'REJECTED': 'bg-red-500/20 text-red-500 border-red-500/30',
             'DRAFT': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
@@ -287,6 +299,7 @@ const AdminReleases: React.FC = () => {
                     >
                         <option value="ALL">All Status</option>
                         <option value="CHECKING">Checking (Pending)</option>
+                        <option value="PROCESSING">Processing (Takedown)</option>
                         <option value="ACCEPTED">Accepted</option>
                         <option value="REJECTED">Rejected</option>
                         <option value="TAKENDOWN">Takedown</option>
@@ -343,6 +356,14 @@ const AdminReleases: React.FC = () => {
                                     <div className="flex items-center gap-1"><Calendar size={10} /> {new Date(release.created_at || '').toLocaleDateString()}</div>
                                 </td>
                                 <td className="px-6 py-4 text-right">
+                                    {release.status === 'PROCESSING' && (
+                                        <button
+                                            onClick={() => handleConfirmTakedown(release.id)}
+                                            className="inline-flex items-center gap-2 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 border border-red-500/30 rounded-lg font-bold uppercase transition mr-2"
+                                        >
+                                            Confirm
+                                        </button>
+                                    )}
                                     <Link
                                         to={`/admin/releases/${release.id}`}
                                         className="inline-flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white font-bold uppercase transition"
