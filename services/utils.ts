@@ -1,7 +1,6 @@
 import placeholderImage from "@/components/undefined.png";
 import { supabase } from './api';
-// @ts-ignore
-import * as lamejs from 'lamejs';
+import { Mp3Encoder } from '@breezystack/lamejs';
 export const getResizedImage = (url: string | undefined, size: number = 200) => {
   if (!url) return placeholderImage;
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
@@ -111,7 +110,8 @@ function audioBufferToMp3(buffer: AudioBuffer): Blob {
   const sampleRate = buffer.sampleRate;
   
   // Initialize Mp3Encoder (channels, sampleRate, kbps)
-  const mp3encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 128); 
+  //const mp3encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 128);
+  const mp3encoder = new Mp3Encoder(numChannels, sampleRate, 128);
   const mp3Data: Int8Array[] = [];
 
   const left = new Int16Array(buffer.length);
@@ -231,7 +231,7 @@ export const ACRScanner = async (file: File): Promise<string> => {
 
     const totalDuration = audioBuffer.duration;
     const minChunkDuration = 10;
-    const maxChunkDuration = 40;
+    const maxChunkDuration = 90;
     
     const chunks: { start: number; duration: number }[] = [];
     let currentTime = 0;
