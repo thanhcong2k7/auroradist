@@ -1,4 +1,5 @@
 import placeholderImage from "@/components/undefined.png";
+import { supabase } from './api';
 export const getResizedImage = (url: string | undefined, size: number = 200) => {
   if (!url) return placeholderImage;
   if (url.startsWith('data:') || url.startsWith('blob:')) return url;
@@ -159,22 +160,60 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
   }
 }
 
-// Đã sửa đổi để gửi lên Backend PHP thay vì ACRCloud
-async function scanSingleFile(file: File | Blob): Promise<string> {
+// HMAC-SHA1 encryption for ACRCloud signature
+async function encryptByHMACSHA1(data: string, key: string): Promise<string> {
+  const enc = new TextEncoder();
+  const keyData = enc.encode(key);
+  const dataToSign = enc.encode(data);
+
+  const cryptoKey = await window.crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-1' },
+    false,
+    ['sign']
+  );
+
+  const signature = await window.crypto.subtle.sign('HMAC', cryptoKey, dataToSign);
+
+  let binary = '';
+  const bytes = new Uint8Array(signature);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+}
+
+// Generate ACRCloud signature and send request to identify endpoint
+async function scanSingleFile(file: File | Blob, host: string, accessKey: string, secretKey: string): Promise<string> {
+  const method = "POST";
+  const httpUrlPath = "/v1/identify";
+  const sigVersion = "1";
+  const queryType = "audio";
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+
+  const reqURL = `https://${host}${httpUrlPath}`;
+
+  const sigStr = `${method}\n${httpUrlPath}\n${accessKey}\n${queryType}\n${sigVersion}\n${timestamp}`;
+  const signature = await encryptByHMACSHA1(sigStr, secretKey);
+
   const formData = new FormData();
-  formData.append('audio', file, "chunk.wav");
+  formData.append("access_key", accessKey);
+  formData.append("sample_bytes", file.size.toString());
+  formData.append("sample", file, "sample");
+  formData.append("timestamp", timestamp);
+  formData.append("signature", signature);
+  formData.append("data_type", queryType);
+  formData.append("signature_version", sigVersion);
 
-  // Trong Vite, dùng import.meta.env thay vì process.env
-  // Trỏ tới đường dẫn file PHP của bạn (ví dụ: http://localhost/api/acr-proxy.php)
-  const proxyUrl = (import.meta.env.VITE_ACR_PROXY_URL || 'https://aurora.viiic.net/api/koyacr/index.php');
-
-  const response = await fetch(proxyUrl, {
+  const response = await fetch(reqURL, {
     method: 'POST',
     body: formData,
   });
 
   if (!response.ok) {
-    throw new Error(`Proxy error! status: ${response.status}`);
+    throw new Error(`ACRCloud HTTP error! status: ${response.status}`);
   }
 
   return await response.text();
@@ -184,6 +223,16 @@ export const ACRScanner = async (file: File): Promise<string> => {
   const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   
   try {
+    const { data: keys, error: keyError } = await supabase
+      .from('copyrightscan')
+      .select('host, key, secret')
+      .limit(1)
+      .single();
+      
+    if (keyError || !keys) {
+      throw new Error(`Failed to fetch ACRCloud keys: ${keyError?.message || 'Unknown error'}`);
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
@@ -241,7 +290,7 @@ export const ACRScanner = async (file: File): Promise<string> => {
 
         const wavBlob = audioBufferToWav(chunkAudioBuffer);
         
-        return scanSingleFile(wavBlob);
+        return scanSingleFile(wavBlob, keys.host, keys.key, keys.secret);
     }).filter(p => p !== null) as Promise<string>[];
 
     const settledResults = await Promise.allSettled(scanPromises);

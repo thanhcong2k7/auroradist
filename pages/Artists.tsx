@@ -102,7 +102,8 @@ const Artists: React.FC = () => {
             toast.error("Official Artist Name is required.");
             return;
         }
-        if (artists.find(a => a.name === formData.name)){
+        const existingArtist = artists.find(a => a.name === formData.name);
+        if (existingArtist && existingArtist.id !== editingId){
             toast.error("An artist with this name already exists.");
             return;
         }
