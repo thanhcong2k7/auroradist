@@ -27,6 +27,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import DSPLogo from "@/components/DSPLogo";
+import WaveformPlayer from "@/components/WaveformPlayer";
 import { ACRScanner } from "@/services/utils";
 
 const WRITER_ROLES = [
@@ -741,20 +742,12 @@ const AdminReleaseDetail: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Visualized Waveform Player */}
+                    <WaveformPlayer audioUrl={track.audio_url} />
+
                     {/* Track Technical Details */}
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-black p-3 rounded-lg border border-white/5 items-center">
-                      <div className="md:col-span-4 space-y-1">
-                        <label className="text-[9px] text-gray-500 font-mono uppercase block">
-                          Audio Preview
-                        </label>
-                        <audio
-                          controls
-                          src={track.audio_url}
-                          className="w-full h-6 block"
-                          style={{ height: 30 }}
-                        />
-                      </div>
-                      <div className="md:col-span-3 space-y-1">
+                      <div className="md:col-span-5 space-y-1">
                         <label className="text-[9px] text-gray-500 font-mono uppercase flex items-center gap-1">
                           ISRC Code{" "}
                           {isModerationMode && !track.isrc && (
@@ -775,7 +768,7 @@ const AdminReleaseDetail: React.FC = () => {
                           placeholder="US-XXX-25..."
                         />
                       </div>
-                      <div className="md:col-span-2 space-y-1">
+                      <div className="md:col-span-3 space-y-1">
                         <label className="text-[9px] text-gray-500 font-mono uppercase">
                           Duration
                         </label>
@@ -783,7 +776,7 @@ const AdminReleaseDetail: React.FC = () => {
                           {track.duration || "---"}
                         </div>
                       </div>
-                      <div className="md:col-span-3 space-y-1">
+                      <div className="md:col-span-4 space-y-1">
                         <label className="text-[9px] text-gray-500 font-mono uppercase">
                           TikTok Start
                         </label>

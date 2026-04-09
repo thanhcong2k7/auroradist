@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
     "@breezystack/lamejs": "^1.2.1",
+    "@supabase/supabase-js": "^2.39.0",
     "lucide-react": "^0.561.0",
     "papaparse": "^5.4.1",
     "react": "^18.3.1",
@@ -20,7 +20,8 @@
     "react-icons": "^5.0.1",
     "react-router-dom": "^6.21.1",
     "recharts": "^2.10.3",
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.7",
+    "wavesurfer.js": "^7.12.5"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
