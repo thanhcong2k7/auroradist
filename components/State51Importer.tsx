@@ -249,8 +249,8 @@ export default function State51Importer() {
           country_code:
             cleanString(findVal(row, ["Country of Sale", "Country"])) ||
             "GLOBAL",
-          period_start: parseDate(findVal(row, ["Start"])),
-          period_end: parseDate(findVal(row, ["End"])),
+          period_start: parseDate2(findVal(row, ["Start"])),
+          period_end: parseDate2(findVal(row, ["End"])),
           stream_quantity: quantity,
           revenue: revenue,
           currency:
