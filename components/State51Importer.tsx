@@ -41,11 +41,13 @@ export default function State51Importer() {
     if (!val) return null;
     try {
       if (val instanceof Date) {
-        // Tránh lỗi nếu Date không hợp lệ
         if (isNaN(val.getTime())) return null;
-        const y = val.getUTCFullYear();
-        const m = String(val.getUTCMonth() + 1).padStart(2, "0");
-        const d = String(val.getUTCDate()).padStart(2, "0");
+        // const timezoneOffsetInMs = val.getTimezoneOffset() * 60000;
+        // const adjustedDate = new Date(val.getTime() - timezoneOffsetInMs);
+        const safeDate = new Date(val.getTime() + 12 * 60 * 60 * 1000);
+        const y = safeDate.getUTCFullYear();
+        const m = String(safeDate.getUTCMonth() + 1).padStart(2, "0");
+        const d = String(safeDate.getUTCDate()).padStart(2, "0");
         return `${y}-${m}-${d}`;
       }
       const dateStr = String(val).trim();
@@ -135,7 +137,7 @@ export default function State51Importer() {
     try {
       const fileExt = file.name.split(".").pop()?.toLowerCase();
       let jsonData: any[] = [];
-
+      process.env.TZ = 'UTC';
       if (fileExt === "xlsx" || fileExt === "xls") {
         const buffer = await file.arrayBuffer();
         const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
@@ -258,6 +260,8 @@ export default function State51Importer() {
             "GBP",
           raw_data: "",
         });
+        // console.log(findVal(row, ["Start"]));
+        // console.log(parseDate2(findVal(row, ["Start"])));
         validCount++;
       }
     }
@@ -265,7 +269,9 @@ export default function State51Importer() {
     setStats({ total: rows.length, valid: validCount });
 
     if (payload.length > 0) {
-      await uploadToSupabase(payload, batchId);
+      //await uploadToSupabase(payload, batchId);
+      console.log("Simulate upload");
+      console.log(payload);
     } else {
       setLogs((prev) => ["⚠️ No valid data found to import.", ...prev]);
       setStep("IDLE");
