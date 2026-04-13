@@ -269,9 +269,9 @@ export default function State51Importer() {
     setStats({ total: rows.length, valid: validCount });
 
     if (payload.length > 0) {
-      //await uploadToSupabase(payload, batchId);
-      console.log("Simulate upload");
-      console.log(payload);
+      await uploadToSupabase(payload, batchId);
+      // console.log("Simulate upload");
+      // console.log(payload);
     } else {
       setLogs((prev) => ["⚠️ No valid data found to import.", ...prev]);
       setStep("IDLE");
