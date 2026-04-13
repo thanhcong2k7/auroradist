@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { supabase } from '@/services/api';
+import React, { useEffect, useState } from 'react';
+import { api, supabase } from '@/services/api';
 import { Database, Wallet, Calendar, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import State51Importer from '@/components/State51Importer';
 import RevelatorImporter from '@/components/RevelatorImporter';
-
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+interface TrendData {
+    group_key: string;
+    total_streams: number;
+    total_revenue: number;
+}
 const AdminAnalytics: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'State51' | 'Revelator' | 'Payout'>('State51');
 
@@ -11,16 +16,35 @@ const AdminAnalytics: React.FC = () => {
     const [payoutMonth, setPayoutMonth] = useState(''); // Format: YYYY-MM
     const [payoutLoading, setPayoutLoading] = useState(false);
     const [payoutResult, setPayoutResult] = useState<{ count: number, total: number } | null>(null);
+    const [viewMode, setViewMode] = useState<'STREAMS' | 'REVENUE'>('STREAMS');
+    const [trendData, setTrendData] = useState<TrendData[]>([]);
+    useEffect(() => {
+        let isMounted = true;
+        const loadData = async () => {
+            try {
+                const trendRes = await api.admin.getFullAnalytics();
 
+                if (isMounted) {
+                    setTrendData(trendRes || []);
+                }
+            } catch (error) {
+                console.error("Failed to load analytics:", error);
+            } finally {
+            }
+        };
+
+        loadData();
+        return () => { isMounted = false; };
+    }, []);
     // --- Logic xử lý Payout ---
     const handlePayout = async () => {
         if (!payoutMonth) return alert("Please select a month first!");
-        
+
         // 1. Tính toán ngày đầu và ngày cuối tháng
         const [year, month] = payoutMonth.split('-').map(Number);
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         // Trick lấy ngày cuối tháng: Day 0 của tháng sau
-        const lastDay = new Date(year, month, 0).getDate(); 
+        const lastDay = new Date(year, month, 0).getDate();
         const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
         if (!confirm(`Are you sure you want to process payouts for ${payoutMonth}?\n(${startDate} to ${endDate})\n\nThis action will generate Transactions for all users.`)) {
@@ -54,15 +78,102 @@ const AdminAnalytics: React.FC = () => {
             setPayoutLoading(false);
         }
     };
-
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-black/90 border border-white/10 p-3 rounded-lg shadow-xl backdrop-blur-md z-50">
+                    <p className="text-gray-400 text-[10px] mb-1 font-mono">{label}</p>
+                    <p className="text-white font-bold text-sm">
+                        {viewMode === 'REVENUE' ? '$' : ''}
+                        {Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        {viewMode === 'STREAMS' ? ' streams' : ''}
+                    </p>
+                </div>
+            );
+        }
+        return null;
+    };
     return (
         <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-20">
+            {/* flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-4 */}
             <div className="border-b border-white/10 pb-4">
                 <h1 className="text-2xl font-black uppercase tracking-tight text-white">Data Ingestion Node</h1>
                 <p className="text-gray-500 text-xs font-mono uppercase">Centralized Royalty Processing</p>
             </div>
+            <div className="flex flex-col xl:flex-row justify-between items-end gap-4 border-b border-white/10 pb-6">
+                <div>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter text-gray-400 flex items-center gap-2">
+                        Preview
+                    </h3>
+                    <p className="text-gray-500 text-xs font-mono mt-1">
+                        All imported data existing on this system.
+                    </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                    <div className="bg-white/5 p-1 rounded-lg flex gap-1 border border-white/10">
+                        <button
+                            onClick={() => setViewMode('STREAMS')}
+                            className={`flex-1 sm:flex-none px-4 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${viewMode === 'STREAMS' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Streams
+                        </button>
+                        <button
+                            onClick={() => setViewMode('REVENUE')}
+                            className={`flex-1 sm:flex-none px-4 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${viewMode === 'REVENUE' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Revenue
+                        </button>
+                    </div>
+                </div>
+                {/* View Mode Switcher */}
 
-            {/* --- Main Tabs --- */}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 border-b border-white/10 pb-4">
+                <div className="lg:col-span-3 bg-[#111] border border-white/5 p-6 rounded-2xl h-[200px] flex flex-col">
+                    <div className="flex-1 w-full min-h-0"><ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={trendData}>
+                            <defs>
+                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor={viewMode === 'STREAMS' ? "#3b82f6" : "#22c55e"} stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor={viewMode === 'STREAMS' ? "#3b82f6" : "#22c55e"} stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                            <XAxis
+                                dataKey="group_key"
+                                stroke="#555"
+                                tick={{ fontSize: 10, fill: '#666' }}
+                                tickFormatter={(val) => val.slice(5)} // Show MM-DD
+                                axisLine={false}
+                                tickLine={false}
+                                dy={10}
+                                minTickGap={30}
+                            />
+                            <YAxis
+                                stroke="#555"
+                                tick={{ fontSize: 10, fill: '#666' }}
+                                axisLine={false}
+                                tickLine={false}
+                                tickFormatter={(val) => viewMode === 'REVENUE' ? `$${val}` : `${(val / 1000).toFixed(0)}k`}
+                                width={40}
+                            />
+                            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }} />
+                            <Area
+                                type="monotone"
+                                dataKey={viewMode === 'STREAMS' ? "total_streams" : "total_revenue"}
+                                stroke={viewMode === 'STREAMS' ? "#3b82f6" : "#22c55e"}
+                                strokeWidth={2}
+                                fillOpacity={1}
+                                fill="url(#colorValue)"
+                                activeDot={{ r: 4, strokeWidth: 0 }}
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
             <div className="flex gap-2 bg-white/5 p-1 rounded-xl w-fit">
                 <button
                     onClick={() => setActiveTab('State51')}
@@ -85,8 +196,6 @@ const AdminAnalytics: React.FC = () => {
                 </button>
             </div>
 
-            {/* --- Content Area --- */}
-            
             {/* 1. State51 Importer */}
             {activeTab === "State51" && (
                 <div className="animate-fade-in">
@@ -111,7 +220,7 @@ const AdminAnalytics: React.FC = () => {
                             </h3>
                             <p className="text-gray-500 text-xs mt-2 leading-relaxed">
                                 This process will aggregate all <b>unpaid</b> raw analytics for the selected month,
-                                calculate the final amount (based on user rates), and generate 
+                                calculate the final amount (based on user rates), and generate
                                 <b> Wallet Transactions</b> for each artist.
                             </p>
                         </div>
@@ -127,8 +236,8 @@ const AdminAnalytics: React.FC = () => {
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-gray-400 uppercase">Select Month</label>
                                 <div className="relative">
-                                    <input 
-                                        type="month" 
+                                    <input
+                                        type="month"
                                         value={payoutMonth}
                                         onChange={(e) => setPayoutMonth(e.target.value)}
                                         className="w-full bg-black border border-white/20 text-white text-sm rounded-lg px-4 py-3 outline-none focus:border-green-500 transition"

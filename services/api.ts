@@ -242,30 +242,6 @@ export const api = {
       return data;
     },
     getAnalyticsTrend: async (startDate: string, endDate: string) => {
-      // DECLARE
-      //     v_rate NUMERIC;
-      // BEGIN
-      //     -- Lấy rate hiện tại của user
-      //     SELECT contract_rate INTO v_rate FROM profiles WHERE id = p_uid;
-          
-      //     -- Fallback nếu null thì lấy 0.8
-      //     IF v_rate IS NULL THEN v_rate := 0.8; END IF;
-
-      //     RETURN QUERY
-      //     SELECT 
-      //         TO_CHAR(ra.period_start, 'YYYY-MM-DD') as group_key,
-      //         SUM(ra.stream_quantity)::BIGINT as total_streams,
-      //         -- LOGIC QUAN TRỌNG: Nhân Doanh thu gốc * Rate
-      //         SUM(ra.revenue * v_rate) as total_revenue
-      //     FROM raw_analytics ra
-      //     JOIN tracks t ON t.isrc = ra.isrc
-      //     WHERE 
-      //         t.uid = p_uid
-      //         AND ra.period_start >= p_start_date 
-      //         AND ra.period_start <= p_end_date
-      //     GROUP BY group_key
-      //     ORDER BY group_key;
-      // END;
       const userId = await getUserId();
       const { data, error } = await supabase.rpc('get_artist_analytics_v3', {
         p_uid: userId,
@@ -1164,6 +1140,11 @@ export const api = {
           contributors: t.contributors || []
         }))
       };
+    },
+    getFullAnalytics: async () => {
+      const { data, error } = await supabase.rpc('admin_get_all_analytics');
+      if (error) throw error;
+      return data;
     },
     confirmTakedown: async (id: number) => {
       const { error } = await supabase

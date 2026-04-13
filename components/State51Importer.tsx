@@ -12,12 +12,15 @@ import {
 
 export default function State51Importer() {
   const [step, setStep] = useState<
-    "IDLE" | "PARSING" | "MAPPING" | "UPLOADING" | "COMPLETE"
+    "IDLE" | "SELECT_SHEET" | "PARSING" | "MAPPING" | "UPLOADING" | "COMPLETE"
   >("IDLE");
   const [logs, setLogs] = useState<string[]>([]);
   const [stats, setStats] = useState<{ total: number; valid: number } | null>(
     null,
   );
+  const [availableSheets, setAvailableSheets] = useState<string[]>([]);
+  const [pendingWorkbook, setPendingWorkbook] = useState<XLSX.WorkBook | null>(null);
+  const [selectedSheet, setSelectedSheet] = useState<string>("");
 
   // --- HELPER FUNCTIONS ---
 
@@ -141,6 +144,17 @@ export default function State51Importer() {
       if (fileExt === "xlsx" || fileExt === "xls") {
         const buffer = await file.arrayBuffer();
         const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
+        
+        if (workbook.SheetNames.length > 1) {
+          setPendingWorkbook(workbook);
+          setAvailableSheets(workbook.SheetNames);
+          setSelectedSheet(workbook.SheetNames[0]);
+          setStep("SELECT_SHEET");
+          setLogs((prev) => [`📁 Multiple sheets detected. Waiting for user selection...`, ...prev]);
+          e.target.value = ""; // Reset input so same file can be uploaded again if needed
+          return; // Stop here, wait for user action
+        }
+        
         const sheetName = workbook.SheetNames[0];
         jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
           raw: true,
@@ -161,8 +175,29 @@ export default function State51Importer() {
 
       // Chuyển sang bước xử lý và map dữ liệu
       await processAndMapData(jsonData);
+      e.target.value = ""; // Reset input
     } catch (err: any) {
       setLogs((prev) => [`❌ File Error: ${err.message}`, ...prev]);
+      setStep("IDLE");
+      e.target.value = ""; // Reset input limit
+    }
+  };
+
+  const handleSheetSelection = async () => {
+    if (!pendingWorkbook || !selectedSheet) return;
+    
+    setStep("PARSING");
+    setLogs((prev) => [`📂 Parsing selected sheet: ${selectedSheet}...`, ...prev]);
+    
+    try {
+      const jsonData = XLSX.utils.sheet_to_json(pendingWorkbook.Sheets[selectedSheet], {
+        raw: true,
+      });
+      // Clear pending workbook to free memory somewhat (optional)
+      setPendingWorkbook(null);
+      await processAndMapData(jsonData);
+    } catch (err: any) {
+      setLogs((prev) => [`❌ Error parsing sheet: ${err.message}`, ...prev]);
       setStep("IDLE");
     }
   };
@@ -379,6 +414,25 @@ export default function State51Importer() {
           />
           <p className="text-sm font-bold text-white">Drop Report File</p>
           <p className="text-xs text-gray-500 mt-1">Auto-detects format</p>
+        </div>
+      ) : step === "SELECT_SHEET" ? (
+        <div className="bg-black/50 border border-white/10 rounded-xl p-8 space-y-4">
+          <p className="text-white text-sm font-bold text-center">Select Sheet to Import</p>
+          <select 
+            value={selectedSheet}
+            onChange={(e) => setSelectedSheet(e.target.value)}
+            className="w-full bg-[#111] text-white border border-white/10 rounded-lg p-3 text-sm focus:outline-none focus:border-blue-500"
+          >
+            {availableSheets.map(sheet => (
+              <option key={sheet} value={sheet}>{sheet}</option>
+            ))}
+          </select>
+          <button 
+            onClick={handleSheetSelection}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-sm transition-colors"
+          >
+            Continue Import
+          </button>
         </div>
       ) : (
         <div className="bg-black/50 border border-white/10 rounded-xl p-8 text-center space-y-3">
