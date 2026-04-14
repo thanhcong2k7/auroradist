@@ -19,14 +19,12 @@ const AdminDashboard: React.FC = () => {
 
     const fetchStats = async () => {
         try {
-            // Chạy song song các query count để tối ưu tốc độ
             const [users, releases, pending, tracks, revenue] = await Promise.all([
                 supabase.from('profiles').select('*', { count: 'exact', head: true }),
                 supabase.from('releases').select('*', { count: 'exact', head: true }),
                 supabase.from('releases').select('*', { count: 'exact', head: true }).eq('status', 'CHECKING'),
                 supabase.from('tracks').select('*', { count: 'exact', head: true }),
-                // Tính tổng tiền payout (đã xử lý) - Query này hơi nặng nếu data lớn, có thể tối ưu sau bằng View
-                supabase.from('transactions').select('amount').eq('type', 'ROYALTY')
+                supabase.from('transactions').select('amount').eq('type', 'ROYALTY_PAYOUT')
             ]);
 
             const totalRev = revenue.data?.reduce((sum, tx) => sum + (tx.amount || 0), 0) || 0;
