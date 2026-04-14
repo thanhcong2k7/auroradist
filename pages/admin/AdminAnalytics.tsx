@@ -20,22 +20,23 @@ const AdminAnalytics: React.FC = () => {
     const [trendData, setTrendData] = useState<TrendData[]>([]);
     useEffect(() => {
         let isMounted = true;
-        const loadData = async () => {
-            try {
-                const trendRes = await api.admin.getFullAnalytics();
 
-                if (isMounted) {
-                    setTrendData(trendRes || []);
-                }
-            } catch (error) {
-                console.error("Failed to load analytics:", error);
-            } finally {
-            }
-        };
-
-        loadData();
+        loadData(isMounted);
         return () => { isMounted = false; };
     }, []);
+    const loadData = async (isMounted: boolean) => {
+        try {
+            //console.log('loading data');
+            const trendRes = await api.admin.getFullAnalytics();
+            //console.log("loaded");
+            if (isMounted) {
+                setTrendData(trendRes || []);
+            }
+        } catch (error) {
+            console.error("Failed to load analytics:", error);
+        } finally {
+        }
+    };
     // --- Logic xử lý Payout ---
     const handlePayout = async () => {
         if (!payoutMonth) return alert("Please select a month first!");
@@ -124,6 +125,12 @@ const AdminAnalytics: React.FC = () => {
                             Revenue
                         </button>
                     </div>
+                    <button
+                        onClick={() => loadData(false)}
+                        className='flex-1 sm:flex-none px-4 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all text-gray-400 hover:text-white'
+                    >
+                        Reload
+                    </button>
                 </div>
                 {/* View Mode Switcher */}
 

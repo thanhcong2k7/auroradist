@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,6 +17,8 @@ import {
   ShieldUser,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronRight,
+  Bell,
 } from "lucide-react";
 import { UserProfile } from "@/types";
 import { api } from "@/services/api";
@@ -37,6 +39,21 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
   });
   const location = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [announcements, setAnnouncements] = useState<{ id: string, subject: string, content: string, time: string }[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -51,8 +68,42 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
   }, []);
 
   const loadData = async () => {
-    const [prof] = await Promise.all([api.auth.getProfile()]);
-    setProfile(prof);
+    try {
+      const [prof] = await Promise.all([api.auth.getProfile()]);
+      setProfile(prof);
+
+      if (prof) {
+        const tickets = await api.support.getTickets();
+        const ticketsWithAdminReplies = tickets.filter(t => {
+          if (t.status === 'CLOSED' || t.status === 'RESOLVED') return false; 
+          if (t.messages && t.messages.length > 1) {
+            const sortedMsgs = [...t.messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            return sortedMsgs[sortedMsgs.length - 1].role === 'ADMIN';
+          }
+          if (t.status === 'OPEN') return true;
+          return false;
+        });
+
+        if (ticketsWithAdminReplies.length > 0) {
+          ticketsWithAdminReplies.sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime());
+          const newAnnouncements = ticketsWithAdminReplies.map(t => {
+            const msgs = [...t.messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            const lastMsg = msgs[msgs.length - 1];
+            return {
+              id: t.id,
+              subject: t.subject,
+              content: lastMsg.content,
+              time: lastMsg.created_at
+            };
+          });
+          setAnnouncements(newAnnouncements);
+        } else {
+             setAnnouncements([]);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load layout data:", error);
+    }
   };
 
   const toggleSidebar = () => {
@@ -252,8 +303,66 @@ const LayoutContent: React.FC<LayoutProps> = ({ children, onLogout }) => {
             <span>//</span>
             <span>{currentTime.toLocaleTimeString()}</span>
           </div>
-
-          <div className="flex items-center gap-4">
+          {/* New replies on support tickets from admin here, just for announcements */}
+          <div className="flex items-center gap-4 ml-auto lg:ml-0">
+            {/* Notifications Dropdown */}
+            <div className="relative" ref={notificationRef}>
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`relative p-2.5 rounded-full transition-colors ${showNotifications ? 'bg-white/10 text-white' : 'bg-surface border border-white/10 text-gray-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <Bell size={18} />
+                {announcements.length > 0 && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-background"></span>
+                )}
+              </button>
+              
+              {showNotifications && (
+                <>
+                  <div className="absolute right-0 top-full mt-3 w-80 sm:w-[26rem] bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col max-h-[32rem]">
+                    <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 rounded-t-2xl">
+                      <h3 className="font-bold text-sm tracking-tight text-white hover:text-white">Notifications</h3>
+                      <span className="text-[10px] font-black uppercase text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">{announcements.length} Unread</span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                      {announcements.length > 0 ? (
+                         announcements.map((ann) => (
+                           <Link
+                             key={ann.id}
+                             to="/support"
+                             onClick={() => setShowNotifications(false)}
+                             className="block p-3 rounded-xl hover:bg-white/5 transition-colors relative group"
+                           >
+                             <div className="flex gap-4">
+                               <div className="shrink-0 w-10 h-10 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center mt-0.5 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                 <MessageSquare size={16} />
+                               </div>
+                               <div className="flex-1 min-w-0">
+                                 <div className="flex justify-between items-start mb-1">
+                                    <p className="text-xs font-bold text-white truncate pr-2">Admin Reply: {ann.subject}</p>
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                                 </div>
+                                 <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed">
+                                   {ann.content}
+                                 </p>
+                                 <p className="text-[10px] text-gray-500 font-mono mt-2 uppercase">
+                                   {new Date(ann.time).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}
+                                 </p>
+                               </div>
+                             </div>
+                           </Link>
+                         ))
+                      ) : (
+                        <div className="py-12 flex flex-col items-center justify-center text-gray-500 opacity-60">
+                           <Bell className="mb-3" size={32} />
+                           <p className="text-xs font-mono uppercase tracking-widest text-center">No new<br/>notifications</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             <Link
               to="/discography/new"
               className="px-4 py-1.5 text-xs font-black border border-white/20 hover:bg-white hover:text-black transition uppercase rounded-full tracking-widest"

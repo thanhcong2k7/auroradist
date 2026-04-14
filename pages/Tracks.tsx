@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Track, TrackArtist, TrackContributor, Artist } from '../types';
-import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2, ListPlus, FilePen, Check, Clock, AlertTriangle } from 'lucide-react';
+import { Music, Plus, Search, Loader2, Play, FileAudio, Users, Mic2, X, Save, Globe, AlertCircle, Trash2, ListPlus, FilePen, Check, Clock, AlertTriangle, Download } from 'lucide-react';
 import FileUploader from '../components/FileUploader';
 import { PERFORMER_ROLES } from '../constants';
 import { useMusicPlayer } from '../components/MusicPlayerContext';
@@ -121,6 +121,32 @@ const Tracks: React.FC = () => {
     const regex = /^([0-5]?[0-9]):([0-5][0-9])$/;
     return regex.test(time);
   };
+  const handleDownloadTrack = async (track: Track) => {
+    if (!track.audioUrl) return;
+    const toastId = toast.loading(`Downloading ${track.name}...`);
+    try {
+      const response = await fetch(track.audioUrl);
+      if (!response.ok) throw new Error("Network response was not ok");
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const urlFileName = track.audioUrl.split('/').pop()?.split('?')[0] || 'master.wav';
+      const extension = urlFileName.includes('.') ? urlFileName.split('.').pop() : 'wav';
+      link.download = `${track.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      
+      toast.success("Download complete", { id: toastId });
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Download failed. Make sure CORS is enabled on the storage bucket.", { id: toastId });
+    }
+  };
+
   const handleDeleteTrack = async (track: Track) => {
     if (!confirm(`Permanently delete "${track.name}"? This handles both database entry and audio file.`)) return;
     setLoading(true);
@@ -411,6 +437,7 @@ const Tracks: React.FC = () => {
                   const isCurrent = globalTrack?.id === track.id;
                   const isActive = isCurrent && isPlaying;
                   const isInQueue = playlist.some(t => t.id === track.id);
+
                   return (
                     <tr key={track.id} className={`transition-colors group ${isCurrent ? 'bg-blue-600/10' : 'hover:bg-white/[0.02]'}`}>
                       <td className="px-6 py-4">
@@ -461,6 +488,9 @@ const Tracks: React.FC = () => {
                             <AlertTriangle size={14} />
                           </button>
                         )}
+                        <button onClick={() => handleDownloadTrack(track)} className="p-2 text-gray-400 hover:text-blue-500 transition opacity-100 group-hover:opacity-100" title="Download Track">
+                          <Download size={16} />
+                        </button>
                         <button onClick={() => openEditor(track)} className="p-2 text-gray-400 hover:text-blue-400 transition opacity-100 group-hover:opacity-100">
                           <FilePen size={16} />
                         </button>
