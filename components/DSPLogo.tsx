@@ -8,7 +8,7 @@ import {
 
 import {
     SiShazam, SiTidal, SiPandora,
-    SiIheartradio, SiMixcloud, SiTencentqq
+    SiIheartradio, SiMixcloud
 } from 'react-icons/si';
 
 interface DSPLogoProps {
@@ -42,7 +42,6 @@ const DSPLogo: React.FC<DSPLogoProps> = ({ code, url, name = '', size = 24, clas
     else if (c.includes('PANDORA')) Icon = <SiPandora size={size} className="text-[#224099]" />;
     else if (c.includes('IHEART')) Icon = <SiIheartradio size={size} className="text-[#C6002B]" />;
     else if (c.includes('MIXCLOUD')) Icon = <SiMixcloud size={size} className="text-[#52AAD8]" />;
-    else if (c.includes('TENCENT')) Icon = <SiTencentqq size={size} className="text-white" />;
 
     if (Icon) return <span className={className}>{Icon}</span>;
 
